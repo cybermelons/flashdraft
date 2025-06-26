@@ -23,7 +23,9 @@
       "Bash(pip install:*)",
       "Bash(node:*)",
       "Bash(timeout:*)",
-      "Bash(pnpm build:*)"
+      "Bash(pnpm build:*)",
+      "mcp__sequential-thinking__sequentialthinking",
+      "Bash(curl:*)"
     ],
     "deny": []
   }

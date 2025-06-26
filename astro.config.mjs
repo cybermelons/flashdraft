@@ -11,7 +11,9 @@ export default defineConfig({
     mode: 'standalone'
   }),
   integrations: [
-    react(),
+    react({
+      experimentalReactChildren: true
+    }),
     tailwind({
       applyBaseStyles: false, // Let shadcn/ui handle base styles
     })
