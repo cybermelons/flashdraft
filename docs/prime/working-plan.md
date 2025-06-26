@@ -29,6 +29,9 @@ The goal is for someone without any set knowledge to learn to draft by playtesti
 - [x] Implement 8-player draft flow with pick tracking ✓ (Note: Full Zustand store with draft state, player management, pack passing logic)
 - [x] Add draft state management (Zustand) with real card data ✓ (Note: Complete store with actions for picks, pack management, draft progression)
 - [x] Test complete draft simulation end-to-end with real sets ✓ (Note: Working draft on localhost:4321/draft with DTK/FIN sets)
+- [ ] Implement permalink URLs for draft state (like 17lands) - encode pack/pick/seat in URL
+- [ ] Optimize draft interface for mobile devices - responsive grid, touch-friendly
+- [ ] Fix hover cards to trigger on mouseover (not click) for desktop
 - [ ] Download and process 17lands data for ACR and DTK formats (Next: Need to implement 17lands data pipeline for better AI)
 - [ ] Create simple rule-based bots using actual card ratings from 17lands
 

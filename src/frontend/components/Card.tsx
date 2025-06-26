@@ -85,11 +85,11 @@ export const Card: React.FC<CardProps> = ({
   }, [onHover]);
 
 
-  // Size classes
+  // Size classes - mobile responsive
   const sizeClasses = {
-    small: 'w-20 h-28',
-    normal: 'w-32 h-44', 
-    large: 'w-48 h-64',
+    small: 'w-16 h-22 sm:w-20 sm:h-28',
+    normal: 'w-24 h-32 sm:w-28 sm:h-40 md:w-32 md:h-44', 
+    large: 'w-32 h-44 sm:w-40 sm:h-56 md:w-48 md:h-64',
   };
 
   return (

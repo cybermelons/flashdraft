@@ -40,7 +40,7 @@ function CardHoverDetails({ card, children }: CardHoverDetailsProps) {
   const rarityColor = rarityColors[card.rarity] || 'text-gray-600';
 
   return (
-    <HoverCard openDelay={300} closeDelay={100}>
+    <HoverCard openDelay={0} closeDelay={0}>
       <HoverCardTrigger asChild>
         {children}
       </HoverCardTrigger>

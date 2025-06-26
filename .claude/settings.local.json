@@ -25,7 +25,10 @@
       "Bash(timeout:*)",
       "Bash(pnpm build:*)",
       "mcp__sequential-thinking__sequentialthinking",
-      "Bash(curl:*)"
+      "Bash(curl:*)",
+      "Bash(ls:*)",
+      "Bash(find:*)",
+      "Bash(cat:*)"
     ],
     "deny": []
   }

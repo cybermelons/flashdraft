@@ -9,7 +9,6 @@ import React, { useState, useCallback, useMemo } from 'react';
 import type { DraftCard, MTGCard } from '../../shared/types/card.js';
 import type { GeneratedPack } from '../utils/clientPackGenerator.js';
 import Card from './Card.js';
-import CardHoverDetails from './CardHoverDetails.js';
 
 // Client-safe utility functions
 const calculateManaCurve = (cards: DraftCard[]): Record<number, number> => {
@@ -158,7 +157,7 @@ export const PackDisplay: React.FC<PackDisplayProps> = ({
     <div className="w-full h-full flex flex-col">
       {/* Pack Header */}
       {showPackInfo && (
-        <div className="bg-white border-b border-gray-200 p-4 flex-shrink-0">
+        <div className="bg-white border-b border-gray-200 p-3 sm:p-4 flex-shrink-0">
           <div className="flex justify-between items-start mb-3">
             <div>
               <h2 className="text-xl font-bold text-gray-900">
@@ -181,11 +180,11 @@ export const PackDisplay: React.FC<PackDisplayProps> = ({
             </div>
           </div>
 
-          {/* Pack Statistics */}
-          <div className="grid grid-cols-2 gap-4 text-sm">
+          {/* Pack Statistics - Mobile Optimized */}
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 text-sm">
             <div>
               <h4 className="font-medium text-gray-700 mb-1">Rarities</h4>
-              <div className="flex flex-wrap gap-2">
+              <div className="flex flex-wrap gap-1 sm:gap-2">
                 {Object.entries(packStats.by_rarity).map(([rarity, count]) => (
                   <span 
                     key={rarity}
@@ -204,7 +203,7 @@ export const PackDisplay: React.FC<PackDisplayProps> = ({
 
             <div>
               <h4 className="font-medium text-gray-700 mb-1">Colors</h4>
-              <div className="flex flex-wrap gap-2">
+              <div className="flex flex-wrap gap-1 sm:gap-2">
                 {Object.entries(packStats.by_color).map(([color, count]) => (
                   <span 
                     key={color}
@@ -225,8 +224,8 @@ export const PackDisplay: React.FC<PackDisplayProps> = ({
             </div>
           </div>
 
-          {/* Sort Controls */}
-          <div className="mt-3 flex items-center space-x-4">
+          {/* Sort Controls - Mobile Friendly */}
+          <div className="mt-3 flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-4">
             <label className="text-sm font-medium text-gray-700">Sort by:</label>
             <select
               value={localSort}
@@ -247,20 +246,19 @@ export const PackDisplay: React.FC<PackDisplayProps> = ({
         </div>
       )}
 
-      {/* Cards Grid */}
-      <div className="flex-1 overflow-auto p-4">
-        <div className="grid grid-cols-5 gap-3 auto-rows-max">
+      {/* Cards Grid - Responsive */}
+      <div className="flex-1 overflow-auto p-2 sm:p-4">
+        <div className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-5 lg:grid-cols-6 xl:grid-cols-7 gap-2 sm:gap-3 auto-rows-max">
           {sortedCards.map((card) => (
-            <CardHoverDetails key={card.id} card={card}>
-              <Card
-                card={card}
-                size="normal"
-                selected={selectedCard?.id === card.id}
-                onClick={handleCardSelect}
-                showDetails={true}
-                className="group"
-              />
-            </CardHoverDetails>
+            <Card
+              key={card.id}
+              card={card}
+              size="normal"
+              selected={selectedCard?.id === card.id}
+              onClick={handleCardSelect}
+              showDetails={true}
+              className="group touch-manipulation"
+            />
           ))}
         </div>
 
