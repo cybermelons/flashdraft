@@ -144,7 +144,7 @@ export const Card: React.FC<CardProps> = ({
       {/* Card Image */}
       <div className="relative w-full h-full rounded-lg overflow-hidden">
         {imageUrl && !imageError ? (
-          <>
+          <React.Fragment>
             <img
               src={imageUrl}
               alt={card.name}
@@ -159,16 +159,11 @@ export const Card: React.FC<CardProps> = ({
                 <div className="text-gray-400 text-xs">Loading...</div>
               </div>
             )}
-          </>
+          </React.Fragment>
         ) : (
-          // Fallback card display when no image
           <div className="w-full h-full bg-white border border-gray-300 p-2 flex flex-col justify-between">
             <div>
-              <div className="text-xs font-semibold mb-1 overflow-hidden" style={{
-                display: '-webkit-box',
-                WebkitLineClamp: 2,
-                WebkitBoxOrient: 'vertical'
-              }}>
+              <div className="text-xs font-semibold mb-1 overflow-hidden line-clamp-2">
                 {card.name}
               </div>
               <div className="text-xs text-gray-600">
@@ -223,7 +218,7 @@ export const Card: React.FC<CardProps> = ({
           <div className="w-2 h-2 bg-green-500 rounded-full" title="Creature" />
         )}
         {isLand(card) && (
-          <div className="w-2 h-2 bg-brown-500 rounded-full" title="Land" />
+          <div className="w-2 h-2 bg-amber-600 rounded-full" title="Land" />
         )}
         {isSpell(card) && (
           <div className="w-2 h-2 bg-purple-500 rounded-full" title="Spell" />
