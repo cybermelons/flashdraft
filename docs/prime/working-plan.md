@@ -23,8 +23,8 @@ The goal is for someone without any set knowledge to learn to draft by playtesti
 - [x] Download Final Fantasy (FIN) set data from Scryfall API
 - [x] Download Dragons of Tarkir (DTK) set data from Scryfall API
 - [x] Create MTG card data models and validation schemas
-- [ ] Implement card image caching and optimization system
-- [ ] Build pack generation using real set data and rarity distributions
+- [x] Implement card image caching and optimization system
+- [x] Build pack generation using real set data and rarity distributions
 - [ ] Create draft interface with real card display and selection
 - [ ] Download and process 17lands data for ACR and DTK formats
 - [ ] Create simple rule-based bots using actual card ratings from 17lands

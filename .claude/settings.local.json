@@ -21,7 +21,8 @@
       "Bash(python3:*)",
       "Bash(source:*)",
       "Bash(pip install:*)",
-      "Bash(node:*)"
+      "Bash(node:*)",
+      "Bash(timeout:*)"
     ],
     "deny": []
   }
