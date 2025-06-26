@@ -49,15 +49,20 @@ export const CardImage: React.FC<CardImageProps> = ({ card, size, onLoad, onErro
     onError?.();
   };
 
+  // Define classes outside JSX
+  const imgOpacityClass = imageLoaded ? 'opacity-100' : 'opacity-0';
+  const imgClassName = `w-full h-full object-cover transition-opacity duration-300 ${imgOpacityClass}`;
+  
+  const rarityColorClass = RARITY_COLORS[card.rarity] || 'text-gray-600';
+  const rarityClassName = `font-medium ${rarityColorClass}`;
+
   if (imageUrl && !imageError) {
     return (
       <div className="relative w-full h-full">
         <img
           src={imageUrl}
           alt={card.name}
-          className={`w-full h-full object-cover transition-opacity duration-300 ${
-            imageLoaded ? 'opacity-100' : 'opacity-0'
-          }`}
+          className={imgClassName}
           onLoad={handleLoad}
           onError={handleError}
         />
@@ -71,6 +76,8 @@ export const CardImage: React.FC<CardImageProps> = ({ card, size, onLoad, onErro
   }
 
   // Fallback text display
+  const formattedManaCost = formatManaCost(card.mana_cost || '');
+  
   return (
     <div className="w-full h-full bg-white border border-gray-300 p-2 flex flex-col justify-between">
       <div>
@@ -78,7 +85,7 @@ export const CardImage: React.FC<CardImageProps> = ({ card, size, onLoad, onErro
           {card.name}
         </div>
         <div className="text-xs text-gray-600">
-          {formatManaCost(card.mana_cost || '')}
+          {formattedManaCost}
         </div>
       </div>
       
@@ -86,7 +93,7 @@ export const CardImage: React.FC<CardImageProps> = ({ card, size, onLoad, onErro
         <div className="text-gray-600 mb-1 truncate">
           {card.type_line}
         </div>
-        <div className={`font-medium ${RARITY_COLORS[card.rarity] || 'text-gray-600'}`}>
+        <div className={rarityClassName}>
           {card.rarity}
         </div>
       </div>

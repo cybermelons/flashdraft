@@ -57,7 +57,7 @@ export const CardOverlay: React.FC<CardOverlayProps> = ({
             <div className="font-semibold truncate">{card.name}</div>
             <div className="flex justify-between items-center">
               <span>{formatManaCost(card.mana_cost || '')}</span>
-              <span className={RARITY_COLORS[card.rarity]}>{card.rarity[0].toUpperCase()}</span>
+              <span className={RARITY_COLORS[card.rarity] || 'text-gray-600'}>{card.rarity[0].toUpperCase()}</span>
             </div>
           </div>
         </div>
