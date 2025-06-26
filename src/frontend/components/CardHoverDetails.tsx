@@ -47,7 +47,8 @@ function CardHoverDetails({ card, children }: CardHoverDetailsProps) {
       <HoverCardContent 
         side="right" 
         align="start"
-        className="w-80 p-0 bg-white border border-gray-200 shadow-xl"
+        className="w-80 p-0 bg-white border border-gray-200 shadow-xl pointer-events-none"
+        sideOffset={10}
       >
         <div className="flex flex-col">
           {/* Card Image */}

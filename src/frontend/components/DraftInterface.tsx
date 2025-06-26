@@ -45,14 +45,6 @@ export const DraftInterface: React.FC<DraftInterfaceProps> = ({ className = '' }
   const currentPack = useDraftStore(selectCurrentPack);
   const humanPlayer = players.find(p => p.is_human);
 
-  // Handle card selection
-  const handleCardSelect = useCallback((card: DraftCard) => {
-    if (!isHumanTurn()) return;
-    
-    selectCard(card);
-    setConfirmPick(false);
-  }, [isHumanTurn, selectCard]);
-
   // Handle pick confirmation
   const handleConfirmPick = useCallback(() => {
     if (!canMakePick() || !selected_card || !currentPlayer) return;
@@ -60,6 +52,19 @@ export const DraftInterface: React.FC<DraftInterfaceProps> = ({ className = '' }
     makePickBy(currentPlayer.id, selected_card);
     setConfirmPick(false);
   }, [canMakePick, selected_card, currentPlayer, makePickBy]);
+
+  // Handle card selection
+  const handleCardSelect = useCallback((card: DraftCard) => {
+    if (!isHumanTurn()) return;
+    
+    // If clicking the already selected card, confirm the pick
+    if (selected_card?.id === card.id) {
+      handleConfirmPick();
+    } else {
+      selectCard(card);
+      setConfirmPick(false);
+    }
+  }, [isHumanTurn, selectCard, selected_card, handleConfirmPick]);
 
   // Handle card hover
   const handleCardHover = useCallback((card: DraftCard | null) => {
@@ -240,10 +245,11 @@ export const DraftInterface: React.FC<DraftInterfaceProps> = ({ className = '' }
                   </button>
                   <button
                     onClick={handleConfirmPick}
-                    className="px-6 py-2 bg-blue-600 text-white rounded font-medium hover:bg-blue-700 transition-colors"
+                    className="px-6 py-2 bg-blue-600 text-white rounded font-medium hover:bg-blue-700 transition-colors flex items-center gap-2"
                     disabled={!canMakePick()}
                   >
-                    Confirm Pick
+                    <span>Next</span>
+                    <span className="text-xs opacity-75">(or click card again)</span>
                   </button>
                 </div>
               </div>
