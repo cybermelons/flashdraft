@@ -6,8 +6,30 @@
  */
 
 import React, { useState, useCallback } from 'react';
-import type { DraftCard, MTGColorSymbol } from '../../shared/types/card';
-import { getPrimaryColor, isCreature, isLand, isSpell } from '../../shared/utils/cardUtils';
+import type { DraftCard, MTGColorSymbol } from '../../shared/types/card.js';
+
+// Client-safe utility functions
+const getPrimaryColor = (card: DraftCard): MTGColorSymbol | 'colorless' => {
+  if (!card.color_identity || card.color_identity.length === 0) {
+    return 'colorless';
+  }
+  if (card.color_identity.length === 1) {
+    return card.color_identity[0];
+  }
+  return card.color_identity[0];
+};
+
+const isCreature = (card: DraftCard): boolean => {
+  return card.type_line.includes('Creature');
+};
+
+const isLand = (card: DraftCard): boolean => {
+  return card.type_line.includes('Land');
+};
+
+const isSpell = (card: DraftCard): boolean => {
+  return card.type_line.includes('Instant') || card.type_line.includes('Sorcery');
+};
 
 export interface CardProps {
   card: DraftCard;

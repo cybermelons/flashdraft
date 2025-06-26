@@ -6,10 +6,10 @@
  */
 
 import React, { useEffect, useState, useCallback } from 'react';
-import { useDraftStore } from '../stores/draftStore';
-import DraftInterface from './DraftInterface';
-import { packGenerator, generateDraftSession } from '../../shared/utils/packGenerator';
-import type { MTGSetData } from '../../shared/types/card';
+import { useDraftStore } from '../stores/draftStore.js';
+import DraftInterface from './DraftInterface.js';
+import { clientPackGenerator, generateDraftSession } from '../utils/clientPackGenerator.js';
+import type { MTGSetData } from '../../shared/types/card.js';
 
 interface AppState {
   loading: boolean;
@@ -90,7 +90,7 @@ export const DraftApp: React.FC = () => {
       const setData = await response.json();
       
       console.log(`Initializing pack generator for ${setCode}...`);
-      packGenerator.initialize(setData);
+      clientPackGenerator.initialize(setData);
       
       console.log(`Setting up draft with ${setData.total_cards} cards...`);
       initializeDraft(setCode, setData, 8);

@@ -6,10 +6,10 @@
  */
 
 import React, { useEffect, useCallback, useState } from 'react';
-import type { DraftCard } from '../../shared/types/card';
-import { useDraftStore, selectCurrentPlayer, selectCurrentPack } from '../stores/draftStore';
-import PackDisplay from './PackDisplay';
-import Card from './Card';
+import type { DraftCard } from '../../shared/types/card.js';
+import { useDraftStore, selectCurrentPlayer, selectCurrentPack } from '../stores/draftStore.js';
+import PackDisplay from './PackDisplay.js';
+import Card from './Card.js';
 
 export interface DraftInterfaceProps {
   className?: string;

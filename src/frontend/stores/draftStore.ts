@@ -7,8 +7,8 @@
 
 import { create } from 'zustand';
 import { subscribeWithSelector } from 'zustand/middleware';
-import type { DraftCard, MTGSetData } from '../../shared/types/card';
-import type { GeneratedPack } from '../../shared/utils/packGenerator';
+import type { DraftCard, MTGSetData } from '../../shared/types/card.js';
+import type { GeneratedPack } from '../utils/clientPackGenerator.js';
 
 export interface DraftPlayer {
   id: string;

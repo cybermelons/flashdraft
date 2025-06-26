@@ -6,10 +6,19 @@
  */
 
 import React, { useState, useCallback, useMemo } from 'react';
-import type { DraftCard, MTGCard } from '../../shared/types/card';
-import type { GeneratedPack } from '../../shared/utils/packGenerator';
-import Card from './Card';
-import { calculateManaCurve, filterCards, sortCards } from '../../shared/utils/cardUtils';
+import type { DraftCard, MTGCard } from '../../shared/types/card.js';
+import type { GeneratedPack } from '../utils/clientPackGenerator.js';
+import Card from './Card.js';
+
+// Client-safe utility functions
+const calculateManaCurve = (cards: DraftCard[]): Record<number, number> => {
+  const curve: Record<number, number> = {};
+  cards.forEach(card => {
+    const cmc = Math.min(card.cmc, 7);
+    curve[cmc] = (curve[cmc] || 0) + 1;
+  });
+  return curve;
+};
 
 export interface PackDisplayProps {
   pack: GeneratedPack;
