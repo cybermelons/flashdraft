@@ -11,7 +11,11 @@ export default defineConfig({
     mode: "standalone",
   }),
   integrations: [
-    react({}),
+    react({
+      include: ['**/*.tsx', '**/*.jsx'],
+      exclude: ['node_modules/**/*'],
+      jsxImportSource: 'react',
+    }),
     tailwind({
       applyBaseStyles: true,
     }),
