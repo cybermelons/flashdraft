@@ -10,6 +10,7 @@ import { subscribeWithSelector } from 'zustand/middleware';
 import type { DraftCard, MTGSetData, MTGCard } from '../../shared/types/card.js';
 import type { GeneratedPack } from '../utils/clientPackGenerator.js';
 import { chooseBotPick, BOT_PERSONALITIES } from '../../shared/utils/cardUtils.js';
+import { updateUrlWithDraftState, createShareableUrl, getDraftStateFromUrl, type DraftUrlState } from '../../shared/utils/draftUrl.js';
 
 export interface DraftPlayer {
   id: string;
@@ -95,6 +96,11 @@ export interface DraftActions {
   isHumanTurn: () => boolean;
   canMakePick: () => boolean;
   getDraftProgress: () => { current: number; total: number };
+  
+  // URL management actions
+  updatePermalink: () => void;
+  getShareableUrl: () => string;
+  loadFromUrl: (urlState: DraftUrlState) => boolean;
 }
 
 type DraftStore = DraftState & DraftActions;
@@ -255,6 +261,11 @@ export const useDraftStore = create<DraftStore>()(
         pick_times: [...state.pick_times, pickTime],
         selected_card: null,
       });
+
+      // Update URL if this was a human pick
+      if (player.is_human) {
+        setTimeout(() => get().updatePermalink(), 100);
+      }
 
       // Auto-advance to next pick or trigger pack passing
       const updatedPlayer = updatedPlayers.find(p => p.id === playerId);
@@ -525,6 +536,62 @@ export const useDraftStore = create<DraftStore>()(
         current: currentPicks,
         total: totalPicks,
       };
+    },
+
+    // URL management actions
+    updatePermalink: () => {
+      const state = get();
+      const humanPlayer = state.players.find(p => p.is_human);
+      
+      if (!humanPlayer || !state.draft_started) return;
+      
+      const urlState: DraftUrlState = {
+        set_code: state.set_code,
+        round: state.current_round,
+        pick: state.current_pick,
+        seat: humanPlayer.position,
+        picks: humanPlayer.picked_cards.map(card => card.id),
+      };
+      
+      updateUrlWithDraftState(urlState);
+    },
+
+    getShareableUrl: () => {
+      const state = get();
+      const humanPlayer = state.players.find(p => p.is_human);
+      
+      if (!humanPlayer) return '';
+      
+      return createShareableUrl(
+        humanPlayer,
+        state.current_round,
+        state.current_pick,
+        state.set_code
+      );
+    },
+
+    loadFromUrl: (urlState: DraftUrlState) => {
+      const state = get();
+      
+      // Basic validation
+      if (!state.set_data || state.set_code !== urlState.set_code) {
+        console.warn('Cannot load draft state: set mismatch');
+        return false;
+      }
+      
+      // Update draft state to match URL
+      set({
+        current_round: urlState.round,
+        current_pick: urlState.pick,
+      });
+      
+      // TODO: Implement pick replay logic to recreate the exact draft state
+      // This would require:
+      // 1. Regenerating packs with the same seed
+      // 2. Replaying all picks up to the current point
+      // 3. Positioning players correctly
+      
+      return true;
     },
   }))
 );

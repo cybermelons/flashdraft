@@ -39,6 +39,7 @@ export const DraftInterface: React.FC<DraftInterfaceProps> = ({ className = '' }
     canMakePick,
     isHumanTurn,
     getDraftProgress,
+    getShareableUrl,
   } = useDraftStore();
 
   const currentPlayer = useDraftStore(selectCurrentPlayer);
@@ -70,6 +71,45 @@ export const DraftInterface: React.FC<DraftInterfaceProps> = ({ className = '' }
   const handleCardHover = useCallback((card: DraftCard | null) => {
     hoverCard(card);
   }, [hoverCard]);
+
+  // Handle share functionality
+  const handleShare = useCallback(async () => {
+    const shareableUrl = getShareableUrl();
+    
+    if (navigator.share) {
+      // Use native share API if available
+      try {
+        await navigator.share({
+          title: 'FlashDraft - MTG Draft Simulator',
+          text: `Check out my draft at pack ${current_round}, pick ${current_pick}!`,
+          url: shareableUrl,
+        });
+      } catch (error) {
+        // User cancelled or error occurred, fall back to clipboard
+        copyToClipboard(shareableUrl);
+      }
+    } else {
+      // Fall back to clipboard copy
+      copyToClipboard(shareableUrl);
+    }
+  }, [getShareableUrl, current_round, current_pick]);
+
+  const copyToClipboard = useCallback(async (text: string) => {
+    try {
+      await navigator.clipboard.writeText(text);
+      // Could add a toast notification here
+      console.log('Draft URL copied to clipboard!');
+    } catch (error) {
+      console.error('Failed to copy to clipboard:', error);
+      // Fallback: create a temporary text area
+      const textArea = document.createElement('textarea');
+      textArea.value = text;
+      document.body.appendChild(textArea);
+      textArea.select();
+      document.execCommand('copy');
+      document.body.removeChild(textArea);
+    }
+  }, []);
 
   // Auto-start pick timer when it's human turn
   useEffect(() => {
@@ -191,6 +231,13 @@ export const DraftInterface: React.FC<DraftInterfaceProps> = ({ className = '' }
                 } hover:bg-opacity-80`}
               >
                 Picks ({humanPlayer?.picked_cards.length || 0})
+              </button>
+              <button
+                onClick={handleShare}
+                className="px-3 py-1 rounded text-sm bg-green-600 hover:bg-green-700 text-white"
+                title="Share draft URL"
+              >
+                📋 Share
               </button>
             </div>
           </div>

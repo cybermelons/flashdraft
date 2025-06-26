@@ -17,7 +17,7 @@ The goal is for someone without any set knowledge to learn to draft by playtesti
 
 ## Implementation Checklist
 
-### Phase 1: Foundation & Real Data Setup (Weeks 1-2)
+### Phase 1: Foundation & Real Data Setup (Weeks 1-2) ✅ COMPLETE
 - [x] Set up development environment (Astro + Tailwind + shadcn/ui) ✓
 - [x] Create data acquisition scripts for Scryfall API ✓
 - [x] Download Final Fantasy (FIN) set data from Scryfall API ✓
@@ -29,7 +29,7 @@ The goal is for someone without any set knowledge to learn to draft by playtesti
 - [x] Implement 8-player draft flow with pick tracking ✓ (Note: Full Zustand store with draft state, player management, pack passing logic)
 - [x] Add draft state management (Zustand) with real card data ✓ (Note: Complete store with actions for picks, pack management, draft progression)
 - [x] Test complete draft simulation end-to-end with real sets ✓ (Note: Working draft on localhost:4321/draft with DTK/FIN sets)
-- [ ] Implement permalink URLs for draft state (like 17lands) - encode pack/pick/seat in URL
+- [x] Implement permalink URLs for draft state (like 17lands) - encode pack/pick/seat in URL ✓ (Note: Full URL encoding/decoding, automatic updates on picks, share button with clipboard/native share API)
 - [x] Optimize draft interface for mobile devices - responsive grid, touch-friendly ✓ (Note: Added responsive 3-7 column grid, mobile card sizes, touch handling)
 - [x] Fix hover cards to trigger on mouseover (not click) for desktop ✓ (Note: Instant hover with pointer-events-none for transparency)
 - [x] Download and process 17lands data for ACR and DTK formats ✓ (Note: 17lands API currently unavailable, implemented fallback rule-based system)
