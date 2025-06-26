@@ -11,6 +11,7 @@ import type { DraftCard, MTGSetData, MTGCard } from '../../shared/types/card.js'
 import type { GeneratedPack } from '../utils/clientPackGenerator.js';
 import { chooseBotPick, BOT_PERSONALITIES } from '../../shared/utils/cardUtils.js';
 import { updateUrlWithDraftState, createShareableUrl, getDraftStateFromUrl, type DraftUrlState } from '../../shared/utils/draftUrl.js';
+import { saveDraftState, loadDraftState, getCurrentDraftId, loadCurrentDraft, generateDraftId, type PersistedDraftState } from '../../shared/utils/draftPersistence.js';
 
 export interface DraftPlayer {
   id: string;
@@ -25,6 +26,7 @@ export interface DraftPlayer {
 
 export interface DraftState {
   // Draft configuration
+  draft_id: string;
   set_code: string;
   set_data: MTGSetData | null;
   players: DraftPlayer[];
@@ -101,11 +103,18 @@ export interface DraftActions {
   updatePermalink: () => void;
   getShareableUrl: () => string;
   loadFromUrl: (urlState: DraftUrlState) => boolean;
+  
+  // Persistence actions
+  saveDraft: () => string;
+  loadDraft: (draftId: string) => boolean;
+  loadCurrentDraft: () => boolean;
+  createNewDraft: (setCode: string, setData: MTGSetData) => string;
 }
 
 type DraftStore = DraftState & DraftActions;
 
 const initialState: DraftState = {
+  draft_id: '',
   set_code: '',
   set_data: null,
   players: [],
@@ -138,7 +147,9 @@ export const useDraftStore = create<DraftStore>()(
 
     // Setup actions
     initializeDraft: (setCode: string, setData: MTGSetData, playerCount = 8) => {
+      const draftId = generateDraftId();
       set({
+        draft_id: draftId,
         set_code: setCode,
         set_data: setData,
         players: [],
@@ -262,9 +273,12 @@ export const useDraftStore = create<DraftStore>()(
         selected_card: null,
       });
 
-      // Update URL if this was a human pick
+      // Update URL and save draft if this was a human pick
       if (player.is_human) {
-        setTimeout(() => get().updatePermalink(), 100);
+        setTimeout(() => {
+          get().updatePermalink();
+          get().saveDraft();
+        }, 100);
       }
 
       // Auto-advance to next pick or trigger pack passing
@@ -273,8 +287,8 @@ export const useDraftStore = create<DraftStore>()(
         // Pack is empty, need to pass or end round
         get().passPacks();
       } else {
-        // Process bot turns after human pick
-        setTimeout(() => get().processBotTurns(), 500);
+        // Process bot turns immediately after human pick
+        get().processBotTurns();
       }
     },
 
@@ -355,11 +369,9 @@ export const useDraftStore = create<DraftStore>()(
 
       if (botsWithPacks.length === 0) return;
 
-      // Process bot picks with staggered timing for better UX
-      botsWithPacks.forEach((bot, index) => {
-        setTimeout(() => {
-          get().makeBotPick(bot.id);
-        }, (index + 1) * 800); // 800ms between each bot pick
+      // Process bot picks immediately
+      botsWithPacks.forEach((bot) => {
+        get().makeBotPick(bot.id);
       });
     },
 
@@ -592,6 +604,56 @@ export const useDraftStore = create<DraftStore>()(
       // 3. Positioning players correctly
       
       return true;
+    },
+
+    // Persistence actions
+    saveDraft: () => {
+      const state = get();
+      try {
+        const draftId = saveDraftState(state, state.draft_id);
+        if (state.draft_id !== draftId) {
+          set({ draft_id: draftId });
+        }
+        return draftId;
+      } catch (error) {
+        console.error('Failed to save draft:', error);
+        return state.draft_id;
+      }
+    },
+
+    loadDraft: (draftId: string) => {
+      try {
+        const persistedState = loadDraftState(draftId);
+        if (!persistedState) {
+          console.warn('Draft not found:', draftId);
+          return false;
+        }
+
+        // Restore state (excluding set_data which needs to be reloaded)
+        const { set_data, ...stateToRestore } = persistedState;
+        set(stateToRestore);
+        
+        // Note: set_data needs to be reloaded from the API
+        // This should be handled by the calling component
+        
+        return true;
+      } catch (error) {
+        console.error('Failed to load draft:', error);
+        return false;
+      }
+    },
+
+    loadCurrentDraft: () => {
+      const currentDraft = loadCurrentDraft();
+      if (!currentDraft) return false;
+      
+      return get().loadDraft(currentDraft.id);
+    },
+
+    createNewDraft: (setCode: string, setData: MTGSetData) => {
+      get().initializeDraft(setCode, setData);
+      const draftId = get().saveDraft();
+      return draftId;
     },
   }))
 );

@@ -1,3 +1,11 @@
+- remove bot delay. why is this needed?
+- persist data in localstorage. 
+- each draft should have an id. so the /draft route goes to the current draft or shows the draft overview. the draft overview has a button for start new draft.
+  - /draft/acbedf123/p1p1
+- some images are missing, eg exdeath
+- show decklist
+- train draft models based on 17lands data. 
+
 # Development Plan: FlashDraft MTG Draft Simulator
 
 ## Overview
