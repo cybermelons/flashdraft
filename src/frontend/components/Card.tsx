@@ -6,10 +6,11 @@
  */
 
 import React, { useState, useCallback } from 'react';
-import type { DraftCard, MTGColorSymbol } from '../../shared/types/card.js';
-import { CardImage } from './CardImage.js';
-import { CardOverlay } from './CardOverlay.js';
-import { CardTypeIndicators } from './CardTypeIndicators.js';
+import type { DraftCard, MTGColorSymbol } from '../../shared/types/card';
+import CardImage from './CardImage';
+import CardOverlay from './CardOverlay';
+import { CardTypeIndicators } from './CardTypeIndicators';
+import { CardHoverDetails } from './CardHoverDetails';
 
 // Client-safe utility functions
 const getPrimaryColor = (card: DraftCard): MTGColorSymbol | 'colorless' => {
@@ -92,38 +93,40 @@ export const Card: React.FC<CardProps> = ({
   };
 
   return (
-    <div
-      className={`
-        relative rounded-lg border-2 transition-all duration-200 cursor-pointer
-        ${colorClass}
-        ${selected ? 'ring-2 ring-blue-500 ring-offset-2' : ''}
-        ${disabled ? 'opacity-50 cursor-not-allowed' : 'hover:shadow-lg hover:scale-105'}
-        ${sizeClasses[size]}
-        ${className}
-      `}
-      onClick={handleClick}
-      onMouseEnter={handleMouseEnter}
-      onMouseLeave={handleMouseLeave}
-    >
-      {/* Card Image */}
-      <div className="relative w-full h-full rounded-lg overflow-hidden">
-        <CardImage 
-          card={card} 
-          size={size} 
-          onLoad={() => setImageLoaded(true)}
-          onError={() => setImageError(true)}
-        />
+    <CardHoverDetails card={card}>
+      <div
+        className={`
+          relative rounded-lg border-2 transition-all duration-200 cursor-pointer
+          ${colorClass}
+          ${selected ? 'ring-2 ring-blue-500 ring-offset-2' : ''}
+          ${disabled ? 'opacity-50 cursor-not-allowed' : 'hover:shadow-lg hover:scale-105'}
+          ${sizeClasses[size]}
+          ${className}
+        `}
+        onClick={handleClick}
+        onMouseEnter={handleMouseEnter}
+        onMouseLeave={handleMouseLeave}
+      >
+        {/* Card Image */}
+        <div className="relative w-full h-full rounded-lg overflow-hidden">
+          <CardImage 
+            card={card}
+            size={size}
+            onLoad={() => setImageLoaded(true)}
+            onError={() => setImageError(true)}
+          />
+          
+          <CardOverlay 
+            card={card}
+            selected={selected}
+            showDetails={showDetails}
+            size={size}
+          />
+        </div>
 
-        <CardOverlay 
-          card={card}
-          selected={selected}
-          showDetails={showDetails}
-          size={size}
-        />
+        <CardTypeIndicators card={card} />
       </div>
-
-      <CardTypeIndicators card={card} />
-    </div>
+    </CardHoverDetails>
   );
 };
 

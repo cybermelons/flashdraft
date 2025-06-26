@@ -5,11 +5,19 @@
  */
 
 import * as React from 'react';
-import { useState } from 'react';
-import type { DraftCard } from '../../shared/types/card.js';
 
 interface CardImageProps {
-  card: DraftCard;
+  card: {
+    name: string;
+    image_uris?: {
+      small?: string;
+      normal?: string;
+      large?: string;
+    };
+    mana_cost?: string;
+    type_line: string;
+    rarity: string;
+  };
   size: 'small' | 'normal' | 'large';
   onLoad?: () => void;
   onError?: () => void;
@@ -34,10 +42,9 @@ function formatManaCost(manaCost: string): string {
     .replace(/\{(\d+)\}/g, '$1');
 }
 
-function CardImage(props: CardImageProps) {
-  const { card, size, onLoad, onError } = props;
-  const [imageLoaded, setImageLoaded] = useState(false);
-  const [imageError, setImageError] = useState(false);
+const CardImage: React.FC<CardImageProps> = React.memo(function CardImage({ card, size, onLoad, onError }) {
+  const [imageLoaded, setImageLoaded] = React.useState(false);
+  const [imageError, setImageError] = React.useState(false);
 
   const imageUrl = card.image_uris?.[size === 'small' ? 'small' : 'normal'];
 
@@ -51,7 +58,6 @@ function CardImage(props: CardImageProps) {
     if (onError) onError();
   }, [onError]);
 
-  // Define classes outside JSX to avoid template literal issues
   const imgOpacityClass = imageLoaded ? 'opacity-100' : 'opacity-0';
   const imgClassName = 'w-full h-full object-cover transition-opacity duration-300 ' + imgOpacityClass;
   
@@ -79,7 +85,6 @@ function CardImage(props: CardImageProps) {
     ]);
   }
 
-  // Fallback text display
   const formattedManaCost = formatManaCost(card.mana_cost || '');
   
   return React.createElement('div', {
@@ -109,7 +114,6 @@ function CardImage(props: CardImageProps) {
       }, card.rarity)
     ])
   ]);
-}
+});
 
-export { CardImage };
 export default CardImage;
