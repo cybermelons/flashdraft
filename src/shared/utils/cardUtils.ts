@@ -285,31 +285,273 @@ export function toDraftCard(card: MTGCard): DraftCard {
 }
 
 /**
- * Basic pick priority calculation (can be enhanced with ML models later)
+ * Enhanced pick priority calculation based on common draft principles
  */
 function calculateBasicPickPriority(card: MTGCard): number {
-  let priority = 0;
+  let priority = 50; // Base priority
+  const text = card.oracle_text?.toLowerCase() || '';
+  const types = getCardTypes(card.type_line);
   
-  // Rarity bonus
+  // Rarity-based base value
   switch (card.rarity) {
-    case 'mythic': priority += 100; break;
-    case 'rare': priority += 80; break;
-    case 'uncommon': priority += 40; break;
-    case 'common': priority += 20; break;
+    case 'mythic': priority = 85; break;
+    case 'rare': priority = 75; break;
+    case 'uncommon': priority = 60; break;
+    case 'common': priority = 45; break;
   }
   
-  // Creature bonus
+  // Card type adjustments
   if (isCreature(card)) {
+    priority += 5; // Creatures are generally good
+    
+    // Power/toughness evaluation for creatures
+    const power = parseFloat(card.power || '0');
+    const toughness = parseFloat(card.toughness || '0');
+    const cmc = card.cmc || 0;
+    
+    if (!isNaN(power) && !isNaN(toughness)) {
+      // Vanilla test: good stats for cost
+      const statSum = power + toughness;
+      const expectedStats = (cmc * 2) + 1;
+      const statBonus = Math.min(10, Math.max(-10, (statSum - expectedStats) * 2));
+      priority += statBonus;
+      
+      // Flying creatures get bonus
+      if (text.includes('flying')) priority += 8;
+      
+      // Other evasion abilities
+      if (text.includes('trample') || text.includes('menace') || 
+          text.includes('unblockable') || text.includes("can't be blocked")) {
+        priority += 5;
+      }
+    }
+  }
+  
+  // Removal spells (high priority)
+  if (text.includes('destroy target creature') || 
+      text.includes('destroy target permanent') ||
+      text.includes('exile target creature')) {
+    priority += 20;
+  }
+  
+  // Direct damage spells
+  if (text.includes('damage to any target') || 
+      text.includes('damage to target creature') ||
+      (text.includes('damage') && types.includes('Instant'))) {
+    priority += 12;
+  }
+  
+  // Card advantage (draw spells)
+  if (text.includes('draw') && text.includes('card')) {
     priority += 10;
   }
   
-  // Removal spell bonus (very basic detection)
-  const text = card.oracle_text?.toLowerCase() || '';
-  if (text.includes('destroy') || text.includes('exile')) {
-    priority += 15;
+  // Counterspells
+  if (text.includes('counter target spell')) {
+    priority += 8;
   }
   
-  return priority;
+  // Expensive spells get penalty unless they're bombs
+  if (card.cmc >= 6) {
+    priority -= 5;
+    // But big creatures with good stats are still valuable
+    if (isCreature(card)) {
+      const power = parseFloat(card.power || '0');
+      if (power >= 6) priority += 8; // Big threats
+    }
+  }
+  
+  // Cheap efficient spells get bonus
+  if (card.cmc <= 2 && !isLand(card)) {
+    priority += 3;
+  }
+  
+  // Lands are generally lower priority in limited
+  if (isLand(card)) {
+    priority = 25;
+    // Non-basic lands can be more valuable
+    if (!text.includes('basic') && !types.includes('Basic')) {
+      priority = 35;
+    }
+  }
+  
+  // Artifacts often provide utility
+  if (types.includes('Artifact') && !isCreature(card)) {
+    priority += 3;
+  }
+  
+  // Auras and equipment that boost creatures
+  if (types.includes('Aura') || types.includes('Equipment')) {
+    if (text.includes('+') && (text.includes('/+') || text.includes('+'))) {
+      priority += 5;
+    }
+  }
+  
+  return Math.max(0, Math.min(100, priority));
+}
+
+/**
+ * Bot personality types with different drafting behaviors
+ */
+export interface BotPersonality {
+  name: string;
+  skill_level: number; // 0-1, how close to optimal picks
+  randomness: number; // 0-1, how much noise to add
+  rare_bias: number; // Multiplier for rare card values
+  color_commitment: number; // 0-1, how well they stick to colors
+  description: string;
+}
+
+export const BOT_PERSONALITIES: Record<string, BotPersonality> = {
+  bronze: {
+    name: 'Bronze Bot',
+    skill_level: 0.3,
+    randomness: 0.4,
+    rare_bias: 1.5, // Overvalues rares
+    color_commitment: 0.5, // Poor color discipline
+    description: 'New player - picks rares highly, poor signals'
+  },
+  silver: {
+    name: 'Silver Bot',
+    skill_level: 0.5,
+    randomness: 0.3,
+    rare_bias: 1.2,
+    color_commitment: 0.7,
+    description: 'Intermediate - decent card evaluation, some signals'
+  },
+  gold: {
+    name: 'Gold Bot',
+    skill_level: 0.7,
+    randomness: 0.2,
+    rare_bias: 1.0,
+    color_commitment: 0.85,
+    description: 'Experienced - good evaluation, reads signals'
+  },
+  mythic: {
+    name: 'Mythic Bot',
+    skill_level: 0.9,
+    randomness: 0.1,
+    rare_bias: 0.9, // Knows when to pass rares
+    color_commitment: 0.95,
+    description: 'Expert - optimal picks, excellent signals'
+  }
+};
+
+/**
+ * Calculate pick priority with bot personality adjustments
+ */
+export function calculateBotPickPriority(
+  card: MTGCard, 
+  personality: BotPersonality,
+  context?: {
+    picked_cards?: MTGCard[];
+    pack_position?: number;
+    round?: number;
+  }
+): number {
+  let priority = calculateBasicPickPriority(card);
+  
+  // Apply rare bias
+  if (card.rarity === 'rare' || card.rarity === 'mythic') {
+    priority *= personality.rare_bias;
+  }
+  
+  // Color commitment logic
+  if (context?.picked_cards) {
+    const pickedColors = getPickedColors(context.picked_cards);
+    const cardColors = new Set(card.color_identity || []);
+    
+    if (pickedColors.size > 0 && cardColors.size > 0) {
+      const colorMatch = hasColorOverlap(pickedColors, cardColors);
+      const colorBonus = colorMatch ? 
+        personality.color_commitment * 15 : 
+        -personality.color_commitment * 10;
+      priority += colorBonus;
+    }
+  }
+  
+  // Skill level adjustment (how close to optimal)
+  const skillAdjustment = (1 - personality.skill_level) * Math.random() * 20 - 10;
+  priority += skillAdjustment;
+  
+  // Add randomness
+  const noise = (Math.random() - 0.5) * personality.randomness * 30;
+  priority += noise;
+  
+  return Math.max(0, Math.min(100, priority));
+}
+
+/**
+ * Get the colors that have been picked so far
+ */
+function getPickedColors(cards: MTGCard[]): Set<MTGColorSymbol> {
+  const colors = new Set<MTGColorSymbol>();
+  
+  cards.forEach(card => {
+    if (card.color_identity) {
+      card.color_identity.forEach(color => colors.add(color));
+    }
+  });
+  
+  return colors;
+}
+
+/**
+ * Check if there's overlap between picked colors and card colors
+ */
+function hasColorOverlap(pickedColors: Set<MTGColorSymbol>, cardColors: Set<MTGColorSymbol>): boolean {
+  for (const color of cardColors) {
+    if (pickedColors.has(color)) return true;
+  }
+  return false;
+}
+
+/**
+ * Choose the best card for a bot to pick from available options
+ */
+export function chooseBotPick(
+  availableCards: MTGCard[],
+  personalityType: keyof typeof BOT_PERSONALITIES = 'silver',
+  context?: {
+    picked_cards?: MTGCard[];
+    pack_position?: number;
+    round?: number;
+  }
+): MTGCard | null {
+  if (availableCards.length === 0) return null;
+  
+  const personality = BOT_PERSONALITIES[personalityType];
+  
+  // Calculate priority for each card
+  const cardPriorities = availableCards.map(card => ({
+    card,
+    priority: calculateBotPickPriority(card, personality, context)
+  }));
+  
+  // Sort by priority (highest first)
+  cardPriorities.sort((a, b) => b.priority - a.priority);
+  
+  // Sometimes pick a lower-ranked card based on skill level
+  const pickRange = Math.min(3, cardPriorities.length);
+  const weights = [0.7, 0.2, 0.1].slice(0, pickRange);
+  
+  // Higher skill = more likely to pick the best card
+  if (Math.random() < personality.skill_level) {
+    return cardPriorities[0].card;
+  } else {
+    // Pick from top 3 with weights
+    const randomValue = Math.random();
+    let cumulativeWeight = 0;
+    
+    for (let i = 0; i < pickRange; i++) {
+      cumulativeWeight += weights[i];
+      if (randomValue <= cumulativeWeight) {
+        return cardPriorities[i].card;
+      }
+    }
+    
+    return cardPriorities[0].card;
+  }
 }
 
 /**

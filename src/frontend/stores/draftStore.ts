@@ -7,8 +7,9 @@
 
 import { create } from 'zustand';
 import { subscribeWithSelector } from 'zustand/middleware';
-import type { DraftCard, MTGSetData } from '../../shared/types/card.js';
+import type { DraftCard, MTGSetData, MTGCard } from '../../shared/types/card.js';
 import type { GeneratedPack } from '../utils/clientPackGenerator.js';
+import { chooseBotPick, BOT_PERSONALITIES } from '../../shared/utils/cardUtils.js';
 
 export interface DraftPlayer {
   id: string;
@@ -18,6 +19,7 @@ export interface DraftPlayer {
   picked_cards: DraftCard[];
   current_pack?: GeneratedPack;
   total_picks: number;
+  bot_personality?: keyof typeof BOT_PERSONALITIES; // For bot players
 }
 
 export interface DraftState {
@@ -58,13 +60,15 @@ export interface DraftActions {
   resetDraft: () => void;
   
   // Player actions
-  addPlayer: (name: string, isHuman: boolean) => void;
+  addPlayer: (name: string, isHuman: boolean, botPersonality?: keyof typeof BOT_PERSONALITIES) => void;
   removePlayer: (playerId: string) => void;
   setCurrentPlayer: (playerId: string) => void;
   
   // Draft flow actions
   startDraft: () => void;
   makePickBy: (playerId: string, card: DraftCard) => void;
+  makeBotPick: (playerId: string) => void;
+  processBotTurns: () => void;
   passPacks: () => void;
   nextRound: () => void;
   completeDraft: () => void;
@@ -149,8 +153,13 @@ export const useDraftStore = create<DraftStore>()(
       const { addPlayer } = get();
       addPlayer('You', true); // Human player
       
+      // Add bots with varied personalities
+      const personalities: (keyof typeof BOT_PERSONALITIES)[] = ['bronze', 'silver', 'gold', 'mythic'];
+      
       for (let i = 1; i < playerCount; i++) {
-        addPlayer(`Bot ${i}`, false);
+        const personality = personalities[(i - 1) % personalities.length];
+        const personalityName = BOT_PERSONALITIES[personality].name;
+        addPlayer(personalityName, false, personality);
       }
     },
 
@@ -159,7 +168,7 @@ export const useDraftStore = create<DraftStore>()(
     },
 
     // Player actions
-    addPlayer: (name: string, isHuman: boolean) => {
+    addPlayer: (name: string, isHuman: boolean, botPersonality?: keyof typeof BOT_PERSONALITIES) => {
       const state = get();
       const newPlayer: DraftPlayer = {
         id: `player-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
@@ -168,6 +177,7 @@ export const useDraftStore = create<DraftStore>()(
         position: state.players.length,
         picked_cards: [],
         total_picks: 0,
+        bot_personality: isHuman ? undefined : (botPersonality || 'silver'),
       };
 
       set({
@@ -251,7 +261,95 @@ export const useDraftStore = create<DraftStore>()(
       if (updatedPlayer?.current_pack?.cards.length === 0) {
         // Pack is empty, need to pass or end round
         get().passPacks();
+      } else {
+        // Process bot turns after human pick
+        setTimeout(() => get().processBotTurns(), 500);
       }
+    },
+
+    makeBotPick: (playerId: string) => {
+      const state = get();
+      const player = state.players.find(p => p.id === playerId);
+      
+      if (!player || player.is_human || !player.current_pack || !player.bot_personality) {
+        return;
+      }
+
+      const availableCards = player.current_pack.cards;
+      if (availableCards.length === 0) return;
+
+      // Convert DraftCard[] to MTGCard[] for bot logic
+      const mtgCards: MTGCard[] = availableCards.map(card => ({
+        id: card.id,
+        name: card.name,
+        set: card.set,
+        rarity: card.rarity,
+        type_line: card.type_line,
+        mana_cost: card.mana_cost,
+        cmc: card.cmc,
+        colors: card.colors,
+        color_identity: card.color_identity,
+        oracle_text: card.oracle_text,
+        power: card.power,
+        toughness: card.toughness,
+        collector_number: card.collector_number,
+        booster: card.booster,
+        image_uris: card.image_uris,
+      }));
+
+      // Get bot's picked cards as MTGCard[]
+      const pickedMtgCards: MTGCard[] = player.picked_cards.map(card => ({
+        id: card.id,
+        name: card.name,
+        set: card.set,
+        rarity: card.rarity,
+        type_line: card.type_line,
+        mana_cost: card.mana_cost,
+        cmc: card.cmc,
+        colors: card.colors,
+        color_identity: card.color_identity,
+        oracle_text: card.oracle_text,
+        power: card.power,
+        toughness: card.toughness,
+        collector_number: card.collector_number,
+        booster: card.booster,
+        image_uris: card.image_uris,
+      }));
+
+      const chosenCard = chooseBotPick(mtgCards, player.bot_personality, {
+        picked_cards: pickedMtgCards,
+        pack_position: player.position,
+        round: state.current_round,
+      });
+
+      if (chosenCard) {
+        // Find the corresponding DraftCard
+        const draftCard = availableCards.find(c => c.id === chosenCard.id);
+        if (draftCard) {
+          get().makePickBy(playerId, draftCard);
+        }
+      }
+    },
+
+    processBotTurns: () => {
+      const state = get();
+      if (!state.draft_started || state.draft_completed) return;
+
+      // Find all bot players who have packs and need to make picks
+      const botsWithPacks = state.players.filter(p => 
+        !p.is_human && 
+        p.current_pack && 
+        p.current_pack.cards.length > 0
+      );
+
+      if (botsWithPacks.length === 0) return;
+
+      // Process bot picks with staggered timing for better UX
+      botsWithPacks.forEach((bot, index) => {
+        setTimeout(() => {
+          get().makeBotPick(bot.id);
+        }, (index + 1) * 800); // 800ms between each bot pick
+      });
     },
 
     passPacks: () => {
