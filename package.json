@@ -16,6 +16,7 @@
     "@astrojs/node": "^9.2.2",
     "@astrojs/react": "^4.3.0",
     "@astrojs/tailwind": "^6.0.2",
+    "@radix-ui/react-hover-card": "^1.1.14",
     "astro": "^5.10.1",
     "axios": "^1.10.0",
     "class-variance-authority": "^0.7.1",

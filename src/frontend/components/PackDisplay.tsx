@@ -9,6 +9,7 @@ import React, { useState, useCallback, useMemo } from 'react';
 import type { DraftCard, MTGCard } from '../../shared/types/card.js';
 import type { GeneratedPack } from '../utils/clientPackGenerator.js';
 import Card from './Card.js';
+import CardHoverDetails from './CardHoverDetails.js';
 
 // Client-safe utility functions
 const calculateManaCurve = (cards: DraftCard[]): Record<number, number> => {
@@ -55,7 +56,6 @@ export const PackDisplay: React.FC<PackDisplayProps> = ({
   sortBy = 'rarity',
   filterBy,
 }) => {
-  const [hoveredCard, setHoveredCard] = useState<DraftCard | null>(null);
   const [localSort, setLocalSort] = useState(sortBy);
 
   // Sort and filter cards
@@ -154,14 +154,6 @@ export const PackDisplay: React.FC<PackDisplayProps> = ({
     onCardSelect(card);
   }, [onCardSelect]);
 
-  // Handle card hover
-  const handleCardHover = useCallback((card: DraftCard | null) => {
-    setHoveredCard(card);
-    if (onCardHover) {
-      onCardHover(card);
-    }
-  }, [onCardHover]);
-
   return (
     <div className="w-full h-full flex flex-col">
       {/* Pack Header */}
@@ -259,16 +251,16 @@ export const PackDisplay: React.FC<PackDisplayProps> = ({
       <div className="flex-1 overflow-auto p-4">
         <div className="grid grid-cols-5 gap-3 auto-rows-max">
           {sortedCards.map((card) => (
-            <Card
-              key={card.id}
-              card={card}
-              size="normal"
-              selected={selectedCard?.id === card.id}
-              onClick={handleCardSelect}
-              onHover={handleCardHover}
-              showDetails={true}
-              className="group"
-            />
+            <CardHoverDetails key={card.id} card={card}>
+              <Card
+                card={card}
+                size="normal"
+                selected={selectedCard?.id === card.id}
+                onClick={handleCardSelect}
+                showDetails={true}
+                className="group"
+              />
+            </CardHoverDetails>
           ))}
         </div>
 
@@ -278,67 +270,6 @@ export const PackDisplay: React.FC<PackDisplayProps> = ({
           </div>
         )}
       </div>
-
-      {/* Card Detail Sidebar (when hovering) */}
-      {hoveredCard && (
-        <div className="fixed right-4 top-1/2 transform -translate-y-1/2 w-80 bg-white border border-gray-300 rounded-lg shadow-xl p-4 z-50">
-          <div className="flex space-x-4">
-            <div className="flex-shrink-0">
-              <Card 
-                card={hoveredCard} 
-                size="large" 
-                showDetails={false}
-                className="pointer-events-none"
-              />
-            </div>
-            
-            <div className="flex-1 min-w-0">
-              <h3 className="font-bold text-lg mb-1 truncate">
-                {hoveredCard.name}
-              </h3>
-              
-              <p className="text-sm text-gray-600 mb-2">
-                {hoveredCard.mana_cost} • {hoveredCard.type_line}
-              </p>
-              
-              {hoveredCard.oracle_text && (
-                <div className="text-sm mb-3">
-                  <h4 className="font-medium mb-1">Rules Text:</h4>
-                  <p className="text-gray-700 whitespace-pre-wrap leading-relaxed">
-                    {hoveredCard.oracle_text}
-                  </p>
-                </div>
-              )}
-              
-              {hoveredCard.power && hoveredCard.toughness && (
-                <p className="text-sm font-medium">
-                  {hoveredCard.power}/{hoveredCard.toughness}
-                </p>
-              )}
-              
-              <div className="mt-3 pt-3 border-t border-gray-200">
-                <div className="flex justify-between text-xs text-gray-600">
-                  <span>CMC: {hoveredCard.cmc}</span>
-                  <span className="capitalize">{hoveredCard.rarity}</span>
-                </div>
-                
-                {hoveredCard.synergy_tags && hoveredCard.synergy_tags.length > 0 && (
-                  <div className="mt-2">
-                    <div className="text-xs text-gray-500 mb-1">Tags:</div>
-                    <div className="flex flex-wrap gap-1">
-                      {hoveredCard.synergy_tags.slice(0, 6).map(tag => (
-                        <span key={tag} className="px-1 py-0.5 bg-gray-100 text-xs rounded">
-                          {tag}
-                        </span>
-                      ))}
-                    </div>
-                  </div>
-                )}
-              </div>
-            </div>
-          </div>
-        </div>
-      )}
     </div>
   );
 };
