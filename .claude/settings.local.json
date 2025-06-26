@@ -12,7 +12,16 @@
       "Bash(pnpm approve-builds:*)",
       "Bash(pnpm add:*)",
       "Bash(pnpm remove:*)",
-      "Bash(git add:*)"
+      "Bash(git add:*)",
+      "Bash(git commit:*)",
+      "Bash(chmod:*)",
+      "Bash(python scripts/download_scryfall_data.py:*)",
+      "Bash(python3 scripts/download_scryfall_data.py:*)",
+      "Bash(pip3 install:*)",
+      "Bash(python3:*)",
+      "Bash(source:*)",
+      "Bash(pip install:*)",
+      "Bash(node:*)"
     ],
     "deny": []
   }

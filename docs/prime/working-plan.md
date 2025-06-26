@@ -18,11 +18,11 @@ The goal is for someone without any set knowledge to learn to draft by playtesti
 ## Implementation Checklist
 
 ### Phase 1: Foundation & Real Data Setup (Weeks 1-2)
-- [ ] Set up development environment (Astro + Tailwind + shadcn/ui)
-- [ ] Create data acquisition scripts for Scryfall API
-- [ ] Download Final Fantasy (FIN) set data from Scryfall API
-- [ ] Download Dragons of Tarkir (TDM) set data from Scryfall API
-- [ ] Create MTG card data models and validation schemas
+- [x] Set up development environment (Astro + Tailwind + shadcn/ui)
+- [x] Create data acquisition scripts for Scryfall API
+- [x] Download Final Fantasy (FIN) set data from Scryfall API
+- [x] Download Dragons of Tarkir (DTK) set data from Scryfall API
+- [x] Create MTG card data models and validation schemas
 - [ ] Implement card image caching and optimization system
 - [ ] Build pack generation using real set data and rarity distributions
 - [ ] Create draft interface with real card display and selection
