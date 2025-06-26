@@ -1,0 +1,168 @@
+---
+/**
+ * FlashDraft - Draft Page
+ * 
+ * Main page for conducting MTG drafts with the full interface.
+ */
+
+export const prerender = false;
+---
+
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>FlashDraft - MTG Draft Simulator</title>
+    <meta name="description" content="Practice Magic: The Gathering drafts with realistic AI opponents and immediate playtesting" />
+  </head>
+  <body class="bg-gray-100 overflow-hidden">
+    <div id="draft-app" class="h-screen flex flex-col">
+      <!-- Loading State -->
+      <div id="loading-screen" class="h-full flex items-center justify-center">
+        <div class="text-center">
+          <div class="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto mb-4"></div>
+          <h2 class="text-xl font-semibold text-gray-800 mb-2">Loading FlashDraft</h2>
+          <p class="text-gray-600">Preparing your draft experience...</p>
+        </div>
+      </div>
+
+      <!-- Draft Interface (will be rendered by React) -->
+      <div id="draft-interface" class="h-full hidden">
+        <!-- React component will mount here -->
+      </div>
+
+      <!-- Error State -->
+      <div id="error-screen" class="h-full flex items-center justify-center hidden">
+        <div class="text-center max-w-md">
+          <div class="text-red-500 text-6xl mb-4">⚠️</div>
+          <h2 class="text-xl font-semibold text-gray-800 mb-2">Draft Error</h2>
+          <p class="text-gray-600 mb-4" id="error-message">
+            Failed to load draft interface
+          </p>
+          <button 
+            id="retry-button"
+            class="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700"
+            onclick="window.location.reload()"
+          >
+            Retry
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <!-- React App Script -->
+    <script>
+      import DraftApp from '../frontend/components/DraftApp.tsx';
+      import { createRoot } from 'react-dom/client';
+      
+      // Initialize the React draft application
+      async function initializeDraft() {
+        try {
+          const container = document.getElementById('draft-interface');
+          const root = createRoot(container);
+          
+          // Hide loading screen
+          document.getElementById('loading-screen').classList.add('hidden');
+          document.getElementById('draft-interface').classList.remove('hidden');
+          
+          // Render the React app
+          root.render(<DraftApp />);
+          
+        } catch (error) {
+          console.error('Failed to initialize draft:', error);
+          showError('Failed to initialize draft interface: ' + error.message);
+        }
+      }
+      
+      function showError(message) {
+        document.getElementById('loading-screen').classList.add('hidden');
+        document.getElementById('draft-interface').classList.add('hidden');
+        document.getElementById('error-screen').classList.remove('hidden');
+        document.getElementById('error-message').textContent = message;
+      }
+      
+      // Start initialization when page loads
+      document.addEventListener('DOMContentLoaded', initializeDraft);
+    </script>
+
+    <style>
+      /* Ensure full height layout */
+      html, body {
+        height: 100%;
+        margin: 0;
+        padding: 0;
+      }
+      
+      /* Custom scrollbar for draft interface */
+      .draft-scroll::-webkit-scrollbar {
+        width: 8px;
+      }
+      
+      .draft-scroll::-webkit-scrollbar-track {
+        background: #f1f1f1;
+        border-radius: 4px;
+      }
+      
+      .draft-scroll::-webkit-scrollbar-thumb {
+        background: #c1c1c1;
+        border-radius: 4px;
+      }
+      
+      .draft-scroll::-webkit-scrollbar-thumb:hover {
+        background: #a1a1a1;
+      }
+      
+      /* Card hover animations */
+      .card-hover {
+        transition: transform 0.2s ease, box-shadow 0.2s ease;
+      }
+      
+      .card-hover:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+      }
+      
+      /* Mana symbol styling */
+      .mana-symbol {
+        display: inline-block;
+        width: 1em;
+        height: 1em;
+        border-radius: 50%;
+        text-align: center;
+        line-height: 1;
+        font-size: 0.8em;
+      }
+      
+      /* Pack transition animations */
+      .pack-transition {
+        transition: all 0.3s ease-in-out;
+      }
+      
+      /* Timer pulse animation */
+      .timer-warning {
+        animation: pulse 1s infinite;
+      }
+      
+      @keyframes pulse {
+        0%, 100% { opacity: 1; }
+        50% { opacity: 0.5; }
+      }
+      
+      /* Loading spinner */
+      .loading-spinner {
+        border: 2px solid #f3f3f3;
+        border-top: 2px solid #3498db;
+        border-radius: 50%;
+        width: 20px;
+        height: 20px;
+        animation: spin 1s linear infinite;
+      }
+      
+      @keyframes spin {
+        0% { transform: rotate(0deg); }
+        100% { transform: rotate(360deg); }
+      }
+    </style>
+  </body>
+</html>
