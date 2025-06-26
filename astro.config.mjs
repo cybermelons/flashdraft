@@ -1,21 +1,19 @@
 // @ts-check
-import { defineConfig } from 'astro/config';
-import react from '@astrojs/react';
-import tailwind from '@astrojs/tailwind';
-import node from '@astrojs/node';
+import { defineConfig } from "astro/config";
+import react from "@astrojs/react";
+import tailwind from "@astrojs/tailwind";
+import node from "@astrojs/node";
 
 // https://astro.build/config
 export default defineConfig({
-  output: 'server',
+  output: "server",
   adapter: node({
-    mode: 'standalone'
+    mode: "standalone",
   }),
   integrations: [
-    react({
-      experimentalReactChildren: true
-    }),
+    react({}),
     tailwind({
       applyBaseStyles: false, // Let shadcn/ui handle base styles
-    })
-  ]
+    }),
+  ],
 });
