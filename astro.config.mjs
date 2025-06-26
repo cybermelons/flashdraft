@@ -13,7 +13,7 @@ export default defineConfig({
   integrations: [
     react({}),
     tailwind({
-      applyBaseStyles: false, // Let shadcn/ui handle base styles
+      applyBaseStyles: true,
     }),
   ],
 });
