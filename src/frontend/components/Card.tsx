@@ -7,6 +7,9 @@
 
 import React, { useState, useCallback } from 'react';
 import type { DraftCard, MTGColorSymbol } from '../../shared/types/card.js';
+import { CardImage } from './CardImage.js';
+import { CardOverlay } from './CardOverlay.js';
+import { CardTypeIndicators } from './CardTypeIndicators.js';
 
 // Client-safe utility functions
 const getPrimaryColor = (card: DraftCard): MTGColorSymbol | 'colorless' => {
@@ -19,17 +22,6 @@ const getPrimaryColor = (card: DraftCard): MTGColorSymbol | 'colorless' => {
   return card.color_identity[0];
 };
 
-const isCreature = (card: DraftCard): boolean => {
-  return card.type_line.includes('Creature');
-};
-
-const isLand = (card: DraftCard): boolean => {
-  return card.type_line.includes('Land');
-};
-
-const isSpell = (card: DraftCard): boolean => {
-  return card.type_line.includes('Instant') || card.type_line.includes('Sorcery');
-};
 
 export interface CardProps {
   card: DraftCard;
@@ -42,16 +34,6 @@ export interface CardProps {
   className?: string;
 }
 
-// Mana symbol mapping for display
-const MANA_SYMBOLS: Record<string, string> = {
-  'W': '⚪', // White
-  'U': '🔵', // Blue  
-  'B': '⚫', // Black
-  'R': '🔴', // Red
-  'G': '🟢', // Green
-  'C': '⚪', // Colorless
-  'X': '❌', // Variable
-};
 
 // Color class mapping for styling
 const COLOR_CLASSES: Record<MTGColorSymbol | 'colorless' | 'multicolor', string> = {
@@ -64,13 +46,6 @@ const COLOR_CLASSES: Record<MTGColorSymbol | 'colorless' | 'multicolor', string>
   'multicolor': 'border-purple-200 bg-purple-50',
 };
 
-const RARITY_COLORS: Record<string, string> = {
-  'common': 'text-gray-600',
-  'uncommon': 'text-blue-600',
-  'rare': 'text-yellow-600',
-  'mythic': 'text-orange-600',
-  'special': 'text-purple-600',
-};
 
 export const Card: React.FC<CardProps> = ({
   card,
@@ -91,15 +66,6 @@ export const Card: React.FC<CardProps> = ({
     ? COLOR_CLASSES.multicolor 
     : COLOR_CLASSES[primaryColor];
 
-  // Format mana cost for display
-  const formatManaCost = useCallback((manaCost: string) => {
-    if (!manaCost) return '';
-    
-    // Simple formatting - replace mana symbols
-    return manaCost
-      .replace(/\{([WUBRGCX])\}/g, (_, symbol) => MANA_SYMBOLS[symbol] || symbol)
-      .replace(/\{(\d+)\}/g, '$1');
-  }, []);
 
   // Handle card click
   const handleClick = useCallback(() => {
@@ -117,8 +83,6 @@ export const Card: React.FC<CardProps> = ({
     if (onHover) onHover(null);
   }, [onHover]);
 
-  // Image URL - prefer normal size for draft interface
-  const imageUrl = card.image_uris?.[size === 'small' ? 'small' : 'normal'];
 
   // Size classes
   const sizeClasses = {
@@ -143,87 +107,22 @@ export const Card: React.FC<CardProps> = ({
     >
       {/* Card Image */}
       <div className="relative w-full h-full rounded-lg overflow-hidden">
-        {imageUrl && !imageError ? (
-          <React.Fragment>
-            <img
-              src={imageUrl}
-              alt={card.name}
-              className={`w-full h-full object-cover transition-opacity duration-300 ${
-                imageLoaded ? 'opacity-100' : 'opacity-0'
-              }`}
-              onLoad={() => setImageLoaded(true)}
-              onError={() => setImageError(true)}
-            />
-            {!imageLoaded && (
-              <div className="absolute inset-0 bg-gray-200 animate-pulse flex items-center justify-center">
-                <div className="text-gray-400 text-xs">Loading...</div>
-              </div>
-            )}
-          </React.Fragment>
-        ) : (
-          <div className="w-full h-full bg-white border border-gray-300 p-2 flex flex-col justify-between">
-            <div>
-              <div className="text-xs font-semibold mb-1 overflow-hidden line-clamp-2">
-                {card.name}
-              </div>
-              <div className="text-xs text-gray-600">
-                {formatManaCost(card.mana_cost || '')}
-              </div>
-            </div>
-            
-            <div className="text-xs">
-              <div className="text-gray-600 mb-1 truncate">
-                {card.type_line}
-              </div>
-              <div className={`font-medium ${RARITY_COLORS[card.rarity] || 'text-gray-600'}`}>
-                {card.rarity}
-              </div>
-            </div>
-          </div>
-        )}
+        <CardImage 
+          card={card} 
+          size={size} 
+          onLoad={() => setImageLoaded(true)}
+          onError={() => setImageError(true)}
+        />
 
-        {/* Selection indicator */}
-        {selected && (
-          <div className="absolute inset-0 bg-blue-500 bg-opacity-30 flex items-center justify-center">
-            <div className="bg-blue-500 text-white rounded-full w-6 h-6 flex items-center justify-center text-sm font-bold">
-              ✓
-            </div>
-          </div>
-        )}
-
-        {/* Quick info overlay (visible on hover for normal+ sizes) */}
-        {showDetails && size !== 'small' && (
-          <div className="absolute bottom-0 left-0 right-0 bg-black bg-opacity-75 text-white p-1 transform translate-y-full group-hover:translate-y-0 transition-transform duration-200">
-            <div className="text-xs">
-              <div className="font-semibold truncate">{card.name}</div>
-              <div className="flex justify-between items-center">
-                <span>{formatManaCost(card.mana_cost || '')}</span>
-                <span className={RARITY_COLORS[card.rarity]}>{card.rarity[0].toUpperCase()}</span>
-              </div>
-            </div>
-          </div>
-        )}
-
-        {/* Draft priority indicator (for debugging/analysis) */}
-        {card.pick_priority && process.env.NODE_ENV === 'development' && (
-          <div className="absolute top-1 right-1 bg-black bg-opacity-75 text-white text-xs px-1 rounded">
-            {Math.round(card.pick_priority)}
-          </div>
-        )}
+        <CardOverlay 
+          card={card}
+          selected={selected}
+          showDetails={showDetails}
+          size={size}
+        />
       </div>
 
-      {/* Card type indicators */}
-      <div className="absolute top-1 left-1 flex space-x-1">
-        {isCreature(card) && (
-          <div className="w-2 h-2 bg-green-500 rounded-full" title="Creature" />
-        )}
-        {isLand(card) && (
-          <div className="w-2 h-2 bg-amber-600 rounded-full" title="Land" />
-        )}
-        {isSpell(card) && (
-          <div className="w-2 h-2 bg-purple-500 rounded-full" title="Spell" />
-        )}
-      </div>
+      <CardTypeIndicators card={card} />
     </div>
   );
 };
