@@ -142,7 +142,11 @@ export const Card: React.FC<CardProps> = ({
           // Fallback card display when no image
           <div className="w-full h-full bg-white border border-gray-300 p-2 flex flex-col justify-between">
             <div>
-              <div className="text-xs font-semibold mb-1 line-clamp-2">
+              <div className="text-xs font-semibold mb-1 overflow-hidden" style={{
+                display: '-webkit-box',
+                WebkitLineClamp: 2,
+                WebkitBoxOrient: 'vertical'
+              }}>
                 {card.name}
               </div>
               <div className="text-xs text-gray-600">
@@ -151,7 +155,7 @@ export const Card: React.FC<CardProps> = ({
             </div>
             
             <div className="text-xs">
-              <div className="text-gray-600 mb-1 line-clamp-1">
+              <div className="text-gray-600 mb-1 truncate">
                 {card.type_line}
               </div>
               <div className={`font-medium ${RARITY_COLORS[card.rarity] || 'text-gray-600'}`}>

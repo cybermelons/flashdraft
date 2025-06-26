@@ -22,7 +22,8 @@
       "Bash(source:*)",
       "Bash(pip install:*)",
       "Bash(node:*)",
-      "Bash(timeout:*)"
+      "Bash(timeout:*)",
+      "Bash(pnpm build:*)"
     ],
     "deny": []
   }

@@ -8,7 +8,6 @@
 import React, { useEffect, useState, useCallback } from 'react';
 import { useDraftStore } from '../stores/draftStore';
 import DraftInterface from './DraftInterface';
-import { loadSetData, listAvailableSets } from '../../shared/utils/dataLoader';
 import { packGenerator, generateDraftSession } from '../../shared/utils/packGenerator';
 import type { MTGSetData } from '../../shared/types/card';
 
@@ -46,8 +45,14 @@ export const DraftApp: React.FC = () => {
       try {
         setAppState(prev => ({ ...prev, loading: true, error: null }));
         
-        // For now, use our demo sets
-        const sets = DEMO_SETS;
+        // Fetch available sets from API
+        const response = await fetch('/api/sets');
+        if (!response.ok) {
+          throw new Error('Failed to fetch available sets');
+        }
+        
+        const data = await response.json();
+        const sets = data.sets || DEMO_SETS;
         
         setAppState(prev => ({
           ...prev,
@@ -57,10 +62,13 @@ export const DraftApp: React.FC = () => {
         }));
       } catch (error) {
         console.error('Failed to load available sets:', error);
+        // Fallback to demo sets
         setAppState(prev => ({
           ...prev,
           loading: false,
-          error: error instanceof Error ? error.message : 'Unknown error',
+          availableSets: DEMO_SETS,
+          selectedSet: DEMO_SETS[0] || '',
+          error: null, // Don't show error for fallback
         }));
       }
     }
@@ -74,7 +82,12 @@ export const DraftApp: React.FC = () => {
       setAppState(prev => ({ ...prev, loading: true, error: null }));
 
       console.log(`Loading set data for ${setCode}...`);
-      const setData = await loadSetData(setCode);
+      const response = await fetch(`/api/sets/${setCode}`);
+      if (!response.ok) {
+        throw new Error(`Failed to load set data for ${setCode}`);
+      }
+      
+      const setData = await response.json();
       
       console.log(`Initializing pack generator for ${setCode}...`);
       packGenerator.initialize(setData);

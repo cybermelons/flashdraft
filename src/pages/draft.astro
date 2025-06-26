@@ -55,6 +55,7 @@ export const prerender = false;
     <script>
       import DraftApp from '../frontend/components/DraftApp.tsx';
       import { createRoot } from 'react-dom/client';
+      import { createElement } from 'react';
       
       // Initialize the React draft application
       async function initializeDraft() {
@@ -67,7 +68,7 @@ export const prerender = false;
           document.getElementById('draft-interface').classList.remove('hidden');
           
           // Render the React app
-          root.render(<DraftApp />);
+          root.render(createElement(DraftApp));
           
         } catch (error) {
           console.error('Failed to initialize draft:', error);
