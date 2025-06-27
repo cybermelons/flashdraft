@@ -282,10 +282,28 @@ export const useDraftStore = create<DraftStore>()(
         }, 100);
       }
 
-      // Process bot turns immediately after human pick
-      setTimeout(() => {
-        get().processBotTurns();
-      }, 100);
+      // Check if all players have made their pick for this pick number
+      const expectedPicks = (state.current_round - 1) * 15 + state.current_pick;
+      const allPlayersPicked = updatedPlayers.every(p => p.total_picks >= expectedPicks);
+
+      console.log(`Pick check: Round ${state.current_round}, Pick ${state.current_pick}`);
+      console.log(`Expected picks: ${expectedPicks}`);
+      console.log(`Player picks:`, updatedPlayers.map(p => `${p.name}: ${p.total_picks}`));
+      console.log(`All picked: ${allPlayersPicked}`);
+
+      if (allPlayersPicked) {
+        // All players have picked, time to pass packs
+        console.log('All players picked, passing packs...');
+        setTimeout(() => {
+          get().passPacks();
+        }, 100);
+      } else {
+        // Process bot turns
+        console.log('Processing bot turns...');
+        setTimeout(() => {
+          get().processBotTurns();
+        }, 100);
+      }
     },
 
     makeBotPick: (playerId: string) => {
@@ -356,39 +374,32 @@ export const useDraftStore = create<DraftStore>()(
       const state = get();
       if (!state.draft_started || state.draft_completed) return;
 
-      // Find all bot players who have packs and need to make picks
-      const botsWithPacks = state.players.filter(p => 
+      // Calculate expected picks for current position
+      const expectedPicks = (state.current_round - 1) * 15 + state.current_pick;
+
+      // Find all bot players who haven't picked yet for this pick
+      const botsNeedingPicks = state.players.filter(p => 
         !p.is_human && 
         p.current_pack && 
-        p.current_pack.cards.length > 0
+        p.current_pack.cards.length > 0 &&
+        p.total_picks < expectedPicks
       );
 
-      if (botsWithPacks.length === 0) {
-        // All bots have picked, check if we need to pass packs
-        const allPlayersFinished = state.players.every(p => 
-          !p.current_pack || p.current_pack.cards.length === 0
-        );
-        
-        if (allPlayersFinished) {
-          get().passPacks();
-        }
-        return;
-      }
+      if (botsNeedingPicks.length === 0) return;
 
-      // Process bot picks immediately
-      botsWithPacks.forEach((bot) => {
-        get().makeBotPick(bot.id);
+      // Process bot picks one at a time with small delays
+      botsNeedingPicks.forEach((bot, index) => {
+        setTimeout(() => {
+          get().makeBotPick(bot.id);
+        }, index * 50);
       });
-      
-      // After bots pick, check again if we need to pass packs
-      setTimeout(() => {
-        get().processBotTurns();
-      }, 50);
     },
 
     passPacks: () => {
       const state = get();
       const { direction, players, current_round } = state;
+
+      console.log(`Passing packs: Round ${current_round}, Pick ${state.current_pick}, Direction: ${direction}`);
 
       // Create a map of packs to pass
       const packsToPass: Record<number, GeneratedPack | undefined> = {};
