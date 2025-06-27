@@ -282,15 +282,10 @@ export const useDraftStore = create<DraftStore>()(
         }, 100);
       }
 
-      // Auto-advance to next pick or trigger pack passing
-      const updatedPlayer = updatedPlayers.find(p => p.id === playerId);
-      if (updatedPlayer?.current_pack?.cards.length === 0) {
-        // Pack is empty, need to pass or end round
-        get().passPacks();
-      } else {
-        // Process bot turns immediately after human pick
+      // Process bot turns immediately after human pick
+      setTimeout(() => {
         get().processBotTurns();
-      }
+      }, 100);
     },
 
     makeBotPick: (playerId: string) => {
@@ -368,42 +363,65 @@ export const useDraftStore = create<DraftStore>()(
         p.current_pack.cards.length > 0
       );
 
-      if (botsWithPacks.length === 0) return;
+      if (botsWithPacks.length === 0) {
+        // All bots have picked, check if we need to pass packs
+        const allPlayersFinished = state.players.every(p => 
+          !p.current_pack || p.current_pack.cards.length === 0
+        );
+        
+        if (allPlayersFinished) {
+          get().passPacks();
+        }
+        return;
+      }
 
       // Process bot picks immediately
       botsWithPacks.forEach((bot) => {
         get().makeBotPick(bot.id);
       });
+      
+      // After bots pick, check again if we need to pass packs
+      setTimeout(() => {
+        get().processBotTurns();
+      }, 50);
     },
 
     passPacks: () => {
       const state = get();
       const { direction, players, current_round } = state;
 
-      // Calculate next positions based on direction
+      // Create a map of packs to pass
+      const packsToPass: Record<number, GeneratedPack | undefined> = {};
       const playerCount = players.length;
-      const updatedPlayers = players.map(player => {
-        if (!player.current_pack || player.current_pack.cards.length === 0) {
-          return { ...player, current_pack: undefined };
-        }
 
-        // Find next player position
-        let nextPosition;
-        if (direction === 'clockwise') {
-          nextPosition = (player.position + 1) % playerCount;
-        } else {
-          nextPosition = (player.position - 1 + playerCount) % playerCount;
+      // Collect all packs that need to be passed
+      players.forEach(player => {
+        if (player.current_pack && player.current_pack.cards.length > 0) {
+          // Calculate next position based on direction
+          let nextPosition;
+          if (direction === 'clockwise') {
+            nextPosition = (player.position + 1) % playerCount;
+          } else {
+            nextPosition = (player.position - 1 + playerCount) % playerCount;
+          }
+          packsToPass[nextPosition] = player.current_pack;
         }
-
-        const nextPlayer = players.find(p => p.position === nextPosition);
-        return nextPlayer ? { ...nextPlayer, current_pack: player.current_pack } : player;
       });
 
-      set({ players: updatedPlayers });
+      // Update all players with their new packs
+      const updatedPlayers = players.map(player => ({
+        ...player,
+        current_pack: packsToPass[player.position] || undefined,
+      }));
+
+      set({ 
+        players: updatedPlayers,
+        current_pick: state.current_pick + 1,
+      });
 
       // Check if round is complete (all packs empty)
-      const anyPacksRemaining = updatedPlayers.some(p => 
-        p.current_pack && p.current_pack.cards.length > 0
+      const anyPacksRemaining = Object.values(packsToPass).some(pack => 
+        pack && pack.cards.length > 0
       );
 
       if (!anyPacksRemaining) {
