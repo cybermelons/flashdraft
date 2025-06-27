@@ -1,3 +1,4 @@
+/** @jsxImportSource react */
 /**
  * FlashDraft - MTG Card Display Component
  * 
@@ -5,7 +6,8 @@
  * and interactive functionality for draft selection.
  */
 
-import React, { useState, useCallback } from 'react';
+import * as React from 'react';
+import { useState, useCallback } from 'react';
 import type { DraftCard, MTGColorSymbol } from '../../shared/types/card';
 import CardImage from './CardImage';
 import CardOverlay from './CardOverlay';

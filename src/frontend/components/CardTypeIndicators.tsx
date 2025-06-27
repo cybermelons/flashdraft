@@ -1,10 +1,11 @@
+/** @jsxImportSource react */
 /**
  * FlashDraft - Card Type Indicators Component
  * 
  * Displays small colored dots to indicate card types (creature, land, spell).
  */
 
-import React from 'react';
+import * as React from 'react';
 import type { DraftCard } from '../../shared/types/card.js';
 
 interface CardTypeIndicatorsProps {

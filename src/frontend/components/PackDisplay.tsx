@@ -1,3 +1,4 @@
+/** @jsxImportSource react */
 /**
  * FlashDraft - Pack Display Component
  * 
@@ -5,7 +6,8 @@
  * functionality and pack information.
  */
 
-import React, { useState, useCallback, useMemo } from 'react';
+import * as React from 'react';
+import { useState, useCallback, useMemo } from 'react';
 import type { DraftCard, MTGCard } from '../../shared/types/card.js';
 import type { GeneratedPack } from '../utils/clientPackGenerator.js';
 import Card from './Card.js';

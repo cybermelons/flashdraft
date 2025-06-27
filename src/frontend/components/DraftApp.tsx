@@ -1,3 +1,4 @@
+/** @jsxImportSource react */
 /**
  * FlashDraft - Main Draft Application Component
  * 
@@ -5,7 +6,8 @@
  * draft experience, including setup, draft flow, and data loading.
  */
 
-import React, { useEffect, useState, useCallback } from 'react';
+import * as React from 'react';
+import { useEffect, useState, useCallback } from 'react';
 import { useDraftStore } from '../stores/draftStore.js';
 import DraftInterface from './DraftInterface.js';
 import { clientPackGenerator, generateDraftSession } from '../utils/clientPackGenerator.js';

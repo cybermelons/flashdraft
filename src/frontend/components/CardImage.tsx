@@ -1,3 +1,4 @@
+/** @jsxImportSource react */
 /**
  * FlashDraft - Card Image Component
  * 

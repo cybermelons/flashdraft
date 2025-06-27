@@ -5,13 +5,13 @@
  */
 
 import React, { useState, useEffect } from 'react';
-import { getDraftList, deleteDraft, updateDraftTitle, type PersistedDraft } from '../../shared/utils/draftPersistence.js';
+import { getDraftList, deleteDraft, updateDraftTitle, type PersistedDraft } from '../../shared/utils/draftPersistence';
 
 export interface DraftOverviewProps {
   className?: string;
 }
 
-export const DraftOverview: React.FC<DraftOverviewProps> = ({ className = '' }) => {
+const DraftOverview: React.FC<DraftOverviewProps> = ({ className = '' }) => {
   const [drafts, setDrafts] = useState<PersistedDraft[]>([]);
   const [loading, setLoading] = useState(true);
 

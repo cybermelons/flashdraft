@@ -1,10 +1,11 @@
+/** @jsxImportSource react */
 /**
  * FlashDraft - Card Overlay Component
  * 
  * Handles selection indicators and hover states for MTG cards.
  */
 
-import React from 'react';
+import * as React from 'react';
 import type { DraftCard } from '../../shared/types/card.js';
 
 interface CardOverlayProps {

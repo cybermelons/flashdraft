@@ -1,10 +1,12 @@
+/** @jsxImportSource react */
 /**
  * FlashDraft - Draft Router Component
  * 
  * Routes between different draft views based on URL structure.
  */
 
-import React, { useState, useEffect } from 'react';
+import * as React from 'react';
+import { useState, useEffect } from 'react';
 import { useDraftStore } from '../stores/draftStore.js';
 import { loadDraftState, getCurrentDraftId } from '../../shared/utils/draftPersistence.js';
 import DraftOverview from './DraftOverview.js';

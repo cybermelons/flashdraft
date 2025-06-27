@@ -1,3 +1,4 @@
+/** @jsxImportSource react */
 /**
  * FlashDraft - Main Draft Interface Component
  * 
@@ -5,7 +6,8 @@
  * pack display, player state, and draft flow control.
  */
 
-import React, { useEffect, useCallback, useState } from 'react';
+import * as React from 'react';
+import { useEffect, useCallback, useState } from 'react';
 import type { DraftCard } from '../../shared/types/card.js';
 import { useDraftStore, selectCurrentPlayer, selectCurrentPack } from '../stores/draftStore.js';
 import PackDisplay from './PackDisplay.js';
