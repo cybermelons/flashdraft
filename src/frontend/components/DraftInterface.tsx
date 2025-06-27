@@ -12,6 +12,7 @@ import type { DraftCard } from '../../shared/types/card';
 import { useDraftStore, selectCurrentPlayer, selectCurrentPack } from '../stores/draftStore';
 import PackDisplay from './PackDisplay';
 import Card from './Card';
+import DecklistView from './DecklistView';
 
 export interface DraftInterfaceProps {
   className?: string;
@@ -19,6 +20,7 @@ export interface DraftInterfaceProps {
 
 export const DraftInterface: React.FC<DraftInterfaceProps> = ({ className = '' }) => {
   const [confirmPick, setConfirmPick] = useState(false);
+  const [showDecklist, setShowDecklist] = useState(false);
   
   // Draft store state
   const {
@@ -156,21 +158,31 @@ export const DraftInterface: React.FC<DraftInterfaceProps> = ({ className = '' }
           <p className="text-gray-600 mb-4">
             All picks have been made. Ready for deck building!
           </p>
-          {humanPlayer && (
-            <div className="bg-white border border-gray-200 rounded-lg p-4 inline-block">
-              <h3 className="font-semibold mb-2">Your Picks ({humanPlayer.picked_cards.length})</h3>
-              <div className="grid grid-cols-8 gap-1 max-w-2xl">
-                {humanPlayer.picked_cards.map((card) => (
-                  <Card
-                    key={card.id}
-                    card={card}
-                    size="small"
-                    showDetails={false}
-                  />
-                ))}
+          
+          <div className="space-y-4">
+            <button
+              onClick={() => setShowDecklist(true)}
+              className="bg-purple-600 hover:bg-purple-700 text-white px-6 py-3 rounded-lg font-medium"
+            >
+              📋 View Full Deck List
+            </button>
+            
+            {humanPlayer && (
+              <div className="bg-white border border-gray-200 rounded-lg p-4 inline-block">
+                <h3 className="font-semibold mb-2">Your Picks ({humanPlayer.picked_cards.length})</h3>
+                <div className="grid grid-cols-8 gap-1 max-w-2xl">
+                  {humanPlayer.picked_cards.map((card) => (
+                    <Card
+                      key={card.id}
+                      card={card}
+                      size="small"
+                      showDetails={false}
+                    />
+                  ))}
+                </div>
               </div>
-            </div>
-          )}
+            )}
+          </div>
         </div>
       </div>
     );
@@ -235,11 +247,18 @@ export const DraftInterface: React.FC<DraftInterfaceProps> = ({ className = '' }
                 Picks ({humanPlayer?.picked_cards.length || 0})
               </button>
               <button
+                onClick={() => setShowDecklist(true)}
+                className="px-3 py-1 rounded text-sm bg-purple-600 hover:bg-purple-700 text-white"
+                title="View deck list"
+              >
+                📋 Deck
+              </button>
+              <button
                 onClick={handleShare}
                 className="px-3 py-1 rounded text-sm bg-green-600 hover:bg-green-700 text-white"
                 title="Share draft URL"
               >
-                📋 Share
+                🔗 Share
               </button>
             </div>
           </div>
@@ -357,6 +376,18 @@ export const DraftInterface: React.FC<DraftInterfaceProps> = ({ className = '' }
           </div>
         )}
       </div>
+
+      {/* Decklist Modal */}
+      {showDecklist && humanPlayer && (
+        <DecklistView
+          cards={humanPlayer.picked_cards}
+          onCardClick={(card) => {
+            // Could implement card hover/details here
+            console.log('Clicked card:', card.name);
+          }}
+          onClose={() => setShowDecklist(false)}
+        />
+      )}
     </div>
   );
 };
