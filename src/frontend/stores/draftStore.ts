@@ -109,6 +109,7 @@ export interface DraftActions {
   loadDraft: (draftId: string) => boolean;
   loadCurrentDraft: () => boolean;
   createNewDraft: (setCode: string, setData: MTGSetData) => string;
+  navigateToPosition: (round: number, pick: number) => boolean;
 }
 
 type DraftStore = DraftState & DraftActions;
@@ -553,19 +554,16 @@ export const useDraftStore = create<DraftStore>()(
     // URL management actions
     updatePermalink: () => {
       const state = get();
-      const humanPlayer = state.players.find(p => p.is_human);
       
-      if (!humanPlayer || !state.draft_started) return;
+      if (!state.draft_started || !state.draft_id) return;
       
-      const urlState: DraftUrlState = {
-        set_code: state.set_code,
-        round: state.current_round,
-        pick: state.current_pick,
-        seat: humanPlayer.position,
-        picks: humanPlayer.picked_cards.map(card => card.id),
-      };
+      // Update URL to new routing structure: /draft/[draftId]/p[round]p[pick]
+      const newUrl = `/draft/${state.draft_id}/p${state.current_round}p${state.current_pick}`;
       
-      updateUrlWithDraftState(urlState);
+      // Update browser URL without full page reload
+      if (typeof window !== 'undefined' && window.history) {
+        window.history.replaceState({}, '', newUrl);
+      }
     },
 
     getShareableUrl: () => {
@@ -654,6 +652,37 @@ export const useDraftStore = create<DraftStore>()(
       get().initializeDraft(setCode, setData);
       const draftId = get().saveDraft();
       return draftId;
+    },
+
+    navigateToPosition: (round: number, pick: number) => {
+      const state = get();
+      
+      // Validate position
+      if (round < 1 || round > 3 || pick < 1 || pick > 15) {
+        console.warn('Invalid draft position:', { round, pick });
+        return false;
+      }
+      
+      // Check if position is valid for current draft state
+      const totalPicks = (round - 1) * 15 + pick;
+      const currentTotalPicks = (state.current_round - 1) * 15 + state.current_pick;
+      
+      if (totalPicks > currentTotalPicks) {
+        console.warn('Cannot navigate to future position:', { round, pick });
+        return false;
+      }
+      
+      // Update current position (this is a simplified version)
+      // In a full implementation, this would replay the draft to the exact position
+      set({
+        current_round: round,
+        current_pick: pick,
+      });
+      
+      // Update permalink to reflect new position
+      get().updatePermalink();
+      
+      return true;
     },
   }))
 );

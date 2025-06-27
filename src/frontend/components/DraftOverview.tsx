@@ -44,11 +44,11 @@ export const DraftOverview: React.FC<DraftOverviewProps> = ({ className = '' }) 
   };
 
   const handleStartNewDraft = () => {
-    window.location.href = '/draft';
+    window.location.href = '/draft/new';
   };
 
   const handleResumeDraft = (draftId: string) => {
-    window.location.href = `/draft?id=${draftId}`;
+    window.location.href = `/draft/${draftId}`;
   };
 
   const formatDate = (dateString: string) => {

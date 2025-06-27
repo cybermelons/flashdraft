@@ -1,0 +1,79 @@
+---
+/**
+ * FlashDraft - Dynamic Draft Routes
+ * 
+ * Handles:
+ * - /draft -> Current draft or overview
+ * - /draft/[draftId] -> Specific draft
+ * - /draft/[draftId]/[round]p[pick] -> Specific position in draft
+ */
+
+import Layout from '../../layouts/Layout.astro';
+
+export const prerender = false;
+
+const { path } = Astro.params;
+const searchParams = Astro.url.searchParams;
+
+// Parse the path to determine what to show
+let routeType = 'overview';
+let draftId = null;
+let round = null;
+let pick = null;
+
+if (path) {
+  const segments = Array.isArray(path) ? path : [path];
+  
+  if (segments.length >= 1) {
+    draftId = segments[0];
+    routeType = 'draft';
+    
+    if (segments.length >= 2) {
+      // Parse p1p3 format (pack 1 pick 3)
+      const positionMatch = segments[1].match(/^p?(\d+)p(\d+)$/);
+      if (positionMatch) {
+        round = parseInt(positionMatch[1]);
+        pick = parseInt(positionMatch[2]);
+        routeType = 'position';
+      }
+    }
+  }
+}
+
+// If no path or invalid draftId, show overview
+if (!path || (path.length === 0)) {
+  routeType = 'overview';
+}
+---
+
+<Layout title={`FlashDraft - ${routeType === 'overview' ? 'Draft Overview' : 'Draft'}`}>
+  <main>
+    <div id="draft-app-root" 
+         data-route-type={routeType}
+         data-draft-id={draftId}
+         data-round={round}
+         data-pick={pick}></div>
+  </main>
+</Layout>
+
+<script>
+  import React from 'react';
+  import { createRoot } from 'react-dom/client';
+  import DraftRouter from '../../frontend/components/DraftRouter.tsx';
+
+  const container = document.getElementById('draft-app-root');
+  if (container) {
+    const routeType = container.getAttribute('data-route-type');
+    const draftId = container.getAttribute('data-draft-id');
+    const round = container.getAttribute('data-round');
+    const pick = container.getAttribute('data-pick');
+    
+    const root = createRoot(container);
+    root.render(React.createElement(DraftRouter, {
+      routeType,
+      draftId,
+      round: round ? parseInt(round) : null,
+      pick: pick ? parseInt(pick) : null,
+    }));
+  }
+</script>

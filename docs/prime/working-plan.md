@@ -1,6 +1,6 @@
-- remove bot delay. why is this needed?
-- persist data in localstorage. 
-- each draft should have an id. so the /draft route goes to the current draft or shows the draft overview. the draft overview has a button for start new draft.
+- [x] remove bot delay. why is this needed? ✓ (Note: Removed 800ms delays - bots now pick instantly for faster draft flow)
+- [x] persist data in localstorage. ✓ (Note: Full localStorage persistence with auto-save after picks, draft metadata, and storage management)
+- [ ] each draft should have an id. so the /draft route goes to the current draft or shows the draft overview. the draft overview has a button for start new draft. (Current: implementing draft routing with dynamic URLs)
   - /draft/acbedf123/p1p1
 - some images are missing, eg exdeath
 - show decklist
