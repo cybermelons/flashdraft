@@ -1,4 +1,4 @@
-/** @jsxImportSource react */
+/** xImportSource react */
 /**
  * FlashDraft - Draft Router Component
  * 
@@ -7,11 +7,11 @@
 
 import * as React from 'react';
 import { useState, useEffect } from 'react';
-import { useDraftStore } from '../stores/draftStore.js';
-import { loadDraftState, getCurrentDraftId } from '../../shared/utils/draftPersistence.js';
-import DraftOverview from './DraftOverview.js';
-import DraftInterface from './DraftInterface.js';
-import DraftApp from './DraftApp.js';
+import { useDraftStore } from '../stores/draftStore';
+import { loadDraftState, getCurrentDraftId } from '../../shared/utils/draftPersistence';
+import DraftOverview from './DraftOverview';
+import DraftInterface from './DraftInterface';
+import DraftApp from './DraftApp';
 
 export interface DraftRouterProps {
   routeType: string;

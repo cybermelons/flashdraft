@@ -7,11 +7,11 @@
 
 import { create } from 'zustand';
 import { subscribeWithSelector } from 'zustand/middleware';
-import type { DraftCard, MTGSetData, MTGCard } from '../../shared/types/card.js';
-import type { GeneratedPack } from '../utils/clientPackGenerator.js';
-import { chooseBotPick, BOT_PERSONALITIES } from '../../shared/utils/cardUtils.js';
-import { updateUrlWithDraftState, createShareableUrl, getDraftStateFromUrl, type DraftUrlState } from '../../shared/utils/draftUrl.js';
-import { saveDraftState, loadDraftState, getCurrentDraftId, loadCurrentDraft, generateDraftId, type PersistedDraftState } from '../../shared/utils/draftPersistence.js';
+import type { DraftCard, MTGSetData, MTGCard } from '../../shared/types/card';
+import type { GeneratedPack } from '../utils/clientPackGenerator';
+import { chooseBotPick, BOT_PERSONALITIES } from '../../shared/utils/cardUtils';
+import { updateUrlWithDraftState, createShareableUrl, getDraftStateFromUrl, type DraftUrlState } from '../../shared/utils/draftUrl';
+import { saveDraftState, loadDraftState, getCurrentDraftId, loadCurrentDraft, generateDraftId, type PersistedDraftState } from '../../shared/utils/draftPersistence';
 
 export interface DraftPlayer {
   id: string;

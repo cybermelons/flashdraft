@@ -8,9 +8,9 @@
 
 import * as React from 'react';
 import { useState, useCallback, useMemo } from 'react';
-import type { DraftCard, MTGCard } from '../../shared/types/card.js';
-import type { GeneratedPack } from '../utils/clientPackGenerator.js';
-import Card from './Card.js';
+import type { DraftCard, MTGCard } from '../../shared/types/card';
+import type { GeneratedPack } from '../utils/clientPackGenerator';
+import Card from './Card';
 
 // Client-safe utility functions
 const calculateManaCurve = (cards: DraftCard[]): Record<number, number> => {

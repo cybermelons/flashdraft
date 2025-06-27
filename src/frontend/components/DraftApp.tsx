@@ -8,10 +8,10 @@
 
 import * as React from 'react';
 import { useEffect, useState, useCallback } from 'react';
-import { useDraftStore } from '../stores/draftStore.js';
-import DraftInterface from './DraftInterface.js';
-import { clientPackGenerator, generateDraftSession } from '../utils/clientPackGenerator.js';
-import type { MTGSetData } from '../../shared/types/card.js';
+import { useDraftStore } from '../stores/draftStore';
+import DraftInterface from './DraftInterface';
+import { clientPackGenerator, generateDraftSession } from '../utils/clientPackGenerator';
+import type { MTGSetData } from '../../shared/types/card';
 
 interface AppState {
   loading: boolean;

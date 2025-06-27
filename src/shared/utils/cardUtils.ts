@@ -15,7 +15,7 @@ import type {
   MTGRarity,
   VALID_COLORS,
   VALID_RARITIES
-} from '../types/card.js';
+} from '../types/card';
 
 /**
  * Validates if a card object has the required fields for draft simulation

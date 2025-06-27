@@ -4,7 +4,7 @@
  * Client-side pack generation utilities without Node.js dependencies.
  */
 
-import type { MTGCard, MTGSetData, DraftCard, MTGRarity } from '../../shared/types/card.js';
+import type { MTGCard, MTGSetData, DraftCard, MTGRarity } from '../../shared/types/card';
 
 export interface PackSlot {
   rarity: MTGRarity;

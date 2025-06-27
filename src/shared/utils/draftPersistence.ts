@@ -4,7 +4,7 @@
  * Utilities for persisting and restoring draft state using localStorage.
  */
 
-import type { DraftState, DraftPlayer } from '../../frontend/stores/draftStore.js';
+import type { DraftState, DraftPlayer } from '../../frontend/stores/draftStore';
 
 const STORAGE_PREFIX = 'flashdraft_';
 const CURRENT_DRAFT_KEY = `${STORAGE_PREFIX}current_draft`;

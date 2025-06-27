@@ -9,7 +9,7 @@ import fs from 'fs/promises';
 import path from 'path';
 import https from 'https';
 import crypto from 'crypto';
-import type { MTGCard, MTGImageUris } from '../types/card.js';
+import type { MTGCard, MTGImageUris } from '../types/card';
 
 // Cache directory structure
 const CACHE_DIR = path.join(process.cwd(), 'public', 'images', 'cards');

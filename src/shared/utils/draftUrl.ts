@@ -5,7 +5,7 @@
  * similar to 17lands permalink functionality.
  */
 
-import type { DraftPlayer } from '../../frontend/stores/draftStore.js';
+import type { DraftPlayer } from '../../frontend/stores/draftStore';
 
 export interface DraftUrlState {
   set_code: string;

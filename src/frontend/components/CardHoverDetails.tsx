@@ -7,7 +7,7 @@
 
 import * as React from 'react';
 import { HoverCard, HoverCardContent, HoverCardTrigger } from '../../components/ui/hover-card';
-import type { DraftCard } from '../../shared/types/card.js';
+import type { DraftCard } from '../../shared/types/card';
 
 interface CardHoverDetailsProps {
   card: DraftCard;

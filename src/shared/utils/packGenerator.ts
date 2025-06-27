@@ -5,8 +5,8 @@
  * and rarity distributions for accurate draft simulation.
  */
 
-import type { MTGCard, MTGSetData, DraftCard, MTGRarity } from '../types/card.js';
-import { groupCardsByRarity, toDraftCard } from './cardUtils.js';
+import type { MTGCard, MTGSetData, DraftCard, MTGRarity } from '../types/cards';
+import { groupCardsByRarity, toDraftCard } from './cardUtils';
 
 export interface PackSlot {
   rarity: MTGRarity;

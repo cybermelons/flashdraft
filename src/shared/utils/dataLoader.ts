@@ -7,8 +7,8 @@
 
 import fs from 'fs/promises';
 import path from 'path';
-import type { MTGSetData, MTGCard, DraftCard } from '../types/card.js';
-import { validateSetData, toDraftCard } from './cardUtils.js';
+import type { MTGSetData, MTGCard, DraftCard } from '../types/card';
+import { validateSetData, toDraftCard } from './cardUtils';
 
 // Data directory paths
 const DATA_DIR = path.join(process.cwd(), 'data');

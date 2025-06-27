@@ -6,7 +6,7 @@
  */
 
 import * as React from 'react';
-import type { DraftCard } from '../../shared/types/card.js';
+import type { DraftCard } from '../../shared/types/card';
 
 interface CardTypeIndicatorsProps {
   card: DraftCard;
