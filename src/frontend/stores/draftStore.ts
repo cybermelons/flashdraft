@@ -425,6 +425,14 @@ export const useDraftStore = create<DraftStore>()(
         current_pack: packsToPass[player.position] || undefined,
       }));
 
+      console.log('After pack passing:');
+      console.log('Packs to pass:', Object.entries(packsToPass).map(([pos, pack]) => 
+        `Position ${pos}: ${pack ? pack.cards.length : 0} cards`
+      ));
+      console.log('Updated player packs:', updatedPlayers.map(p => 
+        `${p.name}: ${p.current_pack ? p.current_pack.cards.length : 0} cards`
+      ));
+
       set({ 
         players: updatedPlayers,
         current_pick: state.current_pick + 1,
@@ -435,8 +443,17 @@ export const useDraftStore = create<DraftStore>()(
         pack && pack.cards.length > 0
       );
 
+      console.log(`Any packs remaining: ${anyPacksRemaining}`);
+
       if (!anyPacksRemaining) {
+        console.log('Round complete, advancing to next round');
         get().nextRound();
+      } else {
+        // Start bot processing for the new packs
+        console.log('Starting bot processing for new packs');
+        setTimeout(() => {
+          get().processBotTurns();
+        }, 200);
       }
     },
 
