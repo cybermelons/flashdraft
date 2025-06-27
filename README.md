@@ -1,10 +1,18 @@
-# **FlashDraft - MTG Draft Simulator & Playtest Platform**
+# **FlashDraft - MTG Draft Simulator & Playtest Platform** ✨
 
 ## **Project Overview**
 
-FlashDraft is an integrated Magic: The Gathering draft simulation and playtesting application that enables players to rapidly iterate through draft scenarios without the time and cost constraints of Arena. The platform combines AI-powered draft opponents trained on real player data with a streamlined digital playmat for immediate deck testing.
+FlashDraft is a complete Magic: The Gathering draft simulation application that enables unlimited practice with AI opponents. Learn Limited formats through rapid iteration without the cost and time constraints of Arena or MTGO.
 
-**Core Value Proposition**: Transform draft learning from expensive, slow iterations (Arena gems + queue times) to unlimited, rapid practice cycles that accelerate skill development.
+**🎯 Core Features**
+- **Complete Draft Simulation**: 8-player drafts with intelligent AI bots (4 skill levels)
+- **Real MTG Sets**: Final Fantasy and Dragons of Tarkir with full Scryfall integration
+- **Professional Deck Analysis**: Mana curve, color distribution, card categorization
+- **Instant Performance**: <150ms transitions, responsive mobile design
+- **Persistent Sessions**: Draft IDs, localStorage auto-save, shareable permalinks
+- **Modern Interface**: React + Astro + Tailwind CSS with shadcn/ui components
+
+**Status**: 🚀 **Production Ready** - Fully functional application ready for MTG players!
 
 ## **Getting Started**
 
@@ -40,6 +48,20 @@ pnpm lint
 # Format code
 pnpm format
 ```
+
+## **🎮 How to Use**
+
+1. **Start a Draft**: Visit `/draft` to see your draft overview or start a new draft
+2. **Select a Set**: Choose from Final Fantasy (FIN) or Dragons of Tarkir (DTK)
+3. **Draft Cards**: Pick cards from packs, AI bots will pick alongside you
+4. **View Your Deck**: Click "📋 Deck" to see detailed deck analysis with mana curve
+5. **Share Drafts**: Use the "🔗 Share" button to share permalink URLs
+6. **Resume Anytime**: All drafts auto-save to localStorage with unique IDs
+
+**🔗 Routing Examples**:
+- `/draft` - Draft overview page
+- `/draft/abc123` - Resume specific draft
+- `/draft/abc123/p1p3` - Go to pack 1, pick 3 of a draft
 
 ## **Project Structure**
 
