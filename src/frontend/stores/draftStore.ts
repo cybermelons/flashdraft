@@ -41,6 +41,7 @@ export interface DraftState {
   
   // Current state
   active_packs: GeneratedPack[];
+  all_draft_packs: GeneratedPack[][]; // [player][round] structure - all packs for all rounds
   pack_history: GeneratedPack[][];
   pick_timer: number | null;
   pick_deadline: number | null;
@@ -78,6 +79,7 @@ export interface DraftActions {
   
   // Pack management
   setActivePacks: (packs: GeneratedPack[]) => void;
+  setAllDraftPacks: (allPacks: GeneratedPack[][]) => void;
   updatePack: (packId: string, pack: GeneratedPack) => void;
   
   // UI actions
@@ -128,6 +130,7 @@ const initialState: DraftState = {
   draft_completed: false,
   
   active_packs: [],
+  all_draft_packs: [],
   pack_history: [],
   pick_timer: null,
   pick_deadline: null,
@@ -161,6 +164,7 @@ export const useDraftStore = create<DraftStore>()(
         draft_started: false,
         draft_completed: false,
         active_packs: [],
+        all_draft_packs: [],
         pack_history: [],
         selected_card: null,
         pick_times: [],
@@ -472,13 +476,31 @@ export const useDraftStore = create<DraftStore>()(
       // Switch direction for round 2
       const newDirection = nextRound === 2 ? 'counterclockwise' : 'clockwise';
 
+      console.log(`Starting round ${nextRound} with direction ${newDirection}`);
+
+      // Get the packs for the new round (round is 1-indexed, array is 0-indexed)
+      const roundIndex = nextRound - 1;
+      const newRoundPacks = state.all_draft_packs.map(playerPacks => playerPacks[roundIndex]).filter(Boolean);
+
+      console.log(`Activating ${newRoundPacks.length} packs for round ${nextRound}`);
+
       set({
         current_round: nextRound,
         current_pick: 1,
         direction: newDirection,
       });
 
-      // This would trigger new pack generation in the UI
+      // Activate the new round's packs
+      if (newRoundPacks.length > 0) {
+        get().setActivePacks(newRoundPacks);
+        
+        // Start bot processing for the new round
+        setTimeout(() => {
+          get().processBotTurns();
+        }, 200);
+      } else {
+        console.error(`No packs available for round ${nextRound}`);
+      }
     },
 
     completeDraft: () => {
@@ -503,6 +525,10 @@ export const useDraftStore = create<DraftStore>()(
         active_packs: packs,
         players: updatedPlayers,
       });
+    },
+
+    setAllDraftPacks: (allPacks: GeneratedPack[][]) => {
+      set({ all_draft_packs: allPacks });
     },
 
     updatePack: (packId: string, pack: GeneratedPack) => {

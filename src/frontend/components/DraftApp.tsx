@@ -36,6 +36,7 @@ export const DraftApp: React.FC = () => {
     initializeDraft,
     startDraft,
     setActivePacks,
+    setAllDraftPacks,
     draft_started,
     draft_completed,
     players,
@@ -127,9 +128,14 @@ export const DraftApp: React.FC = () => {
       console.log('Generating draft packs...');
       const draftPacks = generateDraftSession(appState.selectedSet, 8, 3);
       
+      // Store all generated packs for all rounds
+      setAllDraftPacks(draftPacks);
+      console.log(`Generated ${draftPacks.length} player packs with ${draftPacks[0]?.length || 0} rounds each`);
+      
       // Set initial packs for round 1
       const round1Packs = draftPacks.map(playerPacks => playerPacks[0]);
       setActivePacks(round1Packs);
+      console.log(`Activated ${round1Packs.length} packs for round 1`);
       
       console.log('Starting draft...');
       startDraft();
