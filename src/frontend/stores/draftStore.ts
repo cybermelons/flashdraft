@@ -245,15 +245,15 @@ export const useDraftStore = create<DraftStore>()(
 
       // Update player with picked card
       const updatedPlayers = state.players.map(p => {
-        if (p.id === playerId) {
+        if (p.id === playerId && p.current_pack) {
           return {
             ...p,
             picked_cards: [...p.picked_cards, card],
             total_picks: p.total_picks + 1,
             current_pack: {
-              ...p.current_pack!,
-              cards: p.current_pack!.cards.filter(c => c.id !== card.id),
-              pick_number: p.current_pack!.pick_number + 1,
+              ...p.current_pack,
+              cards: p.current_pack.cards.filter(c => c.id !== card.id),
+              pick_number: p.current_pack.pick_number + 1,
             },
           };
         }
