@@ -57,23 +57,34 @@ if (!path || (path.length === 0)) {
 </Layout>
 
 <script>
-  import React from 'react';
   import { createRoot } from 'react-dom/client';
-  import DraftRouter from '../../frontend/components/DraftRouter';
-
-  const container = document.getElementById('draft-app-root');
-  if (container) {
-    const routeType = container.getAttribute('data-route-type');
-    const draftId = container.getAttribute('data-draft-id');
-    const round = container.getAttribute('data-round');
-    const pick = container.getAttribute('data-pick');
+  import { createElement } from 'react';
+  
+  // Dynamic import to avoid Vite React plugin issues
+  const initializeComponent = async () => {
+    const { default: DraftRouter } = await import('../../frontend/components/DraftRouter');
+    const container = document.getElementById('draft-app-root');
     
-    const root = createRoot(container);
-    root.render(React.createElement(DraftRouter, {
-      routeType,
-      draftId,
-      round: round ? parseInt(round) : null,
-      pick: pick ? parseInt(pick) : null,
-    }));
+    if (container) {
+      const routeType = container.getAttribute('data-route-type');
+      const draftId = container.getAttribute('data-draft-id');
+      const round = container.getAttribute('data-round');
+      const pick = container.getAttribute('data-pick');
+      
+      const root = createRoot(container);
+      root.render(createElement(DraftRouter, {
+        routeType,
+        draftId,
+        round: round ? parseInt(round) : null,
+        pick: pick ? parseInt(pick) : null,
+      }));
+    }
+  };
+  
+  // Initialize when DOM is ready
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', initializeComponent);
+  } else {
+    initializeComponent();
   }
 </script>

@@ -15,6 +15,9 @@ export default defineConfig({
       include: ['**/*.tsx', '**/*.jsx'],
       exclude: ['node_modules/**/*'],
       jsxImportSource: 'react',
+      babel: {
+        plugins: []
+      }
     }),
     tailwind({
       applyBaseStyles: true,

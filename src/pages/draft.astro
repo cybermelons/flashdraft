@@ -15,13 +15,24 @@ import Layout from '../layouts/Layout.astro';
 </Layout>
 
 <script>
-  import React from 'react';
   import { createRoot } from 'react-dom/client';
-  import DraftOverview from '../frontend/components/DraftOverview';
-
-  const container = document.getElementById('draft-overview-root');
-  if (container) {
-    const root = createRoot(container);
-    root.render(React.createElement(DraftOverview));
+  import { createElement } from 'react';
+  
+  // Dynamic import to avoid Vite React plugin issues
+  const initializeComponent = async () => {
+    const { default: DraftOverview } = await import('../frontend/components/DraftOverview');
+    const container = document.getElementById('draft-overview-root');
+    
+    if (container) {
+      const root = createRoot(container);
+      root.render(createElement(DraftOverview));
+    }
+  };
+  
+  // Initialize when DOM is ready
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', initializeComponent);
+  } else {
+    initializeComponent();
   }
 </script>
