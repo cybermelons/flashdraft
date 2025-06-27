@@ -282,16 +282,21 @@ export const useDraftStore = create<DraftStore>()(
         }, 100);
       }
 
-      // Check if all players have made their pick for this pick number
-      const expectedPicks = (state.current_round - 1) * 15 + state.current_pick;
-      const allPlayersPicked = updatedPlayers.every(p => p.total_picks >= expectedPicks);
+      // Check if all players have picked from their current pack this round
+      // Look for any player (except the one who just picked) who still has cards to pick
+      const playersNeedingPicks = updatedPlayers.filter(p => 
+        p.current_pack && 
+        p.current_pack.cards.length > 0 && 
+        p.id !== playerId // Exclude the player who just picked
+      );
+
+      const allPlayersPickedThisRound = playersNeedingPicks.length === 0;
 
       console.log(`Pick check: Round ${state.current_round}, Pick ${state.current_pick}`);
-      console.log(`Expected picks: ${expectedPicks}`);
-      console.log(`Player picks:`, updatedPlayers.map(p => `${p.name}: ${p.total_picks}`));
-      console.log(`All picked: ${allPlayersPicked}`);
+      console.log(`Players needing picks:`, playersNeedingPicks.map(p => `${p.name}: ${p.current_pack?.cards.length || 0} cards`));
+      console.log(`All picked this round: ${allPlayersPickedThisRound}`);
 
-      if (allPlayersPicked) {
+      if (allPlayersPickedThisRound) {
         // All players have picked, time to pass packs
         console.log('All players picked, passing packs...');
         setTimeout(() => {
@@ -374,16 +379,14 @@ export const useDraftStore = create<DraftStore>()(
       const state = get();
       if (!state.draft_started || state.draft_completed) return;
 
-      // Calculate expected picks for current position
-      const expectedPicks = (state.current_round - 1) * 15 + state.current_pick;
-
-      // Find all bot players who haven't picked yet for this pick
+      // Find all bot players who still have cards to pick from
       const botsNeedingPicks = state.players.filter(p => 
         !p.is_human && 
         p.current_pack && 
-        p.current_pack.cards.length > 0 &&
-        p.total_picks < expectedPicks
+        p.current_pack.cards.length > 0
       );
+
+      console.log(`Bot processing: ${botsNeedingPicks.length} bots need to pick`);
 
       if (botsNeedingPicks.length === 0) return;
 
