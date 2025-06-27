@@ -15,9 +15,20 @@ interface CardImageProps {
       normal?: string;
       large?: string;
     };
+    card_faces?: Array<{
+      name: string;
+      image_uris?: {
+        small?: string;
+        normal?: string;
+        large?: string;
+      };
+      mana_cost?: string;
+      type_line?: string;
+    }>;
     mana_cost?: string;
     type_line: string;
     rarity: string;
+    layout?: string;
   };
   size: 'small' | 'normal' | 'large';
   onLoad?: () => void;
@@ -47,7 +58,9 @@ const CardImage: React.FC<CardImageProps> = React.memo(function CardImage({ card
   const [imageLoaded, setImageLoaded] = React.useState(false);
   const [imageError, setImageError] = React.useState(false);
 
-  const imageUrl = card.image_uris?.[size === 'small' ? 'small' : 'normal'];
+  // Get image URL - handle transform cards by using first face if no top-level image_uris
+  const imageUrl = card.image_uris?.[size === 'small' ? 'small' : 'normal'] || 
+                   card.card_faces?.[0]?.image_uris?.[size === 'small' ? 'small' : 'normal'];
 
   const handleLoad = React.useCallback(() => {
     setImageLoaded(true);
@@ -86,7 +99,9 @@ const CardImage: React.FC<CardImageProps> = React.memo(function CardImage({ card
     ]);
   }
 
-  const formattedManaCost = formatManaCost(card.mana_cost || '');
+  // Get mana cost - use first face for transform cards if no top-level mana_cost
+  const manaCost = card.mana_cost || card.card_faces?.[0]?.mana_cost || '';
+  const formattedManaCost = formatManaCost(manaCost);
   
   return React.createElement('div', {
     className: 'w-full h-full bg-white border border-gray-300 p-2 flex flex-col justify-between'
