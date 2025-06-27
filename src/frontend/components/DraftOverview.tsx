@@ -4,7 +4,7 @@
  * Shows list of saved drafts and options to create/resume drafts.
  */
 
-import React, { useState, useEffect } from 'react';
+import * as React from 'react';
 import { getDraftList, deleteDraft, updateDraftTitle, type PersistedDraft } from '../../shared/utils/draftPersistence';
 
 export interface DraftOverviewProps {
@@ -12,10 +12,10 @@ export interface DraftOverviewProps {
 }
 
 const DraftOverview: React.FC<DraftOverviewProps> = ({ className = '' }) => {
-  const [drafts, setDrafts] = useState<PersistedDraft[]>([]);
-  const [loading, setLoading] = useState(true);
+  const [drafts, setDrafts] = React.useState<PersistedDraft[]>([]);
+  const [loading, setLoading] = React.useState(true);
 
-  useEffect(() => {
+  React.useEffect(() => {
     loadDrafts();
   }, []);
 

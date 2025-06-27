@@ -1,4 +1,4 @@
-/** xImportSource react */
+/** @jsxImportSource react */
 /**
  * FlashDraft - Draft Router Component
  * 
@@ -6,7 +6,6 @@
  */
 
 import * as React from 'react';
-import { useState, useEffect } from 'react';
 import { useDraftStore } from '../stores/draftStore';
 import { loadDraftState, getCurrentDraftId } from '../../shared/utils/draftPersistence';
 import DraftOverview from './DraftOverview';
@@ -26,11 +25,11 @@ export const DraftRouter: React.FC<DraftRouterProps> = ({
   round,
   pick,
 }) => {
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
+  const [loading, setLoading] = React.useState(true);
+  const [error, setError] = React.useState<string | null>(null);
   const { loadDraft, navigateToPosition, draft_started, draft_id } = useDraftStore();
 
-  useEffect(() => {
+  React.useEffect(() => {
     initializeRoute();
   }, [routeType, draftId, round, pick]);
 

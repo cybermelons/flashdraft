@@ -2,8 +2,8 @@
 - [x] persist data in localstorage. ✓ (Note: Full localStorage persistence with auto-save after picks, draft metadata, and storage management)
 - [x] each draft should have an id. so the /draft route goes to the current draft or shows the draft overview. the draft overview has a button for start new draft. ✓ (Note: Full routing implementation with /draft/[draftId]/p[round]p[pick] structure)
   - /draft/acbedf123/p1p1
-- some images are missing, eg exdeath
-- show decklist
+- [x] some images are missing, eg exdeath ✓ (Note: Fixed transform card image handling, CardImage component now supports card_faces, cached Exdeath images)
+- [x] show decklist ✓ (Note: Complete DecklistView component with deck statistics, mana curve, color distribution, and card categorization)
 - train draft models based on 17lands data. 
 
 # Development Plan: FlashDraft MTG Draft Simulator
