@@ -109,6 +109,7 @@ export interface DraftActions {
   // Persistence actions
   saveDraft: () => string;
   loadDraft: (draftId: string) => boolean;
+  loadDraftWithData: (draftId: string, setData: MTGSetData, allPacks?: GeneratedPack[][]) => boolean;
   loadCurrentDraft: () => boolean;
   createNewDraft: (setCode: string, setData: MTGSetData) => string;
   navigateToPosition: (round: number, pick: number) => boolean;
@@ -712,6 +713,41 @@ export const useDraftStore = create<DraftStore>()(
         return true;
       } catch (error) {
         console.error('Failed to load draft:', error);
+        return false;
+      }
+    },
+
+    loadDraftWithData: (draftId: string, setData: MTGSetData, allPacks?: GeneratedPack[][]) => {
+      try {
+        const persistedState = loadDraftState(draftId);
+        if (!persistedState) {
+          console.warn('Draft not found:', draftId);
+          return false;
+        }
+
+        // Restore state with the provided set_data
+        const { set_data, ...stateToRestore } = persistedState;
+        set({
+          ...stateToRestore,
+          set_data: setData,
+          all_draft_packs: allPacks || [],
+        });
+
+        // If packs were provided and we're in an active draft, restore the current round's packs
+        if (allPacks && allPacks.length > 0 && stateToRestore.draft_started) {
+          const roundIndex = stateToRestore.current_round - 1;
+          const currentRoundPacks = allPacks.map(playerPacks => playerPacks[roundIndex]).filter(Boolean);
+          
+          if (currentRoundPacks.length > 0) {
+            // Need to restore pack state based on picks already made
+            // For now, just set the packs - TODO: implement proper pick replay
+            get().setActivePacks(currentRoundPacks);
+          }
+        }
+        
+        return true;
+      } catch (error) {
+        console.error('Failed to load draft with data:', error);
         return false;
       }
     },

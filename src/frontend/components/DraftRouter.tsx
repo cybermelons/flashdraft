@@ -8,6 +8,8 @@
 import * as React from 'react';
 import { useDraftStore } from '../stores/draftStore';
 import { loadDraftState, getCurrentDraftId } from '../../shared/utils/draftPersistence';
+import { clientPackGenerator, generateDraftSession } from '../utils/clientPackGenerator';
+import type { MTGSetData } from '../../shared/types/card';
 import DraftOverview from './DraftOverview';
 import DraftInterface from './DraftInterface';
 import DraftApp from './DraftApp';
@@ -27,11 +29,54 @@ export const DraftRouter: React.FC<DraftRouterProps> = ({
 }) => {
   const [loading, setLoading] = React.useState(true);
   const [error, setError] = React.useState<string | null>(null);
-  const { loadDraft, navigateToPosition, draft_started, draft_id } = useDraftStore();
+  const { loadDraft, loadDraftWithData, navigateToPosition, draft_started, draft_id, set_code } = useDraftStore();
 
   React.useEffect(() => {
     initializeRoute();
   }, [routeType, draftId, round, pick]);
+
+  const loadDraftWithSetData = async (targetDraftId: string) => {
+    try {
+      // First, load the basic draft state to get the set code
+      const persistedState = loadDraftState(targetDraftId);
+      if (!persistedState) {
+        setError(`Draft not found: ${targetDraftId}`);
+        setLoading(false);
+        return false;
+      }
+
+      // Load the set data from API
+      const response = await fetch(`/api/sets/${persistedState.set_code}`);
+      if (!response.ok) {
+        setError(`Failed to load set data for ${persistedState.set_code}`);
+        setLoading(false);
+        return false;
+      }
+      
+      const setData: MTGSetData = await response.json();
+      
+      // Initialize pack generator
+      clientPackGenerator.initialize(setData);
+      
+      // Regenerate all draft packs with same structure
+      const draftPacks = generateDraftSession(persistedState.set_code, 8, 3);
+      
+      // Load the draft with set data and packs
+      const success = loadDraftWithData(targetDraftId, setData, draftPacks);
+      
+      if (!success) {
+        setError('Failed to restore draft state');
+      }
+      
+      setLoading(false);
+      return success;
+    } catch (error) {
+      console.error('Failed to load draft with set data:', error);
+      setError('Failed to load draft');
+      setLoading(false);
+      return false;
+    }
+  };
 
   const initializeRoute = async () => {
     setLoading(true);
@@ -50,37 +95,31 @@ export const DraftRouter: React.FC<DraftRouterProps> = ({
             setLoading(false);
           } else if (draftId) {
             // Load specific draft
-            const success = loadDraft(draftId);
-            if (!success) {
-              setError(`Draft not found: ${draftId}`);
-            }
+            await loadDraftWithSetData(draftId);
           } else {
             // Load current draft or show overview
             const currentId = getCurrentDraftId();
             if (currentId) {
-              const success = loadDraft(currentId);
-              if (!success) {
-                setError('Failed to load current draft');
-              }
+              await loadDraftWithSetData(currentId);
+            } else {
+              setLoading(false);
             }
           }
-          setLoading(false);
           break;
 
         case 'position':
           if (draftId && round && pick) {
             // Load draft and navigate to specific position
-            const loadSuccess = loadDraft(draftId);
+            const loadSuccess = await loadDraftWithSetData(draftId);
             if (loadSuccess) {
               const navSuccess = navigateToPosition(round, pick);
               if (!navSuccess) {
                 setError(`Invalid position: Pack ${round}, Pick ${pick}`);
               }
-            } else {
-              setError(`Draft not found: ${draftId}`);
             }
+          } else {
+            setLoading(false);
           }
-          setLoading(false);
           break;
 
         default:
