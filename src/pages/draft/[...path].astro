@@ -16,6 +16,11 @@ export const prerender = false;
 const { path } = Astro.params;
 const searchParams = Astro.url.searchParams;
 
+// Debug logging
+console.log('Draft route path:', path);
+console.log('Path type:', typeof path);
+console.log('Path array check:', Array.isArray(path));
+
 // Parse the path to determine what to show
 let routeType = 'overview';
 let draftId = null;
@@ -24,18 +29,22 @@ let pick = null;
 
 if (path) {
   const segments = Array.isArray(path) ? path : [path];
+  console.log('Parsed segments:', segments);
   
   if (segments.length >= 1) {
     draftId = segments[0];
     routeType = 'draft';
+    console.log('Draft ID extracted:', draftId);
     
     if (segments.length >= 2) {
       // Parse p1p3 format (pack 1 pick 3)
       const positionMatch = segments[1].match(/^p?(\d+)p(\d+)$/);
+      console.log('Position match attempt on:', segments[1], 'Result:', positionMatch);
       if (positionMatch) {
         round = parseInt(positionMatch[1]);
         pick = parseInt(positionMatch[2]);
         routeType = 'position';
+        console.log('Position parsed:', { round, pick, routeType });
       }
     }
   }
