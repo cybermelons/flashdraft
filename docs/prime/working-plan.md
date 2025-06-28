@@ -26,18 +26,18 @@
 - **Navigation Issues**: Full page refreshes losing state, complex load/save timing
 - **Testing Difficulty**: Can't test draft logic independently of UI
 
-# Development Plan: Draft Engine Architecture
+# Development Plan: Draft Session Architecture
 
 ## Overview
-Design a pure draft engine that handles all MTG draft logic independently from any UI framework. The engine will be the single source of truth for draft state, with the UI acting as a view layer.
+Design a pure draft session that handles all MTG draft logic independently from any UI framework. Each session represents one complete draft, and will be the single source of truth for that draft's state, with the UI acting as a view layer.
 
-## Draft Engine Design
+## Draft Session Design
 
 ### Core Concepts
 
 ```typescript
-// The draft engine manages the entire draft state
-interface DraftEngine {
+// A draft session manages one complete MTG draft
+interface DraftSession {
   // Immutable state
   readonly state: DraftState;
   
@@ -48,13 +48,13 @@ interface DraftEngine {
   canMakePick(playerId: string, cardId: string): boolean;
   getDraftStatus(): DraftStatus;
   
-  // Action methods (return new engine instance)
-  applyAction(action: DraftAction): DraftEngine;
+  // Action methods (return new session instance)
+  applyAction(action: DraftAction): DraftSession;
   
   // Serialization
   serialize(): string;
-  static deserialize(data: string): DraftEngine;
-  static create(config: DraftConfig): DraftEngine;
+  static deserialize(data: string): DraftSession;
+  static create(config: DraftConfig): DraftSession;
 }
 
 // Core state shape
@@ -101,8 +101,8 @@ type DraftError =
   | { type: 'DRAFT_NOT_ACTIVE'; message: string }
   | { type: 'INVALID_ACTION'; message: string };
 
-class DraftEngine {
-  applyAction(action: DraftAction): ActionResult<DraftEngine> {
+class DraftSession {
+  applyAction(action: DraftAction): ActionResult<DraftSession> {
     // Validate action first
     const validation = this.validateAction(action);
     if (!validation.success) {
@@ -134,13 +134,13 @@ class DraftEngine {
 ### Pack Generation & Initialization
 
 ```typescript
-// Pack generation happens during engine creation
-class DraftEngine {
-  static create(config: DraftConfig): DraftEngine {
+// Pack generation happens during session creation
+class DraftSession {
+  static create(config: DraftConfig): DraftSession {
     // Generate all packs upfront for entire draft
     const allPacks = generateDraftPacks(config.setData, config.playerCount);
     
-    return new DraftEngine({
+    return new DraftSession({
       id: generateDraftId(),
       config,
       players: [],
@@ -187,20 +187,20 @@ interface DraftBot {
 type BotPersonality = 'bronze' | 'silver' | 'gold' | 'mythic';
 
 // Engine handles bot scheduling automatically
-class DraftEngine {
+class DraftSession {
   // After human pick, process all bot picks for current round
-  private processBotTurns(botSelector: DraftBot): ActionResult<DraftEngine> {
-    let currentEngine = this;
+  private processBotTurns(botSelector: DraftBot): ActionResult<DraftSession> {
+    let currentSession = this;
     
     // Find all bots that need to pick
     const botsNeedingPicks = this.getBotsNeedingPicks();
     
     for (const bot of botsNeedingPicks) {
-      const availableCards = currentEngine.getCurrentPack(bot.id);
+      const availableCards = currentSession.getCurrentPack(bot.id);
       if (!availableCards) continue;
       
-      const pickedCards = currentEngine.getPlayerCards(bot.id);
-      const context = currentEngine.getDraftContext();
+      const pickedCards = currentSession.getPlayerCards(bot.id);
+      const context = currentSession.getDraftContext();
       
       // Bot makes decision (pure function)
       const selectedCard = botSelector.selectCard(
@@ -211,7 +211,7 @@ class DraftEngine {
       );
       
       // Apply bot's pick
-      const result = currentEngine.applyAction({
+      const result = currentSession.applyAction({
         type: 'MAKE_PICK',
         playerId: bot.id,
         cardId: selectedCard.id
@@ -221,10 +221,10 @@ class DraftEngine {
         return result; // Propagate error
       }
       
-      currentEngine = result.data;
+      currentSession = result.data;
     }
     
-    return { success: true, data: currentEngine };
+    return { success: true, data: currentSession };
   }
   
   private getBotsNeedingPicks(): BotPlayer[] {
@@ -238,7 +238,7 @@ class DraftEngine {
 ### Validation Rules
 
 ```typescript
-class DraftEngine {
+class DraftSession {
   // Core validation logic
   canMakePick(playerId: string, cardId: string): boolean {
     // 1. Draft must be active
@@ -289,7 +289,7 @@ interface SerializedDraft {
   timestamp: number;
 }
 
-class DraftEngine {
+class DraftSession {
   serialize(): string {
     return JSON.stringify({
       config: this.state.config,
@@ -298,11 +298,11 @@ class DraftEngine {
     });
   }
   
-  static deserialize(data: string): DraftEngine {
+  static deserialize(data: string): DraftSession {
     const saved: SerializedDraft = JSON.parse(data);
     
     // Recreate engine with original config
-    let engine = DraftEngine.create(saved.config);
+    let engine = DraftSession.create(saved.config);
     
     // Replay all actions to restore state
     for (const action of saved.history) {
@@ -324,7 +324,7 @@ class DraftEngine {
 ```typescript
 // The UI maintains a reference to the engine
 interface DraftUIState {
-  engine: DraftEngine | null;
+  engine: DraftSession | null;
   
   // UI-only state (not in engine)
   selectedCard: Card | null;
@@ -380,14 +380,14 @@ function makePickAction(cardId: string): void {
 ```typescript
 // Clean hook API for React components
 function useDraftEngine(draftId?: string) {
-  const [engine, setEngine] = useState<DraftEngine | null>(null);
+  const [engine, setEngine] = useState<DraftSession | null>(null);
   
   // Load engine on mount
   useEffect(() => {
     if (draftId) {
       const saved = localStorage.getItem(`draft-${draftId}`);
       if (saved) {
-        setEngine(DraftEngine.deserialize(saved));
+        setEngine(DraftSession.deserialize(saved));
       }
     }
   }, [draftId]);
@@ -448,7 +448,7 @@ function useDraftEngine(draftId?: string) {
 
 ## Implementation Phases
 
-### Phase 1: Build Core Engine
+### Phase 1: Build Core Session
 1. Define types and interfaces
 2. Implement basic draft flow (start, pick, pass)
 3. Add pack generation logic
@@ -464,7 +464,7 @@ function useDraftEngine(draftId?: string) {
 5. Handle error cases
 
 ### Phase 3: Build UI Components
-1. Create new React components using engine via hooks
+1. Create new React components using session via hooks
 2. Ensure UI is purely presentational (no draft logic)
 3. Implement client-side navigation and persistence
 4. Add error boundaries and loading states
