@@ -87,7 +87,90 @@ type DraftAction =
 4. **Serializable**: Can save/load complete draft state
 5. **Replayable**: Can rebuild any draft state by replaying actions
 
-### Bot Integration
+### Error Handling Strategy
+
+```typescript
+// Actions return Result type for proper error handling
+type ActionResult<T> = 
+  | { success: true; data: T }
+  | { success: false; error: DraftError };
+
+type DraftError = 
+  | { type: 'INVALID_PICK'; message: string; cardId: string }
+  | { type: 'WRONG_PLAYER'; message: string; playerId: string }
+  | { type: 'DRAFT_NOT_ACTIVE'; message: string }
+  | { type: 'INVALID_ACTION'; message: string };
+
+class DraftEngine {
+  applyAction(action: DraftAction): ActionResult<DraftEngine> {
+    // Validate action first
+    const validation = this.validateAction(action);
+    if (!validation.success) {
+      return validation;
+    }
+    
+    // Apply action if valid
+    const newEngine = this.executeAction(action);
+    return { success: true, data: newEngine };
+  }
+  
+  private validateAction(action: DraftAction): ActionResult<void> {
+    switch (action.type) {
+      case 'MAKE_PICK':
+        if (!this.canMakePick(action.playerId, action.cardId)) {
+          return { 
+            success: false, 
+            error: { type: 'INVALID_PICK', message: 'Card not available', cardId: action.cardId }
+          };
+        }
+        break;
+      // ... other validations
+    }
+    return { success: true, data: undefined };
+  }
+}
+```
+
+### Pack Generation & Initialization
+
+```typescript
+// Pack generation happens during engine creation
+class DraftEngine {
+  static create(config: DraftConfig): DraftEngine {
+    // Generate all packs upfront for entire draft
+    const allPacks = generateDraftPacks(config.setData, config.playerCount);
+    
+    return new DraftEngine({
+      id: generateDraftId(),
+      config,
+      players: [],
+      packs: allPacks, // [round][packIndex] - all 3 rounds pre-generated
+      currentRound: 1,
+      currentPick: 1,
+      direction: 'clockwise',
+      status: 'setup',
+      history: []
+    });
+  }
+}
+
+// Pack generation utility (pure function)
+function generateDraftPacks(setData: MTGSetData, playerCount: number): Pack[][] {
+  const rounds = [];
+  
+  for (let round = 0; round < 3; round++) {
+    const roundPacks = [];
+    for (let player = 0; player < playerCount; player++) {
+      roundPacks.push(generateBoosterPack(setData));
+    }
+    rounds.push(roundPacks);
+  }
+  
+  return rounds;
+}
+```
+
+### Bot Integration & Scheduling
 
 ```typescript
 // Bots are pure functions that analyze state and return picks
@@ -95,24 +178,144 @@ interface DraftBot {
   selectCard(
     availableCards: Card[],
     pickedCards: Card[],
-    draftContext: DraftContext
+    draftContext: DraftContext,
+    personality: BotPersonality
   ): Card;
 }
 
-// Engine uses bots but doesn't depend on them
+// Bot personality is passed as parameter (no bot state)
+type BotPersonality = 'bronze' | 'silver' | 'gold' | 'mythic';
+
+// Engine handles bot scheduling automatically
 class DraftEngine {
-  private processBotPicks(bot: DraftBot): DraftEngine {
-    // Get bot's pick using pure function
-    const card = bot.selectCard(...);
-    // Apply pick action
-    return this.applyAction({
-      type: 'MAKE_PICK',
-      playerId: botPlayer.id,
-      cardId: card.id
-    });
+  // After human pick, process all bot picks for current round
+  private processBotTurns(botSelector: DraftBot): ActionResult<DraftEngine> {
+    let currentEngine = this;
+    
+    // Find all bots that need to pick
+    const botsNeedingPicks = this.getBotsNeedingPicks();
+    
+    for (const bot of botsNeedingPicks) {
+      const availableCards = currentEngine.getCurrentPack(bot.id);
+      if (!availableCards) continue;
+      
+      const pickedCards = currentEngine.getPlayerCards(bot.id);
+      const context = currentEngine.getDraftContext();
+      
+      // Bot makes decision (pure function)
+      const selectedCard = botSelector.selectCard(
+        availableCards.cards,
+        pickedCards,
+        context,
+        bot.personality
+      );
+      
+      // Apply bot's pick
+      const result = currentEngine.applyAction({
+        type: 'MAKE_PICK',
+        playerId: bot.id,
+        cardId: selectedCard.id
+      });
+      
+      if (!result.success) {
+        return result; // Propagate error
+      }
+      
+      currentEngine = result.data;
+    }
+    
+    return { success: true, data: currentEngine };
+  }
+  
+  private getBotsNeedingPicks(): BotPlayer[] {
+    return this.state.players
+      .filter(p => !p.isHuman && this.getCurrentPack(p.id) !== null)
+      .map(p => p as BotPlayer);
   }
 }
 ```
+
+### Validation Rules
+
+```typescript
+class DraftEngine {
+  // Core validation logic
+  canMakePick(playerId: string, cardId: string): boolean {
+    // 1. Draft must be active
+    if (this.state.status !== 'active') return false;
+    
+    // 2. Player must exist and have a pack
+    const player = this.getPlayer(playerId);
+    if (!player) return false;
+    
+    const pack = this.getCurrentPack(playerId);
+    if (!pack) return false;
+    
+    // 3. Card must be in player's current pack
+    const cardExists = pack.cards.some(card => card.id === cardId);
+    if (!cardExists) return false;
+    
+    // 4. Must be player's turn (for human players)
+    if (player.isHuman && !this.isPlayerTurn(playerId)) return false;
+    
+    return true;
+  }
+  
+  private isPlayerTurn(playerId: string): boolean {
+    // In draft, it's always the human's turn when they have a pack
+    // Bots pick automatically after human picks
+    const player = this.getPlayer(playerId);
+    return player?.isHuman === true && this.getCurrentPack(playerId) !== null;
+  }
+  
+  // Additional validation methods
+  private isValidPlayer(playerId: string): boolean {
+    return this.state.players.some(p => p.id === playerId);
+  }
+  
+  private isDraftActive(): boolean {
+    return this.state.status === 'active';
+  }
+}
+```
+
+### Serialization Strategy
+
+```typescript
+// Serialize minimal data - action history + config
+interface SerializedDraft {
+  config: DraftConfig;
+  history: DraftAction[];
+  timestamp: number;
+}
+
+class DraftEngine {
+  serialize(): string {
+    return JSON.stringify({
+      config: this.state.config,
+      history: this.state.history,
+      timestamp: Date.now()
+    });
+  }
+  
+  static deserialize(data: string): DraftEngine {
+    const saved: SerializedDraft = JSON.parse(data);
+    
+    // Recreate engine with original config
+    let engine = DraftEngine.create(saved.config);
+    
+    // Replay all actions to restore state
+    for (const action of saved.history) {
+      const result = engine.applyAction(action);
+      if (!result.success) {
+        throw new Error(`Failed to replay action: ${result.error.message}`);
+      }
+      engine = result.data;
+    }
+    
+    return engine;
+  }
+}
 
 ## UI Integration Pattern
 
@@ -134,16 +337,25 @@ interface DraftUIState {
   draftProgress: number;
 }
 
-// Actions update engine and sync UI
+// Actions update engine and sync UI with proper error handling
 function makePickAction(cardId: string): void {
   if (!uiState.engine) return;
   
   // Apply action to engine
-  const newEngine = uiState.engine.applyAction({
+  const result = uiState.engine.applyAction({
     type: 'MAKE_PICK',
     playerId: currentPlayerId,
     cardId
   });
+  
+  // Handle action result
+  if (!result.success) {
+    // Show error to user
+    showError(result.error.message);
+    return;
+  }
+  
+  const newEngine = result.data;
   
   // Update UI state
   setUIState({
@@ -180,17 +392,26 @@ function useDraftEngine(draftId?: string) {
     }
   }, [draftId]);
   
-  // Action handlers
+  // Action handlers with error handling
   const makePick = useCallback((cardId: string) => {
     if (!engine) return;
-    const newEngine = engine.applyAction({
+    
+    const result = engine.applyAction({
       type: 'MAKE_PICK',
       playerId: 'human',
       cardId
     });
-    setEngine(newEngine);
+    
+    if (!result.success) {
+      setError(result.error.message);
+      return;
+    }
+    
+    setEngine(result.data);
+    setError(null);
+    
     // Auto-save
-    localStorage.setItem(`draft-${newEngine.state.id}`, newEngine.serialize());
+    localStorage.setItem(`draft-${result.data.state.id}`, result.data.serialize());
   }, [engine]);
   
   // Derived state
@@ -242,12 +463,12 @@ function useDraftEngine(draftId?: string) {
 4. Create state synchronization
 5. Handle error cases
 
-### Phase 3: Migrate UI Components
-1. Update components to use engine via hooks
-2. Remove draft logic from components
-3. Ensure UI is purely presentational
-4. Test all user flows
-5. Remove old state management code
+### Phase 3: Build UI Components
+1. Create new React components using engine via hooks
+2. Ensure UI is purely presentational (no draft logic)
+3. Implement client-side navigation and persistence
+4. Add error boundaries and loading states
+5. Test all user flows with new architecture
 
 ## Current Application State (January 2025)
 
