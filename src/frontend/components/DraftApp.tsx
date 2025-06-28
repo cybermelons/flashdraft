@@ -40,6 +40,8 @@ export const DraftApp: React.FC = () => {
     draft_started,
     draft_completed,
     players,
+    draft_id,
+    saveDraft,
   } = useDraftStore();
 
   // Load available sets on mount
@@ -140,9 +142,17 @@ export const DraftApp: React.FC = () => {
       console.log('Starting draft...');
       startDraft();
       
+      // Save the draft to get the proper draft ID
+      const finalDraftId = saveDraft();
+      
       setAppState(prev => ({ ...prev, loading: false }));
       
       console.log('Draft started successfully!');
+      
+      // Navigate to the draft URL with proper ID
+      const draftUrl = `/draft/${finalDraftId}/p1p1`;
+      console.log(`Navigating to draft URL: ${draftUrl}`);
+      window.location.href = draftUrl;
     } catch (error) {
       console.error('Failed to start draft:', error);
       setAppState(prev => ({
