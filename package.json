@@ -10,7 +10,9 @@
     "preview": "astro preview",
     "astro": "astro",
     "lint": "eslint src",
-    "format": "prettier --write \"src/**/*.{js,jsx,ts,tsx,css,md,astro}\""
+    "format": "prettier --write \"src/**/*.{js,jsx,ts,tsx,css,md,astro}\"",
+    "test": "vitest",
+    "test:ui": "vitest --ui"
   },
   "dependencies": {
     "@astrojs/node": "^9.2.2",
@@ -34,6 +36,7 @@
     "@tailwindcss/postcss": "^4.1.11",
     "@types/react": "^19.1.8",
     "@types/react-dom": "^19.1.6",
+    "@vitest/ui": "^3.2.4",
     "autoprefixer": "^10.4.21",
     "eslint": "^8.57.1",
     "eslint-plugin-react": "^7.37.5",
@@ -41,7 +44,8 @@
     "postcss": "^8.5.6",
     "prettier": "^3.6.2",
     "tailwindcss": "^3.4.17",
-    "typescript": "^5.8.3"
+    "typescript": "^5.8.3",
+    "vitest": "^3.2.4"
   },
   "repository": {
     "type": "git",

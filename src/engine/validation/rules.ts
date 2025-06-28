@@ -195,10 +195,15 @@ export function getCurrentPackForPlayer(state: DraftState, playerId: string): Pa
   const player = getPlayer(state, playerId);
   if (!player) return null;
 
+  // Use player's currentPack if available
+  if (player.currentPack) {
+    return player.currentPack;
+  }
+
+  // Fallback to position-based lookup
   const roundIndex = state.currentRound - 1;
   if (roundIndex < 0 || roundIndex >= state.packs.length) return null;
 
-  // Find pack currently assigned to this player's position
   const packsThisRound = state.packs[roundIndex];
   if (!packsThisRound || player.position >= packsThisRound.length) return null;
 
@@ -234,7 +239,7 @@ export function getExpectedPlayer(state: DraftState): Player | null {
 
 export function getPlayersNeedingPicks(state: DraftState): Player[] {
   return state.players.filter(player => {
-    const pack = getCurrentPackForPlayer(state, player.id);
+    const pack = player.currentPack || getCurrentPackForPlayer(state, player.id);
     return pack !== null && pack.cards.length > 0;
   });
 }

@@ -7,6 +7,7 @@
 
 import { create } from 'zustand';
 import { subscribeWithSelector } from 'zustand/middleware';
+import { persist } from 'zustand/middleware';
 import type { DraftCard, MTGSetData, MTGCard } from '../../shared/types/card';
 import type { GeneratedPack } from '../utils/clientPackGenerator';
 import { chooseBotPick, BOT_PERSONALITIES } from '../../shared/utils/cardUtils';
