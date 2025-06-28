@@ -141,10 +141,11 @@ describe('PackGenerator', () => {
       const uncommonCount = rarities.filter(r => r === 'uncommon').length;
       const rareOrMythicCount = rarities.filter(r => r === 'rare' || r === 'mythic').length;
       
-      // Standard pack should have: 11 commons, 3 uncommons, 1 rare/mythic
+      // TEST set uses legacy template: 11 commons, 3 uncommons, 1 rare/mythic (no basic land)
       expect(commonCount).toBe(11);
       expect(uncommonCount).toBe(3);
       expect(rareOrMythicCount).toBe(1);
+      expect(pack.cards).toHaveLength(15);
     });
 
     test('avoids duplicates when configured', () => {

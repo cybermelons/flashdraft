@@ -34,12 +34,15 @@ import {
 } from './validation/rules';
 import { generatePacksForDraft } from './generators/PackGenerator';
 import { BotProcessor, createBotProcessor, type BotDecision } from './bots/DraftBot';
+import { DraftSerializer, createDraftSerializer, type SerializationOptions } from './serialization/DraftSerializer';
 
 export class DraftSession implements IDraftSession {
   private readonly botProcessor: BotProcessor;
+  private readonly serializer: DraftSerializer;
   
   constructor(private readonly _state: DraftState) {
     this.botProcessor = createBotProcessor();
+    this.serializer = createDraftSerializer();
   }
 
   // ============================================================================
@@ -65,12 +68,20 @@ export class DraftSession implements IDraftSession {
   }
 
   static deserialize(data: string): ActionResult<DraftSession> {
+    const serializer = createDraftSerializer();
+    
+    // First deserialize and validate the data
+    const deserializeResult = serializer.deserialize(data);
+    if (!deserializeResult.success) {
+      return deserializeResult as ActionResult<DraftSession>;
+    }
+    
+    const saved = deserializeResult.data;
+    
     try {
-      const saved: SerializedDraft = JSON.parse(data);
-      
       // Create session with original ID
       const state: DraftState = {
-        id: saved.id, // Use original ID
+        id: saved.id,
         config: saved.config,
         players: [],
         packs: [],
@@ -107,7 +118,7 @@ export class DraftSession implements IDraftSession {
         success: false,
         error: {
           type: 'DESERIALIZATION_ERROR',
-          message: 'Failed to parse saved draft data',
+          message: 'Failed to reconstruct draft session',
           details: error instanceof Error ? error.message : 'Unknown error'
         }
       };
@@ -750,16 +761,26 @@ export class DraftSession implements IDraftSession {
   // SERIALIZATION
   // ============================================================================
 
-  serialize(): string {
-    const serialized: SerializedDraft = {
-      id: this._state.id,
-      config: this._state.config,
-      history: this._state.history,
-      timestamp: Date.now(),
-      version: '1.0.0'
-    };
+  serialize(options?: SerializationOptions): string {
+    const result = this.serializer.serialize(this._state, options);
+    if (!result.success) {
+      throw new Error(`Serialization failed: ${result.error.message}`);
+    }
+    return result.data;
+  }
 
-    return JSON.stringify(serialized);
+  /**
+   * Serialize with enhanced options
+   */
+  serializeEnhanced(options: SerializationOptions = {}): ActionResult<string> {
+    return this.serializer.serialize(this._state, options);
+  }
+
+  /**
+   * Serialize for ML training data
+   */
+  serializeForMLTraining(): ActionResult<string> {
+    return this.serializer.serializeForMLTraining(this._state);
   }
 }
 

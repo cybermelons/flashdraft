@@ -98,7 +98,7 @@ export interface DraftContext {
 // BOT INTEGRATION
 // ============================================================================
 
-export type BotPersonality = 'bronze' | 'silver' | 'gold' | 'mythic';
+export type BotPersonality = 'bronze' | 'silver' | 'gold' | 'mythic' | 'ml-17lands' | 'ml-custom';
 
 export interface DraftBot {
   selectCard(
