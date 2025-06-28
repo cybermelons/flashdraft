@@ -33,9 +33,14 @@ import {
   shouldAdvanceRound
 } from './validation/rules';
 import { generatePacksForDraft } from './generators/PackGenerator';
+import { BotProcessor, createBotProcessor, type BotDecision } from './bots/DraftBot';
 
 export class DraftSession implements IDraftSession {
-  constructor(private readonly _state: DraftState) {}
+  private readonly botProcessor: BotProcessor;
+  
+  constructor(private readonly _state: DraftState) {
+    this.botProcessor = createBotProcessor();
+  }
 
   // ============================================================================
   // FACTORY METHODS
@@ -422,8 +427,18 @@ export class DraftSession implements IDraftSession {
       packs: updatedPacks
     };
 
+    let session = new DraftSession(newState);
+
+    // If this was a human pick, process bot picks automatically
+    if (player.isHuman) {
+      const botsResult = session.processAllBotPicks();
+      if (!botsResult.success) {
+        return botsResult;
+      }
+      session = botsResult.data;
+    }
+
     // Check if we need to pass packs or advance round
-    const session = new DraftSession(newState);
     const passResult = session.checkAndProcessPackPassing();
     if (!passResult.success) {
       return passResult;
@@ -624,6 +639,111 @@ export class DraftSession implements IDraftSession {
       success: true,
       data: new DraftSession(newState)
     };
+  }
+
+  // ============================================================================
+  // BOT PROCESSING
+  // ============================================================================
+
+  /**
+   * Process all bot picks for the current state
+   */
+  processAllBotPicks(): ActionResult<DraftSession> {
+    try {
+      const botDecisions = this.botProcessor.processAllBotPicks(this._state);
+      
+      let currentSession: DraftSession = this;
+      
+      // Apply each bot decision as a MAKE_PICK action
+      for (const decision of botDecisions) {
+        const result = currentSession.applyAction({
+          type: 'MAKE_PICK',
+          playerId: decision.playerId,
+          cardId: decision.selectedCardId
+        });
+        
+        if (!result.success) {
+          return {
+            success: false,
+            error: {
+              type: 'BOT_ERROR',
+              message: `Bot ${decision.playerId} pick failed: ${result.error.message}`,
+              botId: decision.playerId,
+              details: result.error.message
+            }
+          };
+        }
+        
+        currentSession = result.data;
+      }
+      
+      return { success: true, data: currentSession };
+    } catch (error) {
+      return {
+        success: false,
+        error: {
+          type: 'BOT_ERROR',
+          message: 'Bot processing failed',
+          botId: 'unknown',
+          details: error instanceof Error ? error.message : 'Unknown error'
+        }
+      };
+    }
+  }
+
+  /**
+   * Get all bot players that need to make picks
+   */
+  getBotsNeedingPicks(): Player[] {
+    return getBotPlayersNeedingPicks(this._state);
+  }
+
+  /**
+   * Process a single bot pick
+   */
+  processSingleBotPick(playerId: string): ActionResult<DraftSession> {
+    const player = getPlayer(this._state, playerId);
+    if (!player) {
+      return {
+        success: false,
+        error: {
+          type: 'PLAYER_NOT_FOUND',
+          message: `Bot player ${playerId} not found`,
+          playerId
+        }
+      };
+    }
+
+    if (player.isHuman) {
+      return {
+        success: false,
+        error: {
+          type: 'INVALID_ACTION',
+          message: `Cannot process bot pick for human player ${playerId}`,
+          action: 'PROCESS_BOT_PICK'
+        }
+      };
+    }
+
+    try {
+      const decision = this.botProcessor.processBotPick(this._state, player);
+      
+      return this.applyAction({
+        type: 'MAKE_PICK',
+        playerId: decision.playerId,
+        cardId: decision.selectedCardId
+      });
+    } catch (error) {
+      return {
+        success: false,
+        error: {
+          type: 'BOT_ERROR',
+          message: `Single bot pick failed for ${playerId}`,
+          botId: playerId,
+          details: error instanceof Error ? error.message : 'Unknown error'
+        }
+      };
+    }
   }
 
   // ============================================================================
