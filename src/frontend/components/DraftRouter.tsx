@@ -37,6 +37,13 @@ export const DraftRouter: React.FC<DraftRouterProps> = ({
 
   const loadDraftWithSetData = async (targetDraftId: string) => {
     try {
+      // Check if this draft is already loaded in the store
+      if (draft_id === targetDraftId && set_code && draft_started) {
+        console.log(`Draft ${targetDraftId} already loaded in store`);
+        setLoading(false);
+        return true;
+      }
+
       // First, load the basic draft state to get the set code
       const persistedState = loadDraftState(targetDraftId);
       if (!persistedState) {
