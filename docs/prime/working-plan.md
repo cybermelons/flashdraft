@@ -8,6 +8,12 @@
 - [x] **Show decklist view** ✓ (Complete DecklistView component with deck statistics, mana curve, color distribution, and card categorization)
 - [x] **Fix React integration issues** ✓ (Resolved React preamble errors and useState null errors using proper Astro client:visible directives)
 
+## Recent Critical Fixes ✅ (January 2025)
+
+- [x] **Fix URL navigation on draft start** ✓ (URL now properly redirects to /draft/{draftId}/p1p1 when draft begins)
+- [x] **Fix draft pack passing logic** ✓ (Drafts now properly advance through all 3 rounds without getting stuck)
+- [x] **Fix draft persistence and reload** ✓ (Saved drafts now properly restore with set data and regenerated packs)
+
 ## Remaining Tasks
 
 - [ ] **Train draft models based on 17lands data** (Low priority - current rule-based bots work well)
@@ -99,11 +105,11 @@ The goal is for someone without any set knowledge to learn to draft by playtesti
 - [x] Download and process 17lands data for ACR and DTK formats ✓ (Note: 17lands API currently unavailable, implemented fallback rule-based system)
 - [x] Create simple rule-based bots using actual card ratings from 17lands ✓ (Note: Enhanced rule-based bots with 4 personalities: Bronze, Silver, Gold, Mythic - different skill levels, color commitment, rare bias)
 
-### Phase 2: Deck Building & Analysis Interface (Weeks 2-3)
+### Phase 2: Deck Building & Analysis Interface (Weeks 2-3) - PARTIALLY COMPLETE
 - [ ] Create deck building interface with card sorting and filtering
-- [ ] Implement mana curve visualization (key for learning)
-- [ ] Add deck statistics display (creature count, card types, etc.)
-- [ ] Build visual feedback for deck composition insights
+- [x] Implement mana curve visualization (key for learning) ✓ (Complete in DecklistView component)
+- [x] Add deck statistics display (creature count, card types, etc.) ✓ (Complete in DecklistView component)
+- [x] Build visual feedback for deck composition insights ✓ (Color distribution, categories in DecklistView)
 - [ ] Create quick deck validation (mana base, creature/spell balance)
 - [ ] Add deckbuilding recommendations based on picked cards
 - [ ] Implement draft-to-deckbuild transition (<150ms target)
