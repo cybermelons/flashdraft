@@ -32,6 +32,7 @@ import {
   shouldPassPacks,
   shouldAdvanceRound
 } from './validation/rules';
+import { generatePacksForDraft } from './generators/PackGenerator';
 
 export class DraftSession implements IDraftSession {
   constructor(private readonly _state: DraftState) {}
@@ -507,21 +508,11 @@ export class DraftSession implements IDraftSession {
         };
       }
 
-      const allRounds: Pack[][] = [];
+      // Use enhanced pack generation with deterministic seed for consistency
+      const seed = `${this._state.id}-${playerCount}`;
+      const allPacks = generatePacksForDraft(setData, playerCount, 3, seed);
 
-      // Generate 3 rounds of packs
-      for (let round = 0; round < 3; round++) {
-        const roundPacks: Pack[] = [];
-        
-        for (let player = 0; player < playerCount; player++) {
-          const pack = generateBoosterPack(setData, round + 1, player);
-          roundPacks.push(pack);
-        }
-        
-        allRounds.push(roundPacks);
-      }
-
-      return { success: true, data: allRounds };
+      return { success: true, data: allPacks };
     } catch (error) {
       return {
         success: false,
@@ -658,48 +649,4 @@ export class DraftSession implements IDraftSession {
 
 function generateId(): string {
   return Date.now().toString(36) + Math.random().toString(36).substr(2, 9);
-}
-
-function generateBoosterPack(setData: MTGSetData, round: number, playerPosition: number): Pack {
-  const packId = `pack-r${round}-p${playerPosition}-${generateId()}`;
-  
-  // Simple pack generation - in real implementation, this would follow set-specific rules
-  const cards = setData.cards || [];
-  const packCards: Card[] = [];
-
-  // Get cards by rarity
-  const mythics = cards.filter(c => c.rarity === 'mythic');
-  const rares = cards.filter(c => c.rarity === 'rare');
-  const uncommons = cards.filter(c => c.rarity === 'uncommon');
-  const commons = cards.filter(c => c.rarity === 'common');
-
-  // Basic pack structure: 1 rare/mythic, 3 uncommons, 11 commons
-  // 1 in 8 chance for mythic instead of rare
-  if (Math.random() < 0.125 && mythics.length > 0) {
-    packCards.push(getRandomCard(mythics));
-  } else if (rares.length > 0) {
-    packCards.push(getRandomCard(rares));
-  }
-
-  // Add uncommons
-  for (let i = 0; i < 3 && uncommons.length > 0; i++) {
-    packCards.push(getRandomCard(uncommons));
-  }
-
-  // Add commons
-  for (let i = 0; i < 11 && commons.length > 0; i++) {
-    packCards.push(getRandomCard(commons));
-  }
-
-  return {
-    id: packId,
-    cards: packCards,
-    round,
-    originalPlayerPosition: playerPosition
-  };
-}
-
-function getRandomCard(cards: Card[]): Card {
-  const index = Math.floor(Math.random() * cards.length);
-  return cards[index];
 }
