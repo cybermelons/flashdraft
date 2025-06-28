@@ -70,7 +70,6 @@ export class DraftBot {
 export interface BotDecision {
   playerId: string;
   selectedCardId: string;
-  timeToDecide: number; // milliseconds
   confidence: number; // 0-1
 }
 
@@ -96,8 +95,6 @@ export class BotProcessor {
    * Process a single bot pick
    */
   processBotPick(state: DraftState, player: Player): BotDecision {
-    const startTime = Date.now();
-    
     // Get available cards from player's current pack
     const pack = player.currentPack || this.getPackForPlayer(state, player);
     if (!pack || pack.cards.length === 0) {
@@ -120,8 +117,6 @@ export class BotProcessor {
       context,
       player.personality || 'silver'
     );
-
-    const timeToDecide = Date.now() - startTime;
     
     // Calculate confidence based on card priority and bot skill
     const personality = BOT_PERSONALITIES[player.personality || 'silver'];
@@ -130,7 +125,6 @@ export class BotProcessor {
     return {
       playerId: player.id,
       selectedCardId: selectedCard.id,
-      timeToDecide,
       confidence
     };
   }
@@ -169,44 +163,7 @@ export class BotProcessor {
   }
 }
 
-// ============================================================================
-// BOT TIMING AND BEHAVIOR
-// ============================================================================
-
-export interface BotTiming {
-  baseDecisionTime: number; // milliseconds
-  varianceRange: number; // +/- milliseconds
-  skillSpeedMultiplier: number; // faster for higher skill
-}
-
-export const BOT_TIMING_PROFILES: Record<BotPersonality, BotTiming> = {
-  bronze: {
-    baseDecisionTime: 3000, // 3 seconds
-    varianceRange: 2000,
-    skillSpeedMultiplier: 0.8 // Slower
-  },
-  silver: {
-    baseDecisionTime: 2000, // 2 seconds
-    varianceRange: 1000,
-    skillSpeedMultiplier: 1.0 // Normal
-  },
-  gold: {
-    baseDecisionTime: 1500, // 1.5 seconds
-    varianceRange: 800,
-    skillSpeedMultiplier: 1.2 // Faster
-  },
-  mythic: {
-    baseDecisionTime: 1000, // 1 second
-    varianceRange: 500,
-    skillSpeedMultiplier: 1.5 // Very fast
-  }
-};
-
-export function calculateBotDelay(personality: BotPersonality): number {
-  const timing = BOT_TIMING_PROFILES[personality];
-  const variance = (Math.random() - 0.5) * timing.varianceRange;
-  return Math.max(100, timing.baseDecisionTime + variance);
-}
+// Timing removed - bots pick instantly for smooth draft practice
 
 // ============================================================================
 // FACTORY FUNCTIONS

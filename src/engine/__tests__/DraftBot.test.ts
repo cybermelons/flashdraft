@@ -3,7 +3,7 @@
  */
 
 import { DraftSession } from '../DraftSession';
-import { DraftBot, BotProcessor, calculateBotDelay } from '../bots/DraftBot';
+import { DraftBot, BotProcessor } from '../bots/DraftBot';
 import type { DraftConfig, MTGSetData, Card, DraftContext } from '../types/core';
 
 // Mock set data for testing
@@ -216,35 +216,7 @@ describe('DraftBot', () => {
     });
   });
 
-  describe('timing calculations', () => {
-    test('different personalities have different timing', () => {
-      const bronzeDelay = calculateBotDelay('bronze');
-      const mythicDelay = calculateBotDelay('mythic');
-      
-      // On average, bronze should be slower than mythic
-      // Run multiple times to check average
-      let bronzeTotal = 0;
-      let mythicTotal = 0;
-      
-      for (let i = 0; i < 50; i++) {
-        bronzeTotal += calculateBotDelay('bronze');
-        mythicTotal += calculateBotDelay('mythic');
-      }
-      
-      const bronzeAvg = bronzeTotal / 50;
-      const mythicAvg = mythicTotal / 50;
-      
-      expect(bronzeAvg).toBeGreaterThan(mythicAvg);
-    });
-
-    test('timing has reasonable ranges', () => {
-      for (let i = 0; i < 20; i++) {
-        const delay = calculateBotDelay('silver');
-        expect(delay).toBeGreaterThan(500); // At least 0.5 seconds
-        expect(delay).toBeLessThan(5000); // At most 5 seconds
-      }
-    });
-  });
+  // Timing tests removed - bots pick instantly for smooth draft practice
 });
 
 describe('BotProcessor', () => {
