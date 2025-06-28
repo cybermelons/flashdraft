@@ -18,6 +18,237 @@
 
 - [ ] **Train draft models based on 17lands data** (Low priority - current rule-based bots work well)
 
+## URGENT: Architecture Refactor - Separate Draft Engine from Frontend
+
+### Current Issues
+- **Mixed Concerns**: Draft logic is tightly coupled with React/Zustand/UI code
+- **State Management Complexity**: Multiple sources of truth (store, localStorage, URL)
+- **Navigation Issues**: Full page refreshes losing state, complex load/save timing
+- **Testing Difficulty**: Can't test draft logic independently of UI
+
+# Development Plan: Draft Engine Architecture
+
+## Overview
+Design a pure draft engine that handles all MTG draft logic independently from any UI framework. The engine will be the single source of truth for draft state, with the UI acting as a view layer.
+
+## Draft Engine Design
+
+### Core Concepts
+
+```typescript
+// The draft engine manages the entire draft state
+interface DraftEngine {
+  // Immutable state
+  readonly state: DraftState;
+  
+  // Query methods (pure, no side effects)
+  getCurrentPack(playerId: string): Pack | null;
+  getPlayerCards(playerId: string): Card[];
+  getAvailableActions(playerId: string): Action[];
+  canMakePick(playerId: string, cardId: string): boolean;
+  getDraftStatus(): DraftStatus;
+  
+  // Action methods (return new engine instance)
+  applyAction(action: DraftAction): DraftEngine;
+  
+  // Serialization
+  serialize(): string;
+  static deserialize(data: string): DraftEngine;
+  static create(config: DraftConfig): DraftEngine;
+}
+
+// Core state shape
+interface DraftState {
+  id: string;
+  config: DraftConfig;
+  players: Player[];
+  packs: Pack[][];  // [round][packIndex]
+  currentRound: number;
+  currentPick: number;
+  direction: 'clockwise' | 'counterclockwise';
+  status: 'setup' | 'active' | 'complete';
+  history: DraftAction[];  // All actions taken
+}
+
+// Actions are the only way to modify state
+type DraftAction = 
+  | { type: 'ADD_PLAYER'; playerId: string; name: string; isBot: boolean }
+  | { type: 'START_DRAFT' }
+  | { type: 'MAKE_PICK'; playerId: string; cardId: string }
+  | { type: 'TIME_OUT_PICK'; playerId: string }  // Auto-pick for timer
+  | { type: 'UNDO_LAST_ACTION' };  // For development/testing
+```
+
+### Engine Characteristics
+
+1. **Pure Functions**: All methods are pure - same input always produces same output
+2. **Immutable State**: Actions return new engine instances, never mutate
+3. **Self-Contained**: All draft rules encoded in the engine
+4. **Serializable**: Can save/load complete draft state
+5. **Replayable**: Can rebuild any draft state by replaying actions
+
+### Bot Integration
+
+```typescript
+// Bots are pure functions that analyze state and return picks
+interface DraftBot {
+  selectCard(
+    availableCards: Card[],
+    pickedCards: Card[],
+    draftContext: DraftContext
+  ): Card;
+}
+
+// Engine uses bots but doesn't depend on them
+class DraftEngine {
+  private processBotPicks(bot: DraftBot): DraftEngine {
+    // Get bot's pick using pure function
+    const card = bot.selectCard(...);
+    // Apply pick action
+    return this.applyAction({
+      type: 'MAKE_PICK',
+      playerId: botPlayer.id,
+      cardId: card.id
+    });
+  }
+}
+```
+
+## UI Integration Pattern
+
+### State Bridge
+
+```typescript
+// The UI maintains a reference to the engine
+interface DraftUIState {
+  engine: DraftEngine | null;
+  
+  // UI-only state (not in engine)
+  selectedCard: Card | null;
+  hoveredCard: Card | null;
+  viewMode: 'draft' | 'deckbuilding';
+  
+  // Derived state (computed from engine)
+  currentPack: Pack | null;
+  playerCards: Card[];
+  draftProgress: number;
+}
+
+// Actions update engine and sync UI
+function makePickAction(cardId: string): void {
+  if (!uiState.engine) return;
+  
+  // Apply action to engine
+  const newEngine = uiState.engine.applyAction({
+    type: 'MAKE_PICK',
+    playerId: currentPlayerId,
+    cardId
+  });
+  
+  // Update UI state
+  setUIState({
+    engine: newEngine,
+    selectedCard: null
+  });
+  
+  // Persist to storage
+  localStorage.setItem(`draft-${newEngine.state.id}`, newEngine.serialize());
+  
+  // Update URL without refresh
+  history.pushState(
+    null, 
+    '', 
+    `/draft/${newEngine.state.id}/p${newEngine.state.currentRound}p${newEngine.state.currentPick}`
+  );
+}
+```
+
+### React Hook Interface
+
+```typescript
+// Clean hook API for React components
+function useDraftEngine(draftId?: string) {
+  const [engine, setEngine] = useState<DraftEngine | null>(null);
+  
+  // Load engine on mount
+  useEffect(() => {
+    if (draftId) {
+      const saved = localStorage.getItem(`draft-${draftId}`);
+      if (saved) {
+        setEngine(DraftEngine.deserialize(saved));
+      }
+    }
+  }, [draftId]);
+  
+  // Action handlers
+  const makePick = useCallback((cardId: string) => {
+    if (!engine) return;
+    const newEngine = engine.applyAction({
+      type: 'MAKE_PICK',
+      playerId: 'human',
+      cardId
+    });
+    setEngine(newEngine);
+    // Auto-save
+    localStorage.setItem(`draft-${newEngine.state.id}`, newEngine.serialize());
+  }, [engine]);
+  
+  // Derived state
+  const currentPack = engine?.getCurrentPack('human') ?? null;
+  const playerCards = engine?.getPlayerCards('human') ?? [];
+  
+  return {
+    engine,
+    currentPack,
+    playerCards,
+    makePick,
+    // ... other methods
+  };
+}
+```
+
+## Key Benefits
+
+### For Development
+- **Testable**: Engine can be tested in isolation with no UI
+- **Debuggable**: Can replay any draft by replaying actions
+- **Predictable**: Pure functions make behavior predictable
+
+### For Features
+- **Undo/Redo**: Easy with immutable state and action history
+- **Replay Viewer**: Can build draft replay by stepping through actions
+- **Spectator Mode**: Multiple UIs can observe same engine state
+- **AI Analysis**: Can simulate different pick choices
+
+### For Architecture
+- **Single Source of Truth**: Engine holds all draft state
+- **Clear Boundaries**: UI never directly modifies draft state
+- **Framework Agnostic**: Could build CLI, web API, or different UI
+
+## Implementation Phases
+
+### Phase 1: Build Core Engine
+1. Define types and interfaces
+2. Implement basic draft flow (start, pick, pass)
+3. Add pack generation logic
+4. Implement bot decision making
+5. Add serialization support
+6. Write comprehensive tests
+
+### Phase 2: Create UI Bridge  
+1. Build React hooks for engine interaction
+2. Add persistence layer
+3. Implement client-side routing
+4. Create state synchronization
+5. Handle error cases
+
+### Phase 3: Migrate UI Components
+1. Update components to use engine via hooks
+2. Remove draft logic from components
+3. Ensure UI is purely presentational
+4. Test all user flows
+5. Remove old state management code
+
 ## Current Application State (January 2025)
 
 ### ✅ Fully Functional Features

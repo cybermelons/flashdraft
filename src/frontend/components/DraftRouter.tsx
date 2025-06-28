@@ -37,6 +37,9 @@ export const DraftRouter: React.FC<DraftRouterProps> = ({
 
   const loadDraftWithSetData = async (targetDraftId: string) => {
     try {
+      console.log(`Loading draft: ${targetDraftId}`);
+      console.log(`Current store state: draft_id=${draft_id}, set_code=${set_code}, draft_started=${draft_started}`);
+      
       // Check if this draft is already loaded in the store
       if (draft_id === targetDraftId && set_code && draft_started) {
         console.log(`Draft ${targetDraftId} already loaded in store`);
@@ -45,7 +48,10 @@ export const DraftRouter: React.FC<DraftRouterProps> = ({
       }
 
       // First, load the basic draft state to get the set code
+      console.log(`Attempting to load draft ${targetDraftId} from localStorage`);
       const persistedState = loadDraftState(targetDraftId);
+      console.log(`Persisted state result:`, persistedState ? 'found' : 'not found');
+      
       if (!persistedState) {
         setError(`Draft not found: ${targetDraftId}`);
         setLoading(false);

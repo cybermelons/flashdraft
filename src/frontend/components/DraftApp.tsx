@@ -144,15 +144,19 @@ export const DraftApp: React.FC = () => {
       
       // Save the draft to get the proper draft ID
       const finalDraftId = saveDraft();
+      console.log(`Draft saved with ID: ${finalDraftId}`);
       
       setAppState(prev => ({ ...prev, loading: false }));
       
       console.log('Draft started successfully!');
       
-      // Navigate to the draft URL with proper ID
-      const draftUrl = `/draft/${finalDraftId}/p1p1`;
-      console.log(`Navigating to draft URL: ${draftUrl}`);
-      window.location.href = draftUrl;
+      // Small delay to ensure localStorage write completes
+      setTimeout(() => {
+        // Navigate to the draft URL with proper ID
+        const draftUrl = `/draft/${finalDraftId}/p1p1`;
+        console.log(`Navigating to draft URL: ${draftUrl}`);
+        window.location.href = draftUrl;
+      }, 100);
     } catch (error) {
       console.error('Failed to start draft:', error);
       setAppState(prev => ({
