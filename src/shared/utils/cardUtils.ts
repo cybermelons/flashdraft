@@ -274,9 +274,22 @@ export function generateBoosterPack(
 }
 
 /**
+ * Ensures a draft card has a valid instanceId
+ */
+export function ensureDraftCardInstanceId(card: DraftCard, context: string = 'migrated'): DraftCard {
+  if (!card.instanceId) {
+    return {
+      ...card,
+      instanceId: `${context}-${card.id}-${Date.now()}-${Math.random().toString(36).substr(2, 5)}`
+    };
+  }
+  return card;
+}
+
+/**
  * Converts a regular MTG card to a draft card with additional metadata
  */
-export function toDraftCard(card: MTGCard): DraftCard {
+export function toDraftCard(card: MTGCard, context: string = 'card'): DraftCard {
   // Handle image URLs for both normal cards and double-faced cards
   let imageUrl = '';
   if (card.image_uris?.normal) {
@@ -300,8 +313,13 @@ export function toDraftCard(card: MTGCard): DraftCard {
     manaCost = card.card_faces[0].mana_cost;
   }
 
+  // Generate unique instance ID
+  const instanceId = `${context}-${card.id}-${Date.now()}-${Math.random().toString(36).substr(2, 5)}`;
+
   return {
     ...card,
+    // Unique instance ID for React keys
+    instanceId,
     // Convert snake_case to camelCase for component compatibility
     imageUrl,
     manaCost,

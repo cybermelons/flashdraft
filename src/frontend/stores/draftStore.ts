@@ -75,6 +75,7 @@ export interface DraftActions {
   makeBotPick: (playerId: string) => void;
   processBotTurns: () => void;
   passPacks: () => void;
+  passPackFromPlayer: (playerId: string) => void;
   nextRound: () => void;
   completeDraft: () => void;
   
@@ -249,16 +250,22 @@ export const useDraftStore = create<DraftStore>()(
 
       const pickTime = state.pick_deadline ? Date.now() - (state.pick_deadline - 75000) : 0;
 
-      // Update player with picked card
+      // Update player with picked card (generate new instance ID for deck)
       const updatedPlayers = state.players.map(p => {
         if (p.id === playerId && p.current_pack) {
+          // Create a new instance with deck context
+          const pickedCard = {
+            ...card,
+            instanceId: `deck-${playerId}-${card.id}-${Date.now()}-${Math.random().toString(36).substr(2, 5)}`
+          };
+          
           return {
             ...p,
-            picked_cards: [...p.picked_cards, card],
+            picked_cards: [...p.picked_cards, pickedCard],
             total_picks: p.total_picks + 1,
             current_pack: {
               ...p.current_pack,
-              cards: p.current_pack.cards.filter(c => c.id !== card.id),
+              cards: p.current_pack.cards.filter(c => c.instanceId !== card.instanceId),
               pick_number: p.current_pack.pick_number + 1,
             },
           };
@@ -288,32 +295,53 @@ export const useDraftStore = create<DraftStore>()(
         }, 100);
       }
 
-      // Check if all players have picked from their current pack this round
-      // Look for any player (except the one who just picked) who still has cards to pick
-      const playersNeedingPicks = updatedPlayers.filter(p => 
-        p.current_pack && 
-        p.current_pack.cards.length > 0 && 
-        p.id !== playerId // Exclude the player who just picked
-      );
-
-      const allPlayersPickedThisRound = playersNeedingPicks.length === 0;
-
-      console.log(`Pick check: Round ${state.current_round}, Pick ${state.current_pick}`);
-      console.log(`Players needing picks:`, playersNeedingPicks.map(p => `${p.name}: ${p.current_pack?.cards.length || 0} cards`));
-      console.log(`All picked this round: ${allPlayersPickedThisRound}`);
-
-      if (allPlayersPickedThisRound) {
-        // All players have picked, time to pass packs
-        console.log('All players picked, passing packs...');
-        setTimeout(() => {
-          get().passPacks();
-        }, 100);
+      // Simplified pack passing logic - pass immediately after human picks
+      if (player.is_human) {
+        // Human just picked - pass their pack to the next player
+        const humanPack = updatedPlayers.find(p => p.id === playerId)?.current_pack;
+        
+        if (humanPack && humanPack.cards.length === 0) {
+          // Pack is empty, check if we need to pass all packs or go to next round
+          const anyPacksWithCards = updatedPlayers.some(p => 
+            p.current_pack && p.current_pack.cards.length > 0
+          );
+          
+          if (!anyPacksWithCards) {
+            // All packs empty - advance to next round
+            setTimeout(() => get().nextRound(), 100);
+          } else {
+            // Pass all packs
+            setTimeout(() => get().passPacks(), 100);
+          }
+        } else {
+          // Pack still has cards - pass it and let bots react
+          setTimeout(() => {
+            get().passPackFromPlayer(playerId);
+            get().processBotTurns();
+          }, 100);
+        }
       } else {
-        // Process bot turns
-        console.log('Processing bot turns...');
-        setTimeout(() => {
-          get().processBotTurns();
-        }, 100);
+        // Bot picked - check if all bots are done with current packs
+        const botsStillPicking = updatedPlayers.filter(p => 
+          !p.is_human && 
+          p.current_pack && 
+          p.current_pack.cards.length > 0
+        );
+        
+        if (botsStillPicking.length === 0) {
+          // All bots done - human can pick again from their new pack
+          const humanPlayer = updatedPlayers.find(p => p.is_human);
+          if (!humanPlayer?.current_pack || humanPlayer.current_pack.cards.length === 0) {
+            // Check if round is over
+            const anyPacksWithCards = updatedPlayers.some(p => 
+              p.current_pack && p.current_pack.cards.length > 0
+            );
+            
+            if (!anyPacksWithCards) {
+              setTimeout(() => get().nextRound(), 100);
+            }
+          }
+        }
       }
     },
 
@@ -385,30 +413,62 @@ export const useDraftStore = create<DraftStore>()(
       const state = get();
       if (!state.draft_started || state.draft_completed) return;
 
-      // Find all bot players who still have cards to pick from
-      const botsNeedingPicks = state.players.filter(p => 
+      // Simple reactive bot processing - each bot picks when they have a pack
+      const botsWithPacks = state.players.filter(p => 
         !p.is_human && 
         p.current_pack && 
         p.current_pack.cards.length > 0
       );
 
-      console.log(`Bot processing: ${botsNeedingPicks.length} bots need to pick`);
-
-      if (botsNeedingPicks.length === 0) return;
-
-      // Process bot picks one at a time with small delays
-      botsNeedingPicks.forEach((bot, index) => {
+      // Process each bot's pick immediately - no complex coordination
+      botsWithPacks.forEach((bot, index) => {
         setTimeout(() => {
-          get().makeBotPick(bot.id);
-        }, index * 50);
+          const currentState = get();
+          const botPlayer = currentState.players.find(p => p.id === bot.id);
+          
+          // Only pick if bot still has cards (avoid race conditions)
+          if (botPlayer?.current_pack?.cards.length) {
+            get().makeBotPick(bot.id);
+          }
+        }, index * 100); // Small delay to simulate thinking
+      });
+    },
+
+    passPackFromPlayer: (playerId: string) => {
+      const state = get();
+      const { direction, players } = state;
+      const playerCount = players.length;
+      
+      const player = players.find(p => p.id === playerId);
+      if (!player || !player.current_pack) return;
+      
+      // Calculate next position based on direction
+      let nextPosition;
+      if (direction === 'clockwise') {
+        nextPosition = (player.position + 1) % playerCount;
+      } else {
+        nextPosition = (player.position - 1 + playerCount) % playerCount;
+      }
+      
+      // Pass the pack to the next player
+      const updatedPlayers = players.map(p => {
+        if (p.position === nextPosition) {
+          return { ...p, current_pack: player.current_pack };
+        } else if (p.id === playerId) {
+          return { ...p, current_pack: undefined };
+        }
+        return p;
+      });
+      
+      set({ 
+        players: updatedPlayers,
+        current_pick: player.is_human ? state.current_pick + 1 : state.current_pick
       });
     },
 
     passPacks: () => {
       const state = get();
       const { direction, players, current_round } = state;
-
-      console.log(`Passing packs: Round ${current_round}, Pick ${state.current_pick}, Direction: ${direction}`);
 
       // Create a map of packs to pass
       const packsToPass: Record<number, GeneratedPack | undefined> = {};
@@ -434,14 +494,6 @@ export const useDraftStore = create<DraftStore>()(
         current_pack: packsToPass[player.position] || undefined,
       }));
 
-      console.log('After pack passing:');
-      console.log('Packs to pass:', Object.entries(packsToPass).map(([pos, pack]) => 
-        `Position ${pos}: ${pack ? pack.cards.length : 0} cards`
-      ));
-      console.log('Updated player packs:', updatedPlayers.map(p => 
-        `${p.name}: ${p.current_pack ? p.current_pack.cards.length : 0} cards`
-      ));
-
       set({ 
         players: updatedPlayers,
         current_pick: state.current_pick + 1,
@@ -452,14 +504,10 @@ export const useDraftStore = create<DraftStore>()(
         pack && pack.cards.length > 0
       );
 
-      console.log(`Any packs remaining: ${anyPacksRemaining}`);
-
       if (!anyPacksRemaining) {
-        console.log('Round complete, advancing to next round');
         get().nextRound();
       } else {
         // Start bot processing for the new packs
-        console.log('Starting bot processing for new packs');
         setTimeout(() => {
           get().processBotTurns();
         }, 200);
@@ -478,13 +526,9 @@ export const useDraftStore = create<DraftStore>()(
       // Switch direction for round 2
       const newDirection = nextRound === 2 ? 'counterclockwise' : 'clockwise';
 
-      console.log(`Starting round ${nextRound} with direction ${newDirection}`);
-
       // Get the packs for the new round (round is 1-indexed, array is 0-indexed)
       const roundIndex = nextRound - 1;
       const newRoundPacks = state.all_draft_packs.map(playerPacks => playerPacks[roundIndex]).filter(Boolean);
-
-      console.log(`Activating ${newRoundPacks.length} packs for round ${nextRound}`);
 
       set({
         current_round: nextRound,
@@ -500,8 +544,6 @@ export const useDraftStore = create<DraftStore>()(
         setTimeout(() => {
           get().processBotTurns();
         }, 200);
-      } else {
-        console.error(`No packs available for round ${nextRound}`);
       }
     },
 
@@ -611,10 +653,14 @@ export const useDraftStore = create<DraftStore>()(
 
     canMakePick: () => {
       const state = get();
+      const humanPlayer = state.players.find(p => p.is_human);
+      
+      // Simple rule: if human has a pack with cards and has selected a card, they can pick
       return state.draft_started && 
              !state.draft_completed && 
              state.selected_card !== null &&
-             get().isHumanTurn();
+             humanPlayer?.current_pack !== undefined &&
+             humanPlayer.current_pack.cards.length > 0;
     },
 
     getDraftProgress: () => {

@@ -113,7 +113,7 @@ const DecklistView: React.FC<DecklistViewProps> = ({ cards, onCardClick, onClose
         <div className="space-y-1">
           {categoryCards.map((card, index) => (
             <div
-              key={`${card.id}-${index}`}
+              key={card.instanceId}
               className={`flex items-center justify-between p-2 rounded hover:bg-gray-50 ${
                 onCardClick ? 'cursor-pointer' : ''
               }`}

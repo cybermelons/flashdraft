@@ -51,7 +51,7 @@ export const NewPackDisplay: React.FC<NewPackDisplayProps> = ({
 
             return (
               <NewCard
-                key={card.id}
+                key={card.instanceId}
                 card={card}
                 size="medium"
                 isSelected={isSelected}

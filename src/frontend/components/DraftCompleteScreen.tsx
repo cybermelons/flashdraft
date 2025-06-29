@@ -77,7 +77,7 @@ export const DraftCompleteScreen: React.FC<DraftCompleteScreenProps> = ({
               <div className="grid grid-cols-6 md:grid-cols-8 lg:grid-cols-10 gap-2">
                 {creatures.map((card) => (
                   <NewCard
-                    key={card.id}
+                    key={card.instanceId}
                     card={card}
                     size="small"
                     canInteract={true}
@@ -98,7 +98,7 @@ export const DraftCompleteScreen: React.FC<DraftCompleteScreenProps> = ({
               <div className="grid grid-cols-6 md:grid-cols-8 lg:grid-cols-10 gap-2">
                 {spells.map((card) => (
                   <NewCard
-                    key={card.id}
+                    key={card.instanceId}
                     card={card}
                     size="small"
                     canInteract={true}
@@ -119,7 +119,7 @@ export const DraftCompleteScreen: React.FC<DraftCompleteScreenProps> = ({
               <div className="grid grid-cols-6 md:grid-cols-8 lg:grid-cols-10 gap-2">
                 {otherCards.map((card) => (
                   <NewCard
-                    key={card.id}
+                    key={card.instanceId}
                     card={card}
                     size="small"
                     canInteract={true}

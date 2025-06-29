@@ -87,7 +87,7 @@ function PackDisplay({ pack }: { pack: { cards: DraftCard[] } }) {
       </h2>
       <div className="grid grid-cols-5 gap-2">
         {pack.cards.map(card => (
-          <CardDisplay key={card.id} card={card} />
+          <CardDisplay key={card.instanceId || `fallback-${card.id}-${Math.random()}`} card={card} />
         ))}
       </div>
     </div>
@@ -140,7 +140,7 @@ function PlayerStatus() {
       <h3 className="font-semibold mb-2">Your Picks ({human.pickedCards.length})</h3>
       <div className="grid grid-cols-8 gap-1">
         {human.pickedCards.map((card, index) => (
-          <div key={card.id} className="text-xs border rounded p-1">
+          <div key={card.instanceId || `fallback-${card.id}-${Math.random()}`} className="text-xs border rounded p-1">
             <div className="font-semibold truncate">{card.name}</div>
             <div className="text-gray-600">{card.manaCost}</div>
           </div>
@@ -162,7 +162,7 @@ function DraftResults() {
       <h2>Your Final Deck ({human.pickedCards.length} cards)</h2>
       <div className="grid grid-cols-6 gap-2 mt-4">
         {human.pickedCards.map(card => (
-          <div key={card.id} className="border rounded p-2">
+          <div key={card.instanceId || `fallback-${card.id}-${Math.random()}`} className="border rounded p-2">
             <div className="font-semibold text-sm">{card.name}</div>
             <div className="text-xs text-gray-600">{card.manaCost}</div>
           </div>
