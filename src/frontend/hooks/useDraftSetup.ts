@@ -23,14 +23,17 @@ export interface DraftSetupConfig {
 
 export interface UseDraftSetupReturn {
   // Set data management
-  availableSets: string[];
+  availableSets: Array<{ code: string; name: string; totalCards: number }>;
   setData: MTGSetData | null;
   loadingSet: boolean;
+  loadingAvailableSets: boolean;
   setError: string | null;
   
   // Configuration
   config: DraftSetupConfig;
   updateConfig: (updates: Partial<DraftSetupConfig>) => void;
+  setSelectedSet: (setCode: string) => void;
+  setPlayerCount: (playerCount: number) => void;
   
   // Actions
   loadSetData: (setCode: string) => Promise<boolean>;
@@ -66,7 +69,15 @@ export function useDraftSetup(): UseDraftSetupReturn {
   const [config, setConfig] = useState<DraftSetupConfig>(DEFAULT_CONFIG);
 
   // Derived state
-  const availableSets = useMemo(() => [...AVAILABLE_SETS], []);
+  const availableSets = useMemo(() => 
+    AVAILABLE_SETS.map(code => ({
+      code,
+      name: code === 'FIN' ? 'Final Fantasy' : 
+            code === 'DTK' ? 'Dragons of Tarkir' :
+            code === 'TEST' ? 'Test Set' : code,
+      totalCards: 0 // Will be updated when set data loads
+    })), 
+  []);
   const setData = useMemo(() => setDataCache[config.setCode] || null, [setDataCache, config.setCode]);
 
   // ============================================================================
@@ -138,6 +149,15 @@ export function useDraftSetup(): UseDraftSetupReturn {
     });
   }, []);
 
+  // Convenience methods for common updates
+  const setSelectedSet = useCallback((setCode: string) => {
+    updateConfig({ setCode });
+  }, [updateConfig]);
+
+  const setPlayerCount = useCallback((playerCount: number) => {
+    updateConfig({ playerCount });
+  }, [updateConfig]);
+
   // ============================================================================
   // VALIDATION
   // ============================================================================
@@ -157,7 +177,7 @@ export function useDraftSetup(): UseDraftSetupReturn {
     }
 
     // Set code validation
-    if (!AVAILABLE_SETS.includes(config.setCode as any)) {
+    if (!availableSets.some(set => set.code === config.setCode)) {
       errors.push(`Set code ${config.setCode} is not available`);
     }
 
@@ -167,7 +187,7 @@ export function useDraftSetup(): UseDraftSetupReturn {
     }
 
     return errors;
-  }, [config, setData, loadingSet]);
+  }, [config, setData, loadingSet, availableSets]);
 
   const isConfigValid = useMemo(() => validationErrors.length === 0, [validationErrors]);
 
@@ -215,11 +235,14 @@ export function useDraftSetup(): UseDraftSetupReturn {
     availableSets,
     setData,
     loadingSet,
+    loadingAvailableSets: false, // Sets are hardcoded for now
     setError,
     
     // Configuration
     config,
     updateConfig,
+    setSelectedSet,
+    setPlayerCount,
     
     // Actions
     loadSetData,
