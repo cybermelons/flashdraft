@@ -131,48 +131,74 @@ export function useFlashDraft(options: UseFlashDraftOptions = {}): UseFlashDraft
 
   const createAndStartDraft = useCallback(async (): Promise<boolean> => {
     try {
+      console.log('Starting draft creation...');
+      
       // Create draft config from setup
+      console.log('Creating draft config from setup...');
       const config = setup.createDraftConfig();
       if (!config) {
+        console.error('Failed to create draft config');
+        console.log('Setup state:', { 
+          isConfigValid: setup.isConfigValid, 
+          validationErrors: setup.validationErrors,
+          setData: !!setup.setData,
+          config: setup.config 
+        });
         return false;
       }
+      console.log('Draft config created successfully');
 
       // Create the draft
+      console.log('Creating draft engine...');
       const created = await draftEngine.createDraft(config);
       if (!created) {
+        console.error('Failed to create draft in engine');
         return false;
       }
+      console.log('Draft engine created successfully');
 
       // Add human player
+      console.log('Adding human player...');
       const humanAdded = draftEngine.addPlayer('human-1', 'You', true);
       if (!humanAdded) {
+        console.error('Failed to add human player');
         return false;
       }
+      console.log('Human player added successfully');
 
       // Add bot players
+      console.log('Adding bot players...');
       for (let i = 0; i < setup.config.botPersonalities.length; i++) {
         const botId = `bot-${i + 1}`;
         const botName = `Bot ${i + 1}`;
         const personality = setup.config.botPersonalities[i];
         
+        console.log(`Adding bot ${i + 1} with personality ${personality}...`);
         const botAdded = draftEngine.addPlayer(botId, botName, false, personality);
         if (!botAdded) {
+          console.error(`Failed to add bot player ${i + 1}`);
           return false;
         }
       }
+      console.log('All bot players added successfully');
 
       // Start the draft
+      console.log('Starting draft...');
       const started = draftEngine.startDraft();
       if (!started) {
+        console.error('Failed to start draft');
         return false;
       }
+      console.log('Draft started successfully');
 
       // Navigate to draft URL
       if (draftEngine.engine) {
         const draftId = draftEngine.engine.state.id;
+        console.log(`Navigating to draft ${draftId}...`);
         router.navigateToDraft(draftId, 1, 1);
       }
 
+      console.log('Draft creation completed successfully');
       return true;
     } catch (err) {
       console.error('Failed to create and start draft:', err);
