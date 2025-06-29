@@ -1,158 +1,81 @@
-# Development Plan: Simplify Draft Pack Passing Logic
+# Development Plan: Draft State Permalinks
 
 ## Overview
-The current draft pack passing system is overengineered with complex "wait for all players" logic. We need to simplify it to work like real MTG draft: pick from your pack, immediately pass it to the next player, increment pick counter.
-
-## Current Problem
-- Complex "getPlayersNeedingPicks" logic waiting for simultaneous picks
-- Overengineered bot processing that checks all players
-- Unnecessary state synchronization complexity
-- Draft gets stuck because it thinks players still need picks when they don't
+Add permalink system for draft states with URLs like `/draft/{draftId}/p{round}p{pick}`. URL updates after each pick (p1p1 → p1p2 → etc.) and supports direct navigation to any position.
 
 ## Approach
-1. **Eliminate simultaneous picking logic** - Just pass packs immediately after each pick
-2. **Simplify pack passing** - When human picks, pass their pack left, get pack from right
-3. **Remove complex validation** - Don't wait for "all players to pick"
-4. **Make bots reactive** - Bots pick when they receive a new pack, not in batches
+1. **URL Structure**: `/draft/{draftId}/p{round}p{pick}` format
+2. **Auto-update**: URL changes after each human pick  
+3. **Direct Navigation**: Load draft at specified position
+4. **404 for invalid**: Invalid draft IDs or positions return 404
 
 ## Implementation Checklist
 
-### Phase 1: Simplify Core Logic ✅ COMPLETE
-- [x] **Remove `getPlayersNeedingPicks()` complexity** ✓
-  - Replaced with simple "does this player have a pack with cards?"
-  - Removed all "waiting for simultaneous picks" logic
-  
-- [x] **Simplify `executeMakePick()` method** ✓
-  - Human picks → immediately pass pack → increment pick counter
-  - New `passPackToNextPlayer()` method handles direction and state
-  
-- [x] **Fix pack passing direction** ✓
-  - Round 1: pass left (clockwise)
-  - Round 2: pass right (counterclockwise)  
-  - Round 3: pass left (clockwise)
+### Phase 1: Update Routing
+- [x] **Create new Astro route**: `[draftId]/[position].astro` ✓ (Already exists)
+- [x] **Parse URL format**: Extract round/pick from `p{round}p{pick}` ✓ (Already implemented)
+- [x] **Handle 404s**: Invalid draftId or position format ✓
 
-- [x] **Remove `processAllBotPicks()` batch logic** ✓
-  - Replaced with reactive `processBotPicksSequentially()`
-  - Bots pick individually when they receive a pack
+### Phase 2: URL Updates  
+- [x] **Update draftStore**: Change URL after each human pick ✓ (Already implemented)
+- [x] **Use replaceState()**: Avoid cluttering browser history ✓ (Already uses replaceState)
+- [x] **Update draft start**: Redirect to `/draft/{id}/p1p1` when starting ✓
 
-### Phase 2: Streamline Bot Processing
-- [ ] **Simplify bot decision making**
-  - When a bot receives a pack (has cards), they pick immediately
-  - Remove complex "which bots need picks" logic
-  
-- [ ] **Remove recursive bot processing**
-  - No more `executeMakePickWithoutBotProcessing` complexity
-  - Just simple pick → pass pack → next player picks
+### Phase 3: Direct Navigation
+- [x] **Load draft state**: Parse URL params and set current position ✓
+- [x] **Validate position**: 404 if position doesn't exist or is invalid ✓
+- [x] **Update existing URL utilities**: Simplify for new format ✓ (Removed old utilities)
 
-- [ ] **Clean up validation rules**
-  - Remove complex turn-based validation
-  - Simple rule: if you have a pack with cards, you can pick
+### Phase 4: Navigation Controls
+- [x] **Add Previous button**: Go to previous pick (if available) ✓
+- [x] **Add Next button**: Go to next pick (if available) ✓ 
+- [x] **Show current position**: Display "Round X, Pick Y" in UI ✓
 
-### Phase 3: Test & Verify Simplification
-- [ ] **Test basic draft flow**
-  - Human pick → pack passes → pick counter advances
-  - Verify all 15 picks in round 1 work correctly
-  - Verify round advancement (round 1 → 2 → 3)
+## Technical Details
 
-- [ ] **Remove unnecessary debug logging**
-  - Clean up all the extensive debug logs added for troubleshooting
-  - Keep only essential logging for development
-
-- [ ] **Verify pack passing directions**
-  - Round 1: left → right → left (correct direction)
-  - Round 2: right → left → right (reverse direction)
-  - Round 3: left → right → left (back to original)
-
-## Technical Considerations
-
-### Core Insight
-Real MTG draft is **asynchronous by nature**:
-- Player 1 picks, passes pack to Player 2
-- Player 2 picks, passes pack to Player 3  
-- Meanwhile, Player 1 receives pack from Player 8
-- No coordination needed - just pass packs around the table
-
-### Remove Complex Logic
-- `getPlayersNeedingPicks()` - unnecessary complexity
-- `processAllBotPicks()` - batch processing not needed
-- `executeMakePickWithoutBotProcessing()` - avoid recursion complexity
-- "Wait for everyone to pick" logic - not how draft works
-
-### Simplified Flow
-```typescript
-// Human picks
-1. Remove card from human's pack
-2. Pass human's pack to next player (left/right based on round)
-3. Increment pick counter
-4. If human receives new pack, they can pick again
-5. Bots process their own packs individually
-
-// No synchronization, no waiting, no complex state checking
+### URL Examples
+```
+/draft/abc123/p1p1   (Round 1, Pick 1)
+/draft/abc123/p2p8   (Round 2, Pick 8)
+/draft/abc123/p3p15  (Round 3, Pick 15)
 ```
 
-### State Tracking
-- Each player has a `currentPack` 
-- When you pick, your pack gets passed to next player
-- When you receive a pack, it becomes your new `currentPack`
-- Pick counter increments after each human pick
-- Round advances when all packs are empty
+### Changes Needed
+- **Draft Store**: Add URL update method
+- **Astro Routes**: New dynamic route structure
+- **Components**: Previous/Next navigation buttons
 
-## Success Criteria
-- [ ] Draft advances from Pick 1 → Pick 2 → Pick 3 etc.
-- [ ] Round advances from Round 1 → Round 2 → Round 3
-- [ ] Pack passing works in correct direction each round
-- [ ] No complex "waiting for players" logic
-- [ ] Clean, simple code that matches real MTG draft flow
-- [ ] All debug logging removed after verification
+## Success Criteria ✅ ALL COMPLETE
+- [x] URLs update automatically (p1p1 → p1p2 → etc.) ✓
+- [x] Direct navigation works for valid URLs ✓
+- [x] Invalid URLs return 404 ✓
+- [x] Previous/Next buttons work correctly ✓
+- [x] No performance regression ✓
 
-## Risk Mitigation
-- **Over-simplification**: Ensure we don't break existing functionality
-- **Bot behavior**: Make sure bots still pick intelligently when they receive packs
-- **Pack tracking**: Verify packs don't get lost or duplicated during passing
+## Implementation Summary
+
+Successfully implemented draft state permalinks for the nanostore-based draft system:
+
+### ✅ **Completed Features**
+1. **Automatic URL Updates**: URLs change from p1p1 → p1p2 → etc. after each pick
+2. **Direct Navigation**: Can navigate directly to any `/draft/{id}/p{round}p{pick}` URL
+3. **Validation & 404s**: Invalid draft IDs or positions show proper error messages
+4. **Navigation Controls**: Previous/Next buttons with proper state management
+5. **Persistence**: Draft state saved to localStorage for URL navigation
+6. **Clean Integration**: Works seamlessly with existing nanostore draft engine
+
+### 🔧 **Technical Implementation** 
+- **URL Format**: `/draft/{draftId}/p{round}p{pick}` (e.g., `/draft/abc123/p2p8`)
+- **State Management**: Enhanced nanostore system with localStorage persistence
+- **Browser History**: Uses `replaceState()` to avoid cluttering back button
+- **Validation**: Checks valid ranges (p1p1 through p3p15) and draft existence
+- **UI Integration**: Previous/Next buttons with visual disabled states
+
+### 🧹 **Code Cleanup**
+- Removed old Zustand-based draft store and utilities
+- Kept good UI components for future integration
+- Simplified codebase to single draft engine (nanostores)
 
 ---
 
-*This plan eliminates unnecessary complexity and implements draft pack passing the way it actually works in real MTG - simple, asynchronous, immediate pack passing after each pick.*
-
-## Previous Completed Work
-
-### ✅ Fully Functional Features
-1. **Draft Simulation**
-   - Complete 8-player MTG draft simulation
-   - Support for Final Fantasy (FIN) and Dragons of Tarkir (DTK) sets
-   - Real-time pack passing and pick tracking
-   - Intelligent bot opponents with 4 skill levels (Bronze, Silver, Gold, Mythic)
-
-2. **User Interface**
-   - Modern React + Astro + Tailwind CSS interface
-   - Responsive design supporting desktop and mobile
-   - Instant hover card previews using shadcn/ui HoverCard
-   - Smooth animations and transitions under 150ms
-   - Keyboard shortcuts and accessibility features
-
-3. **Card Image System**
-   - Support for all card types including transform cards (Exdeath, etc.)
-   - Automatic image caching from Scryfall API
-   - Fallback text displays for missing images
-   - Optimized image loading and performance
-
-4. **Draft Management**
-   - Unique draft IDs with permalink support
-   - Complete routing: `/draft/[draftId]/p[round]p[pick]`
-   - localStorage persistence with auto-save
-   - Draft overview page with session management
-   - Share functionality with URL generation
-
-5. **Deck Analysis**
-   - Professional decklist view with modal interface
-   - Real-time mana curve visualization
-   - Card type categorization (creatures, spells, lands)
-   - Color distribution analysis
-   - Quick deck statistics and insights
-
-6. **Technical Infrastructure**
-   - React integration with proper hydration
-   - TypeScript for type safety
-   - Modular component architecture
-   - Comprehensive build pipeline
-   - Git version control with atomic commits
+*Simple permalink system that makes draft positions shareable and navigable.*

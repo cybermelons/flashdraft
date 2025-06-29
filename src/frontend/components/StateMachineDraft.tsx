@@ -61,15 +61,81 @@ function DraftHeader() {
 
   const human = draft.players.find(p => p.id === draft.humanPlayerId);
   const hasCards = human?.currentPack && human.currentPack.cards.length > 0;
+  
+  // Calculate navigation availability
+  const currentPosition = (draft.round - 1) * 15 + draft.pick;
+  const canGoPrevious = currentPosition > 1;
+  const canGoNext = currentPosition < 45; // Max possible position (3 rounds * 15 picks)
+  
+  const handlePrevious = () => {
+    if (!canGoPrevious) return;
+    
+    let newRound = draft.round;
+    let newPick = draft.pick - 1;
+    
+    if (newPick < 1) {
+      newRound--;
+      newPick = 15;
+    }
+    
+    // Navigate to previous position
+    window.location.href = `/draft/${draft.id}/p${newRound}p${newPick}`;
+  };
+  
+  const handleNext = () => {
+    if (!canGoNext) return;
+    
+    let newRound = draft.round;
+    let newPick = draft.pick + 1;
+    
+    if (newPick > 15) {
+      newRound++;
+      newPick = 1;
+    }
+    
+    // Navigate to next position
+    window.location.href = `/draft/${draft.id}/p${newRound}p${newPick}`;
+  };
 
   return (
     <div className="mb-6">
-      <h1 className="text-2xl font-bold">
-        Round {draft.round}, Pick {draft.pick}
-      </h1>
-      <p className="text-gray-600">
-        Direction: {draft.direction} | Status: {draft.status}
-      </p>
+      <div className="flex items-center justify-between">
+        <div>
+          <h1 className="text-2xl font-bold">
+            Round {draft.round}, Pick {draft.pick}
+          </h1>
+          <p className="text-gray-600">
+            Direction: {draft.direction} | Status: {draft.status}
+          </p>
+        </div>
+        
+        <div className="flex gap-2">
+          <button
+            onClick={handlePrevious}
+            disabled={!canGoPrevious}
+            className={`px-3 py-1 rounded text-sm ${
+              canGoPrevious 
+                ? 'bg-gray-200 hover:bg-gray-300 text-gray-800' 
+                : 'bg-gray-100 text-gray-400 cursor-not-allowed'
+            }`}
+          >
+            ← Previous
+          </button>
+          
+          <button
+            onClick={handleNext}
+            disabled={!canGoNext}
+            className={`px-3 py-1 rounded text-sm ${
+              canGoNext
+                ? 'bg-gray-200 hover:bg-gray-300 text-gray-800'
+                : 'bg-gray-100 text-gray-400 cursor-not-allowed'
+            }`}
+          >
+            Next →
+          </button>
+        </div>
+      </div>
+      
       {!hasCards && (
         <p className="text-orange-600 mt-2">
           ⏳ Waiting for bots to finish Pick {draft.pick - 1}...

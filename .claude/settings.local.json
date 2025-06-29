@@ -36,7 +36,9 @@
       "Bash(pnpm test:*)",
       "Bash(rg:*)",
       "Bash(pnpm run:*)",
-      "Bash(git merge:*)"
+      "Bash(git merge:*)",
+      "Bash(git pull:*)",
+      "Bash(git restore:*)"
     ],
     "deny": []
   }

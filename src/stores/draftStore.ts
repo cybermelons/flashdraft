@@ -405,6 +405,7 @@ export const draftActions = {
     console.log('[DraftStore] Creating draft with set:', setData.set_code, 'Cards:', setData.cards?.length || 0);
     const newDraft = createDraft(setData);
     draftStore.set(newDraft);
+    saveDraft(newDraft);
     return newDraft;
   },
   
@@ -415,6 +416,11 @@ export const draftActions = {
     console.log('[DraftStore] Starting draft with set:', current.setData.set_code);
     const started = startDraft(current);
     draftStore.set(started);
+    saveDraft(started);
+    
+    // Update URL to p1p1 when draft starts
+    updateDraftUrl(started);
+    
     return started;
   },
   
@@ -424,10 +430,62 @@ export const draftActions = {
     
     const updated = processPick(current, current.humanPlayerId, cardId);
     draftStore.set(updated);
+    saveDraft(updated);
+    
+    // Update URL after human pick
+    updateDraftUrl(updated);
+    
     return updated;
+  },
+  
+  load: (draftId: string) => {
+    const draft = loadDraft(draftId);
+    if (draft) {
+      draftStore.set(draft);
+      return draft;
+    }
+    return null;
   },
   
   reset: () => {
     draftStore.set(null);
   },
 };
+
+/**
+ * Update browser URL to match current draft position
+ */
+function updateDraftUrl(draft: DraftState) {
+  if (typeof window === 'undefined' || !window.history) return;
+  
+  const newUrl = `/draft/${draft.id}/p${draft.round}p${draft.pick}`;
+  window.history.replaceState({}, '', newUrl);
+}
+
+/**
+ * Save draft to localStorage
+ */
+function saveDraft(draft: DraftState) {
+  if (typeof window === 'undefined') return;
+  
+  try {
+    localStorage.setItem(`flashdraft_draft_${draft.id}`, JSON.stringify(draft));
+  } catch (error) {
+    console.error('Failed to save draft:', error);
+  }
+}
+
+/**
+ * Load draft from localStorage
+ */
+function loadDraft(draftId: string): DraftState | null {
+  if (typeof window === 'undefined') return null;
+  
+  try {
+    const data = localStorage.getItem(`flashdraft_draft_${draftId}`);
+    return data ? JSON.parse(data) : null;
+  } catch (error) {
+    console.error('Failed to load draft:', error);
+    return null;
+  }
+}

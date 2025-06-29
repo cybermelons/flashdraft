@@ -7,7 +7,7 @@
 
 import React, { useEffect, useState } from 'react';
 import { useStore } from '@nanostores/react';
-import { draftStore, draftActions } from '../../stores/draftStore';
+import { draftStore, draftActions, type DraftState } from '../../stores/draftStore';
 import { StateMachineDraft } from './StateMachineDraft';
 
 export interface StateMachineDraftRouterProps {
@@ -57,9 +57,46 @@ export function StateMachineDraftRouter({
           break;
 
         case 'position':
-          // Navigate to specific position (future feature)
-          setError('Position navigation not implemented yet');
-          setLoading(false);
+          if (!draftId || !round || !pick) {
+            setError('Invalid draft position URL');
+            setLoading(false);
+            break;
+          }
+          
+          // Validate position ranges
+          if (round < 1 || round > 3 || pick < 1 || pick > 15) {
+            setError('Invalid draft position - must be p1p1 through p3p15');
+            setLoading(false);
+            break;
+          }
+          
+          // Try to load the draft
+          try {
+            const savedDraft = await loadDraftFromStorage(draftId);
+            
+            if (!savedDraft) {
+              setError('Draft not found');
+              setLoading(false);
+              break;
+            }
+            
+            // Check if the requested position exists in the draft
+            const requestedPickNumber = (round - 1) * 15 + pick;
+            const currentPickNumber = (savedDraft.round - 1) * 15 + savedDraft.pick;
+            
+            if (requestedPickNumber > currentPickNumber) {
+              setError(`Position p${round}p${pick} not yet reached in this draft`);
+              setLoading(false);
+              break;
+            }
+            
+            // Load the draft into the store
+            draftActions.load(draftId);
+            setLoading(false);
+          } catch (err) {
+            setError('Failed to load draft');
+            setLoading(false);
+          }
           break;
 
         default:
@@ -97,6 +134,21 @@ export function StateMachineDraftRouter({
 
   const handleBackToOverview = () => {
     window.location.href = '/draft';
+  };
+
+  /**
+   * Load draft from localStorage
+   */
+  const loadDraftFromStorage = async (draftId: string): Promise<DraftState | null> => {
+    if (typeof window === 'undefined') return null;
+    
+    try {
+      const data = localStorage.getItem(`flashdraft_draft_${draftId}`);
+      return data ? JSON.parse(data) : null;
+    } catch (error) {
+      console.error('Failed to load draft:', error);
+      return null;
+    }
   };
 
   if (loading) {
