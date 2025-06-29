@@ -508,42 +508,9 @@ export class DraftSession implements IDraftSession {
       };
     }
 
-    const newSession = new DraftSession(newState);
-    
-    // If there are bots with packs, they pick immediately
-    const botsWithPacks = newSession.getBotsNeedingPicks();
-    if (botsWithPacks.length > 0) {
-      return this.processBotPicksSequentially(newSession, botsWithPacks);
-    }
-
-    return { success: true, data: newSession };
+    return { success: true, data: new DraftSession(newState) };
   }
 
-  /**
-   * Process bot picks sequentially (each bot picks immediately when they get a pack)
-   */
-  private processBotPicksSequentially(session: DraftSession, botsWithPacks: Player[]): ActionResult<DraftSession> {
-    let currentSession = session;
-    
-    for (const bot of botsWithPacks) {
-      if (!bot.currentPack || bot.currentPack.cards.length === 0) {
-        continue; // Skip bots without cards
-      }
-      
-      // Bot makes decision
-      const selectedCard = this.botProcessor.processBotPick(currentSession._state, bot);
-      
-      // Apply bot's pick using same logic as human pick
-      const result = currentSession.executeMakePick(bot.id, selectedCard.selectedCardId);
-      if (!result.success) {
-        return result;
-      }
-      
-      currentSession = result.data;
-    }
-    
-    return { success: true, data: currentSession };
-  }
 
 
   private executeTimeOutPick(playerId: string): ActionResult<DraftSession> {
@@ -647,6 +614,40 @@ export class DraftSession implements IDraftSession {
    */
   getBotsNeedingPicks(): Player[] {
     return getBotPlayersNeedingPicks(this._state);
+  }
+
+  /**
+   * Process all bots that currently have packs (non-recursive)
+   */
+  processAvailableBotPicks(): ActionResult<DraftSession> {
+    const botsWithPacks = this.getBotsNeedingPicks();
+    if (botsWithPacks.length === 0) {
+      return { success: true, data: this };
+    }
+
+    let currentSession: DraftSession = this;
+    
+    for (const bot of botsWithPacks) {
+      // Get fresh bot state
+      const currentBot = getPlayer(currentSession._state, bot.id);
+      if (!currentBot || !currentBot.currentPack || currentBot.currentPack.cards.length === 0) {
+        continue;
+      }
+      
+      // Bot makes decision
+      const decision = this.botProcessor.processBotPick(currentSession._state, currentBot);
+      
+      // Apply the pick
+      const result = currentSession.executeMakePick(bot.id, decision.selectedCardId);
+      if (!result.success) {
+        console.error(`Bot ${bot.id} pick failed:`, result.error);
+        continue; // Skip this bot, continue with others
+      }
+      
+      currentSession = result.data;
+    }
+    
+    return { success: true, data: currentSession };
   }
 
   /**
