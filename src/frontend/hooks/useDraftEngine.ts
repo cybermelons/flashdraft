@@ -166,10 +166,10 @@ export function useDraftEngine(initialDraftId?: string): UseDraftEngineReturn {
   // DRAFT ACTIONS
   // ============================================================================
 
-  const applyAction = useCallback((action: DraftAction): boolean => {
+  const applyAction = useCallback((action: DraftAction): DraftSession | null => {
     if (!engine) {
       setError('No active draft');
-      return false;
+      return null;
     }
 
     console.log('Applying action:', action.type, action);
@@ -183,7 +183,7 @@ export function useDraftEngine(initialDraftId?: string): UseDraftEngineReturn {
     if (!result.success) {
       console.error('Action failed:', result.error);
       setError(result.error.message);
-      return false;
+      return null;
     }
 
     console.log('Action applied successfully');
@@ -195,7 +195,7 @@ export function useDraftEngine(initialDraftId?: string): UseDraftEngineReturn {
       console.warn('Auto-save failed:', err);
     });
     
-    return true;
+    return result.data; // Return the updated engine
   }, [engine, persistence]);
 
   const addPlayerToEngine = useCallback((engine: DraftSession, playerId: string, name: string, isHuman: boolean, personality?: string): DraftSession | null => {
@@ -279,7 +279,8 @@ export function useDraftEngine(initialDraftId?: string): UseDraftEngineReturn {
   }, [persistence]);
 
   const startDraft = useCallback((): boolean => {
-    return applyAction({ type: 'START_DRAFT' });
+    const result = applyAction({ type: 'START_DRAFT' });
+    return result !== null;
   }, [applyAction]);
 
   const makePick = useCallback((cardId: string): boolean => {
@@ -297,23 +298,42 @@ export function useDraftEngine(initialDraftId?: string): UseDraftEngineReturn {
     });
 
     const humanPlayerId = engine.state.config.humanPlayerId;
-    const result = applyAction({
+    const updatedEngine = applyAction({
       type: 'MAKE_PICK',
       playerId: humanPlayerId,
       cardId
     });
 
-    console.log(`[DraftEngine] Pick result: ${result ? 'SUCCESS' : 'FAILED'}`);
-    if (result && engine) {
+    console.log(`[DraftEngine] Pick result: ${updatedEngine ? 'SUCCESS' : 'FAILED'}`);
+    if (updatedEngine) {
       console.log(`[DraftEngine] State after pick:`, {
-        round: engine.state.currentRound,
-        pick: engine.state.currentPick,
-        status: engine.state.status
+        round: updatedEngine.state.currentRound,
+        pick: updatedEngine.state.currentPick,
+        status: updatedEngine.state.status
       });
+
+      // Process bot picks after successful human pick using the UPDATED engine
+      console.log(`[DraftEngine] Processing bot picks on updated engine...`);
+      const botResult = updatedEngine.processAvailableBotPicks();
+      if (botResult.success) {
+        console.log(`[DraftEngine] Bot processing successful, final state:`, {
+          round: botResult.data.state.currentRound,
+          pick: botResult.data.state.currentPick,
+          status: botResult.data.state.status
+        });
+        setEngine(botResult.data);
+        
+        // Auto-save after bot processing
+        persistence.save(botResult.data.state.id, botResult.data.serialize()).catch(err => {
+          console.warn('Auto-save after bot processing failed:', err);
+        });
+      } else {
+        console.error(`[DraftEngine] Bot processing failed:`, botResult.error);
+      }
     }
 
-    return result;
-  }, [engine, applyAction]);
+    return updatedEngine !== null;
+  }, [engine, applyAction, persistence]);
 
   // ============================================================================
   // UTILITY FUNCTIONS

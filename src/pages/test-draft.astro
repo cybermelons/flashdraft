@@ -1,0 +1,97 @@
+---
+// Test page for the state machine draft
+import Layout from '../layouts/Layout.astro';
+---
+
+<Layout title="State Machine Draft Test">
+  <div id="test-draft-app" class="min-h-screen bg-gray-50"></div>
+</Layout>
+
+<script>
+  import { StateMachineDraft, DraftDebug } from '../frontend/components/StateMachineDraft';
+  import { draftActions } from '../stores/draftStore';
+  import React from 'react';
+  import { createRoot } from 'react-dom/client';
+
+  // Mock set data with variety
+  const mockSetData = {
+    set_code: 'TEST',
+    name: 'Test Set',
+    cards: [
+      // Commons (60% of set)
+      { id: 'common-1', name: 'Lightning Bolt', mana_cost: '{R}', rarity: 'common', booster: true, colors: ['R'], cmc: 1 },
+      { id: 'common-2', name: 'Counterspell', mana_cost: '{U}{U}', rarity: 'common', booster: true, colors: ['U'], cmc: 2 },
+      { id: 'common-3', name: 'Giant Growth', mana_cost: '{G}', rarity: 'common', booster: true, colors: ['G'], cmc: 1 },
+      { id: 'common-4', name: 'Terror', mana_cost: '{1}{B}', rarity: 'common', booster: true, colors: ['B'], cmc: 2 },
+      { id: 'common-5', name: 'Healing Salve', mana_cost: '{W}', rarity: 'common', booster: true, colors: ['W'], cmc: 1 },
+      { id: 'common-6', name: 'Stone Rain', mana_cost: '{2}{R}', rarity: 'common', booster: true, colors: ['R'], cmc: 3 },
+      { id: 'common-7', name: 'Divination', mana_cost: '{2}{U}', rarity: 'common', booster: true, colors: ['U'], cmc: 3 },
+      { id: 'common-8', name: 'Disenchant', mana_cost: '{1}{W}', rarity: 'common', booster: true, colors: ['W'], cmc: 2 },
+      ...Array.from({ length: 120 }, (_, i) => ({
+        id: `common-${i + 9}`,
+        name: `${['Goblin', 'Elf', 'Knight', 'Wizard', 'Beast'][i % 5]} ${['Scout', 'Warrior', 'Mage', 'Fighter', 'Archer'][Math.floor(i / 5) % 5]}`,
+        mana_cost: `{${Math.floor(i % 4) + 1}}`,
+        rarity: 'common',
+        booster: true,
+        colors: [['W'], ['U'], ['B'], ['R'], ['G']][i % 5],
+        cmc: Math.floor(i % 4) + 1
+      })),
+      
+      // Uncommons (30% of set)  
+      { id: 'uncommon-1', name: 'Wrath of God', mana_cost: '{2}{W}{W}', rarity: 'uncommon', booster: true, colors: ['W'], cmc: 4 },
+      { id: 'uncommon-2', name: 'Control Magic', mana_cost: '{2}{U}{U}', rarity: 'uncommon', booster: true, colors: ['U'], cmc: 4 },
+      { id: 'uncommon-3', name: 'Dark Ritual', mana_cost: '{B}', rarity: 'uncommon', booster: true, colors: ['B'], cmc: 1 },
+      ...Array.from({ length: 60 }, (_, i) => ({
+        id: `uncommon-${i + 4}`,
+        name: `${['Elite', 'Royal', 'Master', 'Ancient', 'Fierce'][i % 5]} ${['Dragon', 'Angel', 'Demon', 'Phoenix', 'Hydra'][Math.floor(i / 5) % 5]}`,
+        mana_cost: `{${Math.floor(i % 3) + 2}}{${['W', 'U', 'B', 'R', 'G'][i % 5]}}`,
+        rarity: 'uncommon',
+        booster: true,
+        colors: [['W'], ['U'], ['B'], ['R'], ['G']][i % 5],
+        cmc: Math.floor(i % 3) + 3
+      })),
+      
+      // Rares (8% of set)
+      { id: 'rare-1', name: 'Shivan Dragon', mana_cost: '{4}{R}{R}', rarity: 'rare', booster: true, colors: ['R'], cmc: 6 },
+      { id: 'rare-2', name: 'Serra Angel', mana_cost: '{3}{W}{W}', rarity: 'rare', booster: true, colors: ['W'], cmc: 5 },
+      ...Array.from({ length: 15 }, (_, i) => ({
+        id: `rare-${i + 3}`,
+        name: `Legendary ${['Planeswalker', 'Creature', 'Artifact', 'Enchantment', 'Sorcery'][i % 5]}`,
+        mana_cost: `{${Math.floor(i % 2) + 4}}{${['W', 'U', 'B', 'R', 'G'][i % 5]}}`,
+        rarity: 'rare',
+        booster: true,
+        colors: [['W'], ['U'], ['B'], ['R'], ['G']][i % 5],
+        cmc: Math.floor(i % 2) + 5
+      })),
+      
+      // Mythics (2% of set)
+      { id: 'mythic-1', name: 'Nicol Bolas', mana_cost: '{7}{U}{B}{R}', rarity: 'mythic', booster: true, colors: ['U', 'B', 'R'], cmc: 10 },
+      { id: 'mythic-2', name: 'Jace Beleren', mana_cost: '{1}{U}{U}', rarity: 'mythic', booster: true, colors: ['U'], cmc: 3 },
+      ...Array.from({ length: 3 }, (_, i) => ({
+        id: `mythic-${i + 3}`,
+        name: `Planeswalker ${['Chandra', 'Garruk', 'Liliana'][i]}`,
+        mana_cost: `{${i + 3}}{${['R', 'G', 'B'][i]}}`,
+        rarity: 'mythic',
+        booster: true,
+        colors: [['R'], ['G'], ['B']][i],
+        cmc: i + 4
+      }))
+    ]
+  };
+
+  // Initialize the app
+  document.addEventListener('DOMContentLoaded', () => {
+    const container = document.getElementById('test-draft-app');
+    if (container) {
+      const root = createRoot(container);
+      
+      // Create initial draft
+      draftActions.create(mockSetData);
+
+      root.render(React.createElement('div', { className: 'w-full' }, [
+        React.createElement(StateMachineDraft, { key: 'draft' }),
+        React.createElement(DraftDebug, { key: 'debug' })
+      ]));
+    }
+  });
+</script>
