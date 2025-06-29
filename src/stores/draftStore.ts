@@ -25,6 +25,7 @@ export interface DraftCard {
   rarity: string;
   colors: string[];
   cmc: number;
+  instanceId: string;
 }
 
 export interface Pack {
@@ -377,7 +378,8 @@ function generateSinglePack(setData: MTGSetData): DraftCard[] {
 /**
  * Convert MTG card to draft card format
  */
-function toDraftCard(card: any): DraftCard {
+function toDraftCard(card: any, context: string = 'pack'): DraftCard {
+  const instanceId = `${context}-${card.id}-${Date.now()}-${Math.random().toString(36).substr(2, 5)}`;
   return {
     id: card.id,
     name: card.name,
@@ -386,6 +388,7 @@ function toDraftCard(card: any): DraftCard {
     rarity: card.rarity,
     colors: card.colors || [],
     cmc: card.cmc || 0,
+    instanceId,
   };
 }
 
@@ -394,6 +397,56 @@ function toDraftCard(card: any): DraftCard {
  */
 function generateId(): string {
   return Date.now().toString(36) + Math.random().toString(36).substr(2, 9);
+}
+
+/**
+ * Restore draft to a specific position
+ * Creates a view of the draft as it would appear at the target position
+ */
+function restoreDraftToPosition(draft: DraftState, targetRound: number, targetPick: number): DraftState | null {
+  const targetPosition = (targetRound - 1) * 15 + targetPick;
+  const humanPlayer = draft.players.find(p => p.id === draft.humanPlayerId);
+  if (!humanPlayer) return null;
+  
+  const totalPicksMade = humanPlayer.pickedCards.length;
+  
+  // Can't navigate to positions that haven't been reached yet
+  if (targetPosition > totalPicksMade + 1) {
+    return null;
+  }
+  
+  // Create a view of the draft at the target position
+  const restoredDraft: DraftState = {
+    ...draft,
+    round: targetRound as 1 | 2 | 3,
+    pick: targetPick,
+    direction: targetRound === 2 ? 'counterclockwise' : 'clockwise',
+  };
+  
+  // If viewing a past position, show only the cards that were picked by that point
+  if (targetPosition <= totalPicksMade) {
+    const picksAtPosition = targetPosition - 1; // Position 1 = 0 picks made, Position 2 = 1 pick made, etc.
+    
+    const restoredPlayers = draft.players.map(player => {
+      if (player.id === draft.humanPlayerId) {
+        // Show only the cards picked up to this position
+        return {
+          ...player,
+          pickedCards: player.pickedCards.slice(0, picksAtPosition),
+          // Clear current pack for past positions (they're not currently picking)
+          currentPack: targetPosition <= totalPicksMade ? null : player.currentPack,
+        };
+      }
+      return player;
+    });
+    
+    return {
+      ...restoredDraft,
+      players: restoredPlayers,
+    };
+  }
+  
+  return restoredDraft;
 }
 
 // ============================================================================
@@ -445,6 +498,36 @@ export const draftActions = {
       return draft;
     }
     return null;
+  },
+  
+  navigateToPosition: (draftId: string, targetRound: number, targetPick: number) => {
+    const draft = loadDraft(draftId);
+    if (!draft) return false;
+    
+    // Validate position
+    if (targetRound < 1 || targetRound > 3 || targetPick < 1 || targetPick > 15) {
+      return false;
+    }
+    
+    // Calculate target position
+    const targetPosition = (targetRound - 1) * 15 + targetPick;
+    const currentPosition = (draft.round - 1) * 15 + draft.pick;
+    const humanPlayer = draft.players.find(p => p.id === draft.humanPlayerId);
+    const totalPicksMade = humanPlayer?.pickedCards.length || 0;
+    
+    // Can't navigate to positions that haven't been reached yet
+    if (targetPosition > totalPicksMade + 1) {
+      return false;
+    }
+    
+    // Create a view of the draft at the target position
+    const restoredDraft = restoreDraftToPosition(draft, targetRound, targetPick);
+    if (restoredDraft) {
+      draftStore.set(restoredDraft);
+      return true;
+    }
+    
+    return false;
   },
   
   reset: () => {

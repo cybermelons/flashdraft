@@ -62,10 +62,14 @@ function DraftHeader() {
   const human = draft.players.find(p => p.id === draft.humanPlayerId);
   const hasCards = human?.currentPack && human.currentPack.cards.length > 0;
   
-  // Calculate navigation availability
+  // Calculate navigation availability based on actual draft progress
   const currentPosition = (draft.round - 1) * 15 + draft.pick;
   const canGoPrevious = currentPosition > 1;
-  const canGoNext = currentPosition < 45; // Max possible position (3 rounds * 15 picks)
+  
+  // Only allow "next" if there are future positions that have been reached
+  const humanPlayer = draft.players.find(p => p.id === draft.humanPlayerId);
+  const totalPicksMade = humanPlayer?.pickedCards.length || 0;
+  const canGoNext = currentPosition < totalPicksMade + 1;
   
   const handlePrevious = () => {
     if (!canGoPrevious) return;
@@ -153,7 +157,7 @@ function PackDisplay({ pack }: { pack: { cards: DraftCard[] } }) {
       </h2>
       <div className="grid grid-cols-5 gap-2">
         {pack.cards.map(card => (
-          <CardDisplay key={card.id} card={card} />
+          <CardDisplay key={card.instanceId || card.id} card={card} />
         ))}
       </div>
     </div>
@@ -206,7 +210,7 @@ function PlayerStatus() {
       <h3 className="font-semibold mb-2">Your Picks ({human.pickedCards.length})</h3>
       <div className="grid grid-cols-8 gap-1">
         {human.pickedCards.map((card, index) => (
-          <div key={card.id} className="text-xs border rounded p-1">
+          <div key={card.instanceId || `${card.id}-${index}`} className="text-xs border rounded p-1">
             <div className="font-semibold truncate">{card.name}</div>
             <div className="text-gray-600">{card.manaCost}</div>
           </div>
@@ -227,8 +231,8 @@ function DraftResults() {
     <div>
       <h2>Your Final Deck ({human.pickedCards.length} cards)</h2>
       <div className="grid grid-cols-6 gap-2 mt-4">
-        {human.pickedCards.map(card => (
-          <div key={card.id} className="border rounded p-2">
+        {human.pickedCards.map((card, index) => (
+          <div key={card.instanceId || `${card.id}-${index}`} className="border rounded p-2">
             <div className="font-semibold text-sm">{card.name}</div>
             <div className="text-xs text-gray-600">{card.manaCost}</div>
           </div>

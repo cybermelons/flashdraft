@@ -70,31 +70,17 @@ export function StateMachineDraftRouter({
             break;
           }
           
-          // Try to load the draft
+          // Try to navigate to the specific position
           try {
-            const savedDraft = await loadDraftFromStorage(draftId);
+            const success = draftActions.navigateToPosition(draftId, round, pick);
             
-            if (!savedDraft) {
-              setError('Draft not found');
-              setLoading(false);
-              break;
+            if (!success) {
+              setError('Draft not found or position not reached yet');
             }
             
-            // Check if the requested position exists in the draft
-            const requestedPickNumber = (round - 1) * 15 + pick;
-            const currentPickNumber = (savedDraft.round - 1) * 15 + savedDraft.pick;
-            
-            if (requestedPickNumber > currentPickNumber) {
-              setError(`Position p${round}p${pick} not yet reached in this draft`);
-              setLoading(false);
-              break;
-            }
-            
-            // Load the draft into the store
-            draftActions.load(draftId);
             setLoading(false);
           } catch (err) {
-            setError('Failed to load draft');
+            setError('Failed to load draft position');
             setLoading(false);
           }
           break;
