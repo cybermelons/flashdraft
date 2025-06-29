@@ -277,11 +277,34 @@ export function generateBoosterPack(
  * Converts a regular MTG card to a draft card with additional metadata
  */
 export function toDraftCard(card: MTGCard): DraftCard {
+  // Handle image URLs for both normal cards and double-faced cards
+  let imageUrl = '';
+  if (card.image_uris?.normal) {
+    imageUrl = card.image_uris.normal;
+  } else if (card.image_uris?.large) {
+    imageUrl = card.image_uris.large;
+  } else if (card.image_uris?.small) {
+    imageUrl = card.image_uris.small;
+  } else if (card.card_faces && card.card_faces[0]?.image_uris?.normal) {
+    // Handle double-faced cards - use the front face image
+    imageUrl = card.card_faces[0].image_uris.normal;
+  } else if (card.card_faces && card.card_faces[0]?.image_uris?.large) {
+    imageUrl = card.card_faces[0].image_uris.large;
+  } else if (card.card_faces && card.card_faces[0]?.image_uris?.small) {
+    imageUrl = card.card_faces[0].image_uris.small;
+  }
+
+  // Handle mana cost for both normal cards and double-faced cards
+  let manaCost = card.mana_cost || '';
+  if (!manaCost && card.card_faces && card.card_faces[0]?.mana_cost) {
+    manaCost = card.card_faces[0].mana_cost;
+  }
+
   return {
     ...card,
     // Convert snake_case to camelCase for component compatibility
-    imageUrl: card.image_uris?.normal || card.image_uris?.large || card.image_uris?.small || '',
-    manaCost: card.mana_cost || '',
+    imageUrl,
+    manaCost,
     pick_priority: calculateBasicPickPriority(card),
     synergy_tags: generateSynergyTags(card)
   } as DraftCard;

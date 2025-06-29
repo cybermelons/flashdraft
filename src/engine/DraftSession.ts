@@ -380,7 +380,7 @@ export class DraftSession implements IDraftSession {
 
   private executeMakePick(playerId: string, cardId: string): ActionResult<DraftSession> {
     const player = getPlayer(this._state, playerId);
-    const pack = getCurrentPackForPlayer(this._state, playerId);
+    const pack = player?.currentPack;
     
     if (!player || !pack) {
       return {
@@ -415,42 +415,11 @@ export class DraftSession implements IDraftSession {
 
     const updatedPlayer: Player = {
       ...player,
-      pickedCards: [...player.pickedCards, card],
-      currentPack: updatedPack // Update the player's current pack reference
+      pickedCards: [...player.pickedCards, card]
     };
 
-    // Update state with new player and pack
-    const updatedPlayers = this._state.players.map(p => 
-      p.id === playerId ? updatedPlayer : p
-    );
-
-    // Update packs array
-    const roundIndex = this._state.currentRound - 1;
-    const updatedPacks = this._state.packs.map((round, rIndex) => 
-      rIndex === roundIndex 
-        ? round.map(p => p.id === pack.id ? updatedPack : p)
-        : round
-    );
-
-    let newState: DraftState = {
-      ...this._state,
-      players: updatedPlayers,
-      packs: updatedPacks
-    };
-
-    let session = new DraftSession(newState);
-
-    // If this was a human pick, process bot picks automatically
-    if (player.isHuman) {
-      const botsResult = session.processAllBotPicks();
-      if (!botsResult.success) {
-        return botsResult;
-      }
-      session = botsResult.data;
-    }
-
-    // Check if we need to pass packs or advance round
-    const passResult = session.checkAndProcessPackPassing();
+    // Simple pack passing logic: pass pack immediately to next player
+    const passResult = this.passPackToNextPlayer(updatedPlayer, updatedPack);
     if (!passResult.success) {
       return passResult;
     }
@@ -460,6 +429,122 @@ export class DraftSession implements IDraftSession {
       data: passResult.data
     };
   }
+
+  /**
+   * Pass pack to next player and increment pick counter
+   */
+  private passPackToNextPlayer(pickingPlayer: Player, updatedPack: Pack): ActionResult<DraftSession> {
+    const playerCount = this._state.players.length;
+    const direction = this._state.direction;
+    
+    // Calculate next player position based on direction
+    let nextPosition: number;
+    if (direction === 'clockwise') {
+      nextPosition = (pickingPlayer.position + 1) % playerCount;
+    } else {
+      nextPosition = (pickingPlayer.position - 1 + playerCount) % playerCount;
+    }
+    
+    // Update players: picking player loses pack, next player gets pack
+    const updatedPlayers = this._state.players.map(player => {
+      if (player.id === pickingPlayer.id) {
+        // Picking player: add picked card, remove pack
+        return {
+          ...pickingPlayer,
+          currentPack: null
+        };
+      } else if (player.position === nextPosition) {
+        // Next player: receives the passed pack
+        return {
+          ...player,
+          currentPack: updatedPack
+        };
+      }
+      return player;
+    });
+
+    // Increment pick counter
+    const newPick = this._state.currentPick + 1;
+    
+    // Check if we need to advance round (all packs empty)
+    const hasAnyCardsLeft = updatedPlayers.some(p => p.currentPack && p.currentPack.cards.length > 0);
+    
+    let newState: DraftState;
+    if (!hasAnyCardsLeft && this._state.currentRound < 3) {
+      // Advance to next round
+      const nextRound = this._state.currentRound + 1;
+      const newDirection = nextRound === 2 ? 'counterclockwise' : 'clockwise';
+      
+      // Get packs for next round
+      const roundIndex = nextRound - 1;
+      const nextRoundPacks = this._state.packs[roundIndex] || [];
+      
+      const playersWithNewPacks = this._state.players.map((player, index) => ({
+        ...updatedPlayers[index],
+        currentPack: nextRoundPacks[index] || null
+      }));
+
+      newState = {
+        ...this._state,
+        players: playersWithNewPacks,
+        currentRound: nextRound,
+        currentPick: 1,
+        direction: newDirection
+      };
+    } else if (!hasAnyCardsLeft) {
+      // Draft complete
+      newState = {
+        ...this._state,
+        players: updatedPlayers,
+        currentPick: newPick,
+        status: 'complete'
+      };
+    } else {
+      // Continue current round
+      newState = {
+        ...this._state,
+        players: updatedPlayers,
+        currentPick: newPick
+      };
+    }
+
+    const newSession = new DraftSession(newState);
+    
+    // If there are bots with packs, they pick immediately
+    const botsWithPacks = newSession.getBotsNeedingPicks();
+    if (botsWithPacks.length > 0) {
+      return this.processBotPicksSequentially(newSession, botsWithPacks);
+    }
+
+    return { success: true, data: newSession };
+  }
+
+  /**
+   * Process bot picks sequentially (each bot picks immediately when they get a pack)
+   */
+  private processBotPicksSequentially(session: DraftSession, botsWithPacks: Player[]): ActionResult<DraftSession> {
+    let currentSession = session;
+    
+    for (const bot of botsWithPacks) {
+      if (!bot.currentPack || bot.currentPack.cards.length === 0) {
+        continue; // Skip bots without cards
+      }
+      
+      // Bot makes decision
+      const selectedCard = this.botProcessor.processBotPick(currentSession._state, bot);
+      
+      // Apply bot's pick using same logic as human pick
+      const result = currentSession.executeMakePick(bot.id, selectedCard.selectedCardId);
+      if (!result.success) {
+        return result;
+      }
+      
+      currentSession = result.data;
+    }
+    
+    return { success: true, data: currentSession };
+  }
+
 
   private executeTimeOutPick(playerId: string): ActionResult<DraftSession> {
     const pack = getCurrentPackForPlayer(this._state, playerId);
@@ -551,156 +636,11 @@ export class DraftSession implements IDraftSession {
     }
   }
 
-  private checkAndProcessPackPassing(): ActionResult<DraftSession> {
-    // Check if all players have picked (packs are empty or no one needs picks)
-    const playersNeedingPicks = getPlayersNeedingPicks(this._state);
-    
-    if (playersNeedingPicks.length === 0) {
-      // All players picked, advance round or complete draft
-      if (shouldAdvanceRound(this._state)) {
-        return this.advanceRound();
-      } else {
-        // Pass packs within current round
-        return this.passPacks();
-      }
-    }
-
-    // More picks needed in current round
-    return { success: true, data: this };
-  }
-
-  private passPacks(): ActionResult<DraftSession> {
-    const playerCount = this._state.players.length;
-    const direction = this._state.direction;
-
-    // Calculate pack passing direction
-    const passMap = new Map<number, Pack | null>();
-    
-    this._state.players.forEach(player => {
-      const currentPack = getCurrentPackForPlayer(this._state, player.id);
-      if (currentPack && currentPack.cards.length > 0) {
-        let targetPosition: number;
-        
-        if (direction === 'clockwise') {
-          targetPosition = (player.position + 1) % playerCount;
-        } else {
-          targetPosition = (player.position - 1 + playerCount) % playerCount;
-        }
-        
-        passMap.set(targetPosition, currentPack);
-      }
-    });
-
-    // Update players with passed packs
-    const updatedPlayers = this._state.players.map(player => ({
-      ...player,
-      currentPack: passMap.get(player.position) || null
-    }));
-
-    const newState: DraftState = {
-      ...this._state,
-      players: updatedPlayers,
-      currentPick: this._state.currentPick + 1
-    };
-
-    return {
-      success: true,
-      data: new DraftSession(newState)
-    };
-  }
-
-  private advanceRound(): ActionResult<DraftSession> {
-    const nextRound = this._state.currentRound + 1;
-
-    if (nextRound > 3) {
-      // Draft complete
-      const newState: DraftState = {
-        ...this._state,
-        status: 'complete',
-        currentRound: 3,
-        currentPick: 15
-      };
-
-      return {
-        success: true,
-        data: new DraftSession(newState)
-      };
-    }
-
-    // Start new round
-    const newDirection = nextRound === 2 ? 'counterclockwise' : 'clockwise';
-    const roundIndex = nextRound - 1;
-    const nextRoundPacks = this._state.packs[roundIndex] || [];
-
-    // Assign new round packs to players
-    const updatedPlayers = this._state.players.map((player, index) => ({
-      ...player,
-      currentPack: nextRoundPacks[index] || null
-    }));
-
-    const newState: DraftState = {
-      ...this._state,
-      currentRound: nextRound,
-      currentPick: 1,
-      direction: newDirection,
-      players: updatedPlayers
-    };
-
-    return {
-      success: true,
-      data: new DraftSession(newState)
-    };
-  }
 
   // ============================================================================
   // BOT PROCESSING
   // ============================================================================
 
-  /**
-   * Process all bot picks for the current state
-   */
-  processAllBotPicks(): ActionResult<DraftSession> {
-    try {
-      const botDecisions = this.botProcessor.processAllBotPicks(this._state);
-      
-      let currentSession: DraftSession = this;
-      
-      // Apply each bot decision as a MAKE_PICK action
-      for (const decision of botDecisions) {
-        const result = currentSession.applyAction({
-          type: 'MAKE_PICK',
-          playerId: decision.playerId,
-          cardId: decision.selectedCardId
-        });
-        
-        if (!result.success) {
-          return {
-            success: false,
-            error: {
-              type: 'BOT_ERROR',
-              message: `Bot ${decision.playerId} pick failed: ${result.error.message}`,
-              botId: decision.playerId,
-              details: result.error.message
-            }
-          };
-        }
-        
-        currentSession = result.data;
-      }
-      
-      return { success: true, data: currentSession };
-    } catch (error) {
-      return {
-        success: false,
-        error: {
-          type: 'BOT_ERROR',
-          message: 'Bot processing failed',
-          botId: 'unknown',
-          details: error instanceof Error ? error.message : 'Unknown error'
-        }
-      };
-    }
-  }
 
   /**
    * Get all bot players that need to make picks

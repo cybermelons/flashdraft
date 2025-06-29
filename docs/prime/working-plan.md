@@ -1,476 +1,120 @@
-## Completed Core Features ✅
-
-- [x] **Remove bot delays** ✓ (Removed 800ms delays - bots now pick instantly for faster draft flow)
-- [x] **Persist data in localStorage** ✓ (Full localStorage persistence with auto-save after picks, draft metadata, and storage management)
-- [x] **Draft IDs and routing system** ✓ (Complete /draft/[draftId]/p[round]p[pick] structure with proper navigation)
-  - Example: `/draft/acbedf123/p1p1`
-- [x] **Fix missing card images** ✓ (Fixed transform card image handling, CardImage component now supports card_faces, cached Exdeath and other images)
-- [x] **Show decklist view** ✓ (Complete DecklistView component with deck statistics, mana curve, color distribution, and card categorization)
-- [x] **Fix React integration issues** ✓ (Resolved React preamble errors and useState null errors using proper Astro client:visible directives)
-
-## Recent Critical Fixes ✅ (January 2025)
-
-- [x] **Fix URL navigation on draft start** ✓ (URL now properly redirects to /draft/{draftId}/p1p1 when draft begins)
-- [x] **Fix draft pack passing logic** ✓ (Drafts now properly advance through all 3 rounds without getting stuck)
-- [x] **Fix draft persistence and reload** ✓ (Saved drafts now properly restore with set data and regenerated packs)
-
-## Remaining Tasks
-
-- [ ] **Train draft models based on 17lands data** (Low priority - current rule-based bots work well)
-
-## URGENT: Architecture Refactor - Separate Draft Engine from Frontend
-
-### Current Issues
-- **Mixed Concerns**: Draft logic is tightly coupled with React/Zustand/UI code
-- **State Management Complexity**: Multiple sources of truth (store, localStorage, URL)
-- **Navigation Issues**: Full page refreshes losing state, complex load/save timing
-- **Testing Difficulty**: Can't test draft logic independently of UI
-
-# Development Plan: Draft Session Architecture
+# Development Plan: Simplify Draft Pack Passing Logic
 
 ## Overview
-Design a pure draft session that handles all MTG draft logic independently from any UI framework. Each session represents one complete draft, and will be the single source of truth for that draft's state, with the UI acting as a view layer.
+The current draft pack passing system is overengineered with complex "wait for all players" logic. We need to simplify it to work like real MTG draft: pick from your pack, immediately pass it to the next player, increment pick counter.
 
-## Draft Session Design
+## Current Problem
+- Complex "getPlayersNeedingPicks" logic waiting for simultaneous picks
+- Overengineered bot processing that checks all players
+- Unnecessary state synchronization complexity
+- Draft gets stuck because it thinks players still need picks when they don't
 
-### Core Concepts
+## Approach
+1. **Eliminate simultaneous picking logic** - Just pass packs immediately after each pick
+2. **Simplify pack passing** - When human picks, pass their pack left, get pack from right
+3. **Remove complex validation** - Don't wait for "all players to pick"
+4. **Make bots reactive** - Bots pick when they receive a new pack, not in batches
 
+## Implementation Checklist
+
+### Phase 1: Simplify Core Logic
+- [ ] **Remove `getPlayersNeedingPicks()` complexity**
+  - Replace with simple "does this player have a pack with cards?"
+  - Remove all "waiting for simultaneous picks" logic
+  
+- [ ] **Simplify `executeMakePick()` method**
+  - Human picks → immediately pass pack → increment pick counter
+  - Don't process "all bot picks" - just pass packs around
+  
+- [ ] **Fix pack passing direction**
+  - Round 1: pass left (clockwise)
+  - Round 2: pass right (counterclockwise)  
+  - Round 3: pass left (clockwise)
+
+- [ ] **Remove `processAllBotPicks()` batch logic**
+  - Bots pick individually when they receive a pack
+  - No complex batch processing or state synchronization
+
+### Phase 2: Streamline Bot Processing
+- [ ] **Simplify bot decision making**
+  - When a bot receives a pack (has cards), they pick immediately
+  - Remove complex "which bots need picks" logic
+  
+- [ ] **Remove recursive bot processing**
+  - No more `executeMakePickWithoutBotProcessing` complexity
+  - Just simple pick → pass pack → next player picks
+
+- [ ] **Clean up validation rules**
+  - Remove complex turn-based validation
+  - Simple rule: if you have a pack with cards, you can pick
+
+### Phase 3: Test & Verify Simplification
+- [ ] **Test basic draft flow**
+  - Human pick → pack passes → pick counter advances
+  - Verify all 15 picks in round 1 work correctly
+  - Verify round advancement (round 1 → 2 → 3)
+
+- [ ] **Remove unnecessary debug logging**
+  - Clean up all the extensive debug logs added for troubleshooting
+  - Keep only essential logging for development
+
+- [ ] **Verify pack passing directions**
+  - Round 1: left → right → left (correct direction)
+  - Round 2: right → left → right (reverse direction)
+  - Round 3: left → right → left (back to original)
+
+## Technical Considerations
+
+### Core Insight
+Real MTG draft is **asynchronous by nature**:
+- Player 1 picks, passes pack to Player 2
+- Player 2 picks, passes pack to Player 3  
+- Meanwhile, Player 1 receives pack from Player 8
+- No coordination needed - just pass packs around the table
+
+### Remove Complex Logic
+- `getPlayersNeedingPicks()` - unnecessary complexity
+- `processAllBotPicks()` - batch processing not needed
+- `executeMakePickWithoutBotProcessing()` - avoid recursion complexity
+- "Wait for everyone to pick" logic - not how draft works
+
+### Simplified Flow
 ```typescript
-// A draft session manages one complete MTG draft
-interface DraftSession {
-  // Immutable state
-  readonly state: DraftState;
-  
-  // Query methods (pure, no side effects)
-  getCurrentPack(playerId: string): Pack | null;
-  getPlayerCards(playerId: string): Card[];
-  getAvailableActions(playerId: string): Action[];
-  canMakePick(playerId: string, cardId: string): boolean;
-  getDraftStatus(): DraftStatus;
-  
-  // Action methods (return new session instance)
-  applyAction(action: DraftAction): DraftSession;
-  
-  // Serialization
-  serialize(): string;
-  static deserialize(data: string): DraftSession;
-  static create(config: DraftConfig): DraftSession;
-}
+// Human picks
+1. Remove card from human's pack
+2. Pass human's pack to next player (left/right based on round)
+3. Increment pick counter
+4. If human receives new pack, they can pick again
+5. Bots process their own packs individually
 
-// Core state shape
-interface DraftState {
-  id: string;
-  config: DraftConfig;
-  players: Player[];
-  packs: Pack[][];  // [round][packIndex]
-  currentRound: number;
-  currentPick: number;
-  direction: 'clockwise' | 'counterclockwise';
-  status: 'setup' | 'active' | 'complete';
-  history: DraftAction[];  // All actions taken
-}
-
-// Actions are the only way to modify state
-type DraftAction = 
-  | { type: 'ADD_PLAYER'; playerId: string; name: string; isBot: boolean }
-  | { type: 'START_DRAFT' }
-  | { type: 'MAKE_PICK'; playerId: string; cardId: string }
-  | { type: 'TIME_OUT_PICK'; playerId: string }  // Auto-pick for timer
-  | { type: 'UNDO_LAST_ACTION' };  // For development/testing
+// No synchronization, no waiting, no complex state checking
 ```
 
-### Engine Characteristics
+### State Tracking
+- Each player has a `currentPack` 
+- When you pick, your pack gets passed to next player
+- When you receive a pack, it becomes your new `currentPack`
+- Pick counter increments after each human pick
+- Round advances when all packs are empty
 
-1. **Pure Functions**: All methods are pure - same input always produces same output
-2. **Immutable State**: Actions return new engine instances, never mutate
-3. **Self-Contained**: All draft rules encoded in the engine
-4. **Serializable**: Can save/load complete draft state
-5. **Replayable**: Can rebuild any draft state by replaying actions
+## Success Criteria
+- [ ] Draft advances from Pick 1 → Pick 2 → Pick 3 etc.
+- [ ] Round advances from Round 1 → Round 2 → Round 3
+- [ ] Pack passing works in correct direction each round
+- [ ] No complex "waiting for players" logic
+- [ ] Clean, simple code that matches real MTG draft flow
+- [ ] All debug logging removed after verification
 
-### Error Handling Strategy
+## Risk Mitigation
+- **Over-simplification**: Ensure we don't break existing functionality
+- **Bot behavior**: Make sure bots still pick intelligently when they receive packs
+- **Pack tracking**: Verify packs don't get lost or duplicated during passing
 
-```typescript
-// Actions return Result type for proper error handling
-type ActionResult<T> = 
-  | { success: true; data: T }
-  | { success: false; error: DraftError };
+---
 
-type DraftError = 
-  | { type: 'INVALID_PICK'; message: string; cardId: string }
-  | { type: 'WRONG_PLAYER'; message: string; playerId: string }
-  | { type: 'DRAFT_NOT_ACTIVE'; message: string }
-  | { type: 'INVALID_ACTION'; message: string };
+*This plan eliminates unnecessary complexity and implements draft pack passing the way it actually works in real MTG - simple, asynchronous, immediate pack passing after each pick.*
 
-class DraftSession {
-  applyAction(action: DraftAction): ActionResult<DraftSession> {
-    // Validate action first
-    const validation = this.validateAction(action);
-    if (!validation.success) {
-      return validation;
-    }
-    
-    // Apply action if valid
-    const newEngine = this.executeAction(action);
-    return { success: true, data: newEngine };
-  }
-  
-  private validateAction(action: DraftAction): ActionResult<void> {
-    switch (action.type) {
-      case 'MAKE_PICK':
-        if (!this.canMakePick(action.playerId, action.cardId)) {
-          return { 
-            success: false, 
-            error: { type: 'INVALID_PICK', message: 'Card not available', cardId: action.cardId }
-          };
-        }
-        break;
-      // ... other validations
-    }
-    return { success: true, data: undefined };
-  }
-}
-```
-
-### Pack Generation & Initialization
-
-```typescript
-// Pack generation happens during session creation
-class DraftSession {
-  static create(config: DraftConfig): DraftSession {
-    // Generate all packs upfront for entire draft
-    const allPacks = generateDraftPacks(config.setData, config.playerCount);
-    
-    return new DraftSession({
-      id: generateDraftId(),
-      config,
-      players: [],
-      packs: allPacks, // [round][packIndex] - all 3 rounds pre-generated
-      currentRound: 1,
-      currentPick: 1,
-      direction: 'clockwise',
-      status: 'setup',
-      history: []
-    });
-  }
-}
-
-// Pack generation utility (pure function)
-function generateDraftPacks(setData: MTGSetData, playerCount: number): Pack[][] {
-  const rounds = [];
-  
-  for (let round = 0; round < 3; round++) {
-    const roundPacks = [];
-    for (let player = 0; player < playerCount; player++) {
-      roundPacks.push(generateBoosterPack(setData));
-    }
-    rounds.push(roundPacks);
-  }
-  
-  return rounds;
-}
-```
-
-### Bot Integration & Scheduling
-
-```typescript
-// Bots are pure functions that analyze state and return picks
-interface DraftBot {
-  selectCard(
-    availableCards: Card[],
-    pickedCards: Card[],
-    draftContext: DraftContext,
-    personality: BotPersonality
-  ): Card;
-}
-
-// Bot personality is passed as parameter (no bot state)
-type BotPersonality = 'bronze' | 'silver' | 'gold' | 'mythic';
-
-// Engine handles bot scheduling automatically
-class DraftSession {
-  // After human pick, process all bot picks for current round
-  private processBotTurns(botSelector: DraftBot): ActionResult<DraftSession> {
-    let currentSession = this;
-    
-    // Find all bots that need to pick
-    const botsNeedingPicks = this.getBotsNeedingPicks();
-    
-    for (const bot of botsNeedingPicks) {
-      const availableCards = currentSession.getCurrentPack(bot.id);
-      if (!availableCards) continue;
-      
-      const pickedCards = currentSession.getPlayerCards(bot.id);
-      const context = currentSession.getDraftContext();
-      
-      // Bot makes decision (pure function)
-      const selectedCard = botSelector.selectCard(
-        availableCards.cards,
-        pickedCards,
-        context,
-        bot.personality
-      );
-      
-      // Apply bot's pick
-      const result = currentSession.applyAction({
-        type: 'MAKE_PICK',
-        playerId: bot.id,
-        cardId: selectedCard.id
-      });
-      
-      if (!result.success) {
-        return result; // Propagate error
-      }
-      
-      currentSession = result.data;
-    }
-    
-    return { success: true, data: currentSession };
-  }
-  
-  private getBotsNeedingPicks(): BotPlayer[] {
-    return this.state.players
-      .filter(p => !p.isHuman && this.getCurrentPack(p.id) !== null)
-      .map(p => p as BotPlayer);
-  }
-}
-```
-
-### Validation Rules
-
-```typescript
-class DraftSession {
-  // Core validation logic
-  canMakePick(playerId: string, cardId: string): boolean {
-    // 1. Draft must be active
-    if (this.state.status !== 'active') return false;
-    
-    // 2. Player must exist and have a pack
-    const player = this.getPlayer(playerId);
-    if (!player) return false;
-    
-    const pack = this.getCurrentPack(playerId);
-    if (!pack) return false;
-    
-    // 3. Card must be in player's current pack
-    const cardExists = pack.cards.some(card => card.id === cardId);
-    if (!cardExists) return false;
-    
-    // 4. Must be player's turn (for human players)
-    if (player.isHuman && !this.isPlayerTurn(playerId)) return false;
-    
-    return true;
-  }
-  
-  private isPlayerTurn(playerId: string): boolean {
-    // In draft, it's always the human's turn when they have a pack
-    // Bots pick automatically after human picks
-    const player = this.getPlayer(playerId);
-    return player?.isHuman === true && this.getCurrentPack(playerId) !== null;
-  }
-  
-  // Additional validation methods
-  private isValidPlayer(playerId: string): boolean {
-    return this.state.players.some(p => p.id === playerId);
-  }
-  
-  private isDraftActive(): boolean {
-    return this.state.status === 'active';
-  }
-}
-```
-
-### Serialization Strategy
-
-```typescript
-// Serialize minimal data - action history + config
-interface SerializedDraft {
-  config: DraftConfig;
-  history: DraftAction[];
-  timestamp: number;
-}
-
-class DraftSession {
-  serialize(): string {
-    return JSON.stringify({
-      config: this.state.config,
-      history: this.state.history,
-      timestamp: Date.now()
-    });
-  }
-  
-  static deserialize(data: string): DraftSession {
-    const saved: SerializedDraft = JSON.parse(data);
-    
-    // Recreate engine with original config
-    let engine = DraftSession.create(saved.config);
-    
-    // Replay all actions to restore state
-    for (const action of saved.history) {
-      const result = engine.applyAction(action);
-      if (!result.success) {
-        throw new Error(`Failed to replay action: ${result.error.message}`);
-      }
-      engine = result.data;
-    }
-    
-    return engine;
-  }
-}
-
-## UI Integration Pattern
-
-### State Bridge
-
-```typescript
-// The UI maintains a reference to the engine
-interface DraftUIState {
-  engine: DraftSession | null;
-  
-  // UI-only state (not in engine)
-  selectedCard: Card | null;
-  hoveredCard: Card | null;
-  viewMode: 'draft' | 'deckbuilding';
-  
-  // Derived state (computed from engine)
-  currentPack: Pack | null;
-  playerCards: Card[];
-  draftProgress: number;
-}
-
-// Actions update engine and sync UI with proper error handling
-function makePickAction(cardId: string): void {
-  if (!uiState.engine) return;
-  
-  // Apply action to engine
-  const result = uiState.engine.applyAction({
-    type: 'MAKE_PICK',
-    playerId: currentPlayerId,
-    cardId
-  });
-  
-  // Handle action result
-  if (!result.success) {
-    // Show error to user
-    showError(result.error.message);
-    return;
-  }
-  
-  const newEngine = result.data;
-  
-  // Update UI state
-  setUIState({
-    engine: newEngine,
-    selectedCard: null
-  });
-  
-  // Persist to storage
-  localStorage.setItem(`draft-${newEngine.state.id}`, newEngine.serialize());
-  
-  // Update URL without refresh
-  history.pushState(
-    null, 
-    '', 
-    `/draft/${newEngine.state.id}/p${newEngine.state.currentRound}p${newEngine.state.currentPick}`
-  );
-}
-```
-
-### React Hook Interface
-
-```typescript
-// Clean hook API for React components
-function useDraftEngine(draftId?: string) {
-  const [engine, setEngine] = useState<DraftSession | null>(null);
-  
-  // Load engine on mount
-  useEffect(() => {
-    if (draftId) {
-      const saved = localStorage.getItem(`draft-${draftId}`);
-      if (saved) {
-        setEngine(DraftSession.deserialize(saved));
-      }
-    }
-  }, [draftId]);
-  
-  // Action handlers with error handling
-  const makePick = useCallback((cardId: string) => {
-    if (!engine) return;
-    
-    const result = engine.applyAction({
-      type: 'MAKE_PICK',
-      playerId: 'human',
-      cardId
-    });
-    
-    if (!result.success) {
-      setError(result.error.message);
-      return;
-    }
-    
-    setEngine(result.data);
-    setError(null);
-    
-    // Auto-save
-    localStorage.setItem(`draft-${result.data.state.id}`, result.data.serialize());
-  }, [engine]);
-  
-  // Derived state
-  const currentPack = engine?.getCurrentPack('human') ?? null;
-  const playerCards = engine?.getPlayerCards('human') ?? [];
-  
-  return {
-    engine,
-    currentPack,
-    playerCards,
-    makePick,
-    // ... other methods
-  };
-}
-```
-
-## Key Benefits
-
-### For Development
-- **Testable**: Engine can be tested in isolation with no UI
-- **Debuggable**: Can replay any draft by replaying actions
-- **Predictable**: Pure functions make behavior predictable
-
-### For Features
-- **Undo/Redo**: Easy with immutable state and action history
-- **Replay Viewer**: Can build draft replay by stepping through actions
-- **Spectator Mode**: Multiple UIs can observe same engine state
-- **AI Analysis**: Can simulate different pick choices
-
-### For Architecture
-- **Single Source of Truth**: Engine holds all draft state
-- **Clear Boundaries**: UI never directly modifies draft state
-- **Framework Agnostic**: Could build CLI, web API, or different UI
-
-## Implementation Phases
-
-### Phase 1: Build Core Session
-1. Define types and interfaces
-2. Implement basic draft flow (start, pick, pass)
-3. Add pack generation logic
-4. Implement bot decision making
-5. Add serialization support
-6. Write comprehensive tests
-
-### Phase 2: Create UI Bridge  
-1. Build React hooks for engine interaction
-2. Add persistence layer
-3. Implement client-side routing
-4. Create state synchronization
-5. Handle error cases
-
-### Phase 3: Build UI Components
-1. Create new React components using session via hooks
-2. Ensure UI is purely presentational (no draft logic)
-3. Implement client-side navigation and persistence
-4. Add error boundaries and loading states
-5. Test all user flows with new architecture
-
-## Current Application State (January 2025)
+## Previous Completed Work
 
 ### ✅ Fully Functional Features
 1. **Draft Simulation**
@@ -512,150 +156,3 @@ function useDraftEngine(draftId?: string) {
    - Modular component architecture
    - Comprehensive build pipeline
    - Git version control with atomic commits
-
-### 🚀 Ready for Use
-The FlashDraft MTG Draft Simulator is now a complete, production-ready application suitable for:
-- MTG players learning Limited formats
-- Draft practice and skill development
-- Deck building experimentation
-- Educational purposes for MTG content creators 
-
-# Development Plan: FlashDraft MTG Draft Simulator
-
-## Overview
-Building an integrated Magic: The Gathering draft simulation and playtesting platform that enables unlimited practice with AI opponents trained on real 17lands data. The core workflow is: Draft → (Edit Deck → Playtest) Loop → New Draft
-
-The goal is for someone without any set knowledge to learn to draft by playtesting their deck immediately against real decks.
-
-## Approach
-- **MVP-first**: Start with functional draft + basic playtest, then enhance AI
-- **Data-driven bots**: Use 17lands datasets for realistic opponent behavior
-- **Performance-focused**: <150ms transitions, keyboard shortcuts, snappy interactions
-- **Goldfishing-oriented**: Interface is optimized for rapid iteration and goldfishing, to get a good "feel" of the pick process, and a feel for how it affects the deck
-  - eg: mana curve distribution
-  - creature count
-  - card type distribution
-- **Low barrier to exploration**: quick back-and-forth between deckbuild and playtest.
-
-## Implementation Checklist
-
-### Phase 1: Foundation & Real Data Setup (Weeks 1-2) ✅ COMPLETE
-- [x] Set up development environment (Astro + Tailwind + shadcn/ui) ✓
-- [x] Create data acquisition scripts for Scryfall API ✓
-- [x] Download Final Fantasy (FIN) set data from Scryfall API ✓
-- [x] Download Dragons of Tarkir (DTK) set data from Scryfall API ✓
-- [x] Create MTG card data models and validation schemas ✓
-- [x] Implement card image caching and optimization system ✓
-- [x] Build pack generation using real set data and rarity distributions ✓
-- [x] Create draft interface with real card display and selection ✓ (Note: Built complete draft interface with Pack Display, Card components, hover details using shadcn HoverCard)
-- [x] Implement 8-player draft flow with pick tracking ✓ (Note: Full Zustand store with draft state, player management, pack passing logic)
-- [x] Add draft state management (Zustand) with real card data ✓ (Note: Complete store with actions for picks, pack management, draft progression)
-- [x] Test complete draft simulation end-to-end with real sets ✓ (Note: Working draft on localhost:4321/draft with DTK/FIN sets)
-- [x] Implement permalink URLs for draft state (like 17lands) - encode pack/pick/seat in URL ✓ (Note: Full URL encoding/decoding, automatic updates on picks, share button with clipboard/native share API)
-- [x] Optimize draft interface for mobile devices - responsive grid, touch-friendly ✓ (Note: Added responsive 3-7 column grid, mobile card sizes, touch handling)
-- [x] Fix hover cards to trigger on mouseover (not click) for desktop ✓ (Note: Instant hover with pointer-events-none for transparency)
-- [x] Download and process 17lands data for ACR and DTK formats ✓ (Note: 17lands API currently unavailable, implemented fallback rule-based system)
-- [x] Create simple rule-based bots using actual card ratings from 17lands ✓ (Note: Enhanced rule-based bots with 4 personalities: Bronze, Silver, Gold, Mythic - different skill levels, color commitment, rare bias)
-
-### Phase 2: Deck Building & Analysis Interface (Weeks 2-3) - PARTIALLY COMPLETE
-- [ ] Create deck building interface with card sorting and filtering
-- [x] Implement mana curve visualization (key for learning) ✓ (Complete in DecklistView component)
-- [x] Add deck statistics display (creature count, card types, etc.) ✓ (Complete in DecklistView component)
-- [x] Build visual feedback for deck composition insights ✓ (Color distribution, categories in DecklistView)
-- [ ] Create quick deck validation (mana base, creature/spell balance)
-- [ ] Add deckbuilding recommendations based on picked cards
-- [ ] Implement draft-to-deckbuild transition (<150ms target)
-- [ ] Test rapid iteration between draft picks and deck preview
-
-### Phase 3: Goldfishing Playtest Interface (Weeks 3-4)
-- [ ] Design streamlined goldfishing interface (no opponent interaction)
-- [ ] Implement card draw simulation and opening hand analysis
-- [ ] Add mana generation and curve testing functionality
-- [ ] Create turn-by-turn play simulation for deck "feel"
-- [ ] Build keyboard shortcuts for rapid goldfishing (space = draw, enter = next turn)
-- [ ] Add quick deck performance metrics (avg turn for threats, mana efficiency)
-- [ ] Implement seamless deckbuild ↔ playtest transitions
-- [ ] Test complete learning loop: draft → build → goldfish → revise
-
-### Phase 4: Enhanced AI & Data Pipeline (Weeks 4-5)
-- [ ] Create 17lands data download and processing scripts
-- [ ] Download and process 17lands draft data for ACR and DTK formats
-- [ ] Implement feature engineering (card synergy, color signals, pack position)
-- [ ] Train pairwise ranking models for bot decision making
-- [ ] Create multiple bot personalities (Bronze, Gold, Mythic skill levels)
-- [ ] Replace rule-based bots with ML-trained models
-- [ ] Validate bot realism against human baselines (>70% pick agreement)
-- [ ] Performance optimize bot decision speed (<1s per pick)
-- [ ] Test bot behavior across different draft scenarios for both sets
-
-
-## Technical Considerations
-
-### Architecture Decisions
-- **Frontend**: Astro + React islands + TypeScript for optimal performance ✓ (Implemented)
-- **UI Components**: shadcn/ui + Tailwind for rapid, consistent interface development ✓ (Implemented with HoverCard component)
-- **State Management**: Zustand for simplicity and snappy state updates ✓ (Implemented complete draft store)
-- **Backend**: Astro endpoints https://docs.astro.build/en/guides/endpoints/ ✓ (API endpoints for sets working)
-- **Data Storage**: JSON files for card data, pickle for trained models ✓ (Scryfall data cached as JSON)
-- **ML Framework**: scikit-learn for pairwise ranking models (simple, effective) (Pending 17lands integration)
-
-### Current Technical State
-- **Components**: Card, CardImage, CardOverlay, CardTypeIndicators, PackDisplay, DraftInterface, DraftApp
-- **Store**: Complete Zustand store with draft state, player management, pack passing, pick tracking
-- **API**: Working endpoints at /api/sets and /api/sets/[setCode] serving DTK/FIN data
-- **Styling**: Full Tailwind + shadcn/ui integration with proper CSS variables
-- **Data**: Two complete MTG sets (DTK: 264 cards, FIN: sets) with images cached from Scryfall
-- **Pack Generation**: Realistic rarity distributions (1 rare/mythic, 3 uncommons, 11 commons)
-- **Pick Priority**: Basic algorithm (rarity + creature + removal bonuses) - needs 17lands data upgrade
-
-### Key Challenges & Solutions
-- **Bot Realism**: Use 17lands real pick data, validate against human baselines
-- **Ultra-fast Transitions**: <150ms target requires optimized state management, minimal re-renders
-- **Goldfishing UX**: Design for rapid iteration - keyboard shortcuts, visual feedback, instant deck stats
-- **Learning Feedback Loop**: Visual cues that connect draft picks to deck performance patterns
-- **Card Data**: Source from Scryfall API, cache locally, version appropriately
-- **Draft State**: Immutable updates, clear action patterns, robust error handling
-- **Deck Analysis**: Real-time mana curve and composition feedback without performance impact
-
-### Dependencies & Risks
-- **17lands Data Access**: Public datasets available, but format coverage varies
-- **Card Image Rights**: Use Scryfall API with proper attribution
-- **ML Training Time**: Initial model training should be <30 minutes on laptop
-- **User Adoption**: Target existing Limited community through focused features
-
-### Alternative Approaches Considered
-- **Deep Learning vs. Pairwise Ranking**: Chose pairwise for interpretability and data efficiency
-- **Real-time vs. Turn-based**: Chose turn-based for simplicity and focus on learning
-- **Full Rules Engine vs. Manual**: Chose manual for faster development and flexibility
-
-## Success Criteria
-- [ ] Complete draft simulation in <5 minutes
-- [ ] Draft ↔ deckbuild ↔ goldfish transitions in <150ms
-- [ ] Bot pick agreement with humans >70%
-- [ ] Goldfishing feels smooth and responsive (no lag)
-- [ ] Clear visual feedback on deck composition and balance
-- [ ] Learning loop enables rapid skill improvement through iteration
-- [ ] Core functionality works reliably for 1-2 MTG formats
-- [ ] Essential test coverage for stability
-- [ ] Performance benchmarks met consistently
-
-## Data Requirements
-- [ ] **Final Fantasy (FIN)** set data from Scryfall API - Universes Beyond set with unique mechanics
-- [ ] **Tarkir: Dragonstorm (TDM)** set data from Scryfall API - classic draft format with dragon tribal
-- [ ] 17lands draft data for both ACR and DTK formats
-- [ ] 17lands card ratings and pick data for realistic bot behavior
-- [ ] Successful deck lists from 17lands for both formats
-- [ ] Card images and mana symbols from Scryfall (with proper caching)
-- [ ] Set booster pack compositions and rarity distributions
-
-## Testing Strategy
-- [ ] Unit tests for all business logic
-- [ ] Integration tests for draft flow
-- [ ] E2E tests for complete user journeys
-- [ ] Performance testing for transitions
-- [ ] Bot validation against held-out data
-- [ ] User testing with MTG players
-
----
-
-*This plan targets a focused 5-6 week development cycle for a core MVP that delivers the essential draft-to-goldfish learning loop.*

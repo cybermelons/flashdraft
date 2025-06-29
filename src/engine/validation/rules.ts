@@ -238,8 +238,9 @@ export function getExpectedPlayer(state: DraftState): Player | null {
 }
 
 export function getPlayersNeedingPicks(state: DraftState): Player[] {
+  // Simple check: does this player have a pack with cards?
   return state.players.filter(player => {
-    const pack = player.currentPack || getCurrentPackForPlayer(state, player.id);
+    const pack = player.currentPack;
     return pack !== null && pack.cards.length > 0;
   });
 }

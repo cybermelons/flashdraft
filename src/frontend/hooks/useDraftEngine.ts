@@ -288,12 +288,31 @@ export function useDraftEngine(initialDraftId?: string): UseDraftEngineReturn {
       return false;
     }
 
+    console.log(`[DraftEngine] Human making pick: ${cardId}`);
+    console.log(`[DraftEngine] Current state before pick:`, {
+      round: engine.state.currentRound,
+      pick: engine.state.currentPick,
+      playerCount: engine.state.players.length,
+      status: engine.state.status
+    });
+
     const humanPlayerId = engine.state.config.humanPlayerId;
-    return applyAction({
+    const result = applyAction({
       type: 'MAKE_PICK',
       playerId: humanPlayerId,
       cardId
     });
+
+    console.log(`[DraftEngine] Pick result: ${result ? 'SUCCESS' : 'FAILED'}`);
+    if (result && engine) {
+      console.log(`[DraftEngine] State after pick:`, {
+        round: engine.state.currentRound,
+        pick: engine.state.currentPick,
+        status: engine.state.status
+      });
+    }
+
+    return result;
   }, [engine, applyAction]);
 
   // ============================================================================
