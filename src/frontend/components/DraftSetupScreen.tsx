@@ -68,7 +68,7 @@ export const DraftSetupScreen: React.FC<DraftSetupScreenProps> = ({
                 onClick={() => handleSetChange(setInfo.code)}
                 disabled={isLoading}
                 className={`w-full p-4 border-2 rounded-lg text-left transition-colors ${
-                  setup.config.selectedSet === setInfo.code
+                  setup.config.setCode === setInfo.code
                     ? 'border-blue-500 bg-blue-50'
                     : 'border-gray-200 hover:border-gray-300'
                 } ${isLoading ? 'opacity-50 cursor-not-allowed' : ''}`}

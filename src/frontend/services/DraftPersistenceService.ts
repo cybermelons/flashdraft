@@ -96,6 +96,14 @@ export class DraftPersistenceService {
       const deserializeResult = DraftSession.deserialize(serializedData);
       if (!deserializeResult.success) {
         console.error('Failed to deserialize draft:', deserializeResult.error);
+        
+        // If it's a checksum error, auto-delete the corrupted draft
+        if (deserializeResult.error?.type === 'SERIALIZATION_ERROR' && 
+            deserializeResult.error?.details?.includes('Checksum mismatch')) {
+          console.warn(`Auto-deleting corrupted draft ${draftId} due to checksum mismatch`);
+          await this.deleteDraft(draftId);
+        }
+        
         return null;
       }
       

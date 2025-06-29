@@ -7,12 +7,14 @@
  */
 
 import * as React from 'react';
+import { useEffect } from 'react';
 import { useFlashDraft } from '../hooks/useFlashDraft';
 import { DraftEngineErrorBoundary } from './ErrorBoundary';
 import NewDraftInterface from './NewDraftInterface';
 import DraftSetupScreen from './DraftSetupScreen';
 import LoadingScreen from './LoadingScreen';
 import ErrorScreen from './ErrorScreen';
+import { clearCorruptedDrafts } from '../utils/clearCorruptedData';
 
 export interface NewDraftAppProps {
   className?: string;
@@ -24,6 +26,13 @@ export const NewDraftApp: React.FC<NewDraftAppProps> = ({ className = '' }) => {
     autoSave: true,
     enableSync: true
   });
+
+  // Clear corrupted data on startup
+  useEffect(() => {
+    clearCorruptedDrafts().catch(err => 
+      console.error('Failed to clear corrupted drafts:', err)
+    );
+  }, []);
 
   // Loading state
   if (flashDraft.loading) {

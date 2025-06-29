@@ -7,10 +7,12 @@
  */
 
 import * as React from 'react';
+import { useEffect } from 'react';
 import { useDraftListManager } from '../hooks/useDraftPersistence';
 import type { DraftMetadata } from '../services/DraftPersistenceService';
 import LoadingScreen from './LoadingScreen';
 import ErrorScreen from './ErrorScreen';
+import { clearCorruptedDrafts } from '../utils/clearCorruptedData';
 
 export const DraftListPage: React.FC = () => {
   const {
@@ -20,6 +22,13 @@ export const DraftListPage: React.FC = () => {
     listLoading,
     listError
   } = useDraftListManager();
+
+  // Clear corrupted data on startup and refresh list
+  useEffect(() => {
+    clearCorruptedDrafts()
+      .then(() => refreshDraftList())
+      .catch(err => console.error('Failed to clear corrupted drafts:', err));
+  }, [refreshDraftList]);
 
   // Handle draft deletion
   const handleDeleteDraft = async (draftId: string) => {
