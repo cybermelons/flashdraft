@@ -170,12 +170,21 @@ export function useDraftEngine(initialDraftId?: string): UseDraftEngineReturn {
       return false;
     }
 
+    console.log('Applying action:', action.type, action);
+    console.log('Current draft state:', {
+      status: engine.state.status,
+      playerCount: engine.state.players.length,
+      players: engine.state.players.map(p => ({ id: p.id, name: p.name, isHuman: p.isHuman }))
+    });
+
     const result = engine.applyAction(action);
     if (!result.success) {
+      console.error('Action failed:', result.error);
       setError(result.error.message);
       return false;
     }
 
+    console.log('Action applied successfully');
     setEngine(result.data);
     setError(null);
     

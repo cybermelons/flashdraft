@@ -33,7 +33,8 @@
       "Bash(grep:*)",
       "Bash(git checkout:*)",
       "Bash(git ls-tree:*)",
-      "Bash(pnpm test:*)"
+      "Bash(pnpm test:*)",
+      "Bash(rg:*)"
     ],
     "deny": []
   }
