@@ -188,6 +188,26 @@ function DraftOverview() {
   );
 }
 
+// Helper to get friendly set names
+function getSetName(code: string): string {
+  const setNames: Record<string, string> = {
+    'DTK': 'Dragons of Tarkir',
+    'FIN': 'Final Fantasy',
+    'DMU': 'Dominaria United',
+    'BRO': "The Brothers' War",
+    'ONE': 'Phyrexia: All Will Be One',
+    'MOM': 'March of the Machine',
+    'WOE': 'Wilds of Eldraine',
+    'LCI': 'The Lost Caverns of Ixalan',
+    'MKM': 'Murders at Karlov Manor',
+    'OTJ': 'Outlaws of Thunder Junction',
+    'BLB': 'Bloomburrow',
+    'DSK': 'Duskmourn: House of Horror',
+    'FDN': 'Foundations',
+  };
+  return setNames[code] || code;
+}
+
 // Simple draft setup component
 function DraftSetup() {
   const [sets, setSets] = useState<Array<{code: string, name: string}>>([]);
@@ -205,8 +225,17 @@ function DraftSetup() {
         throw new Error('Failed to load sets');
       }
       
-      const availableSets = await response.json();
-      setSets(availableSets);
+      const data = await response.json();
+      // API returns { sets: [...] }, so we need to extract the array
+      const setCodes = data.sets || [];
+      
+      // Map set codes to objects with names
+      const formattedSets = setCodes.map((code: string) => ({
+        code,
+        name: getSetName(code)
+      }));
+      
+      setSets(formattedSets);
       setLoading(false);
     } catch (error) {
       console.error('Failed to load sets:', error);
