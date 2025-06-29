@@ -139,30 +139,6 @@ export function useDraftSetup(): UseDraftSetupReturn {
   }, []);
 
   // ============================================================================
-  // DRAFT CONFIG CREATION
-  // ============================================================================
-
-  const createDraftConfig = useCallback((): DraftConfig | null => {
-    if (!setData) {
-      setSetError('Set data not loaded');
-      return null;
-    }
-
-    if (!isConfigValid) {
-      setSetError('Configuration is invalid');
-      return null;
-    }
-
-    return {
-      setCode: config.setCode,
-      setData: setData,
-      playerCount: config.playerCount,
-      humanPlayerId: 'human-1',
-      botPersonalities: config.botPersonalities
-    };
-  }, [setData, config, isConfigValid]);
-
-  // ============================================================================
   // VALIDATION
   // ============================================================================
 
@@ -194,6 +170,30 @@ export function useDraftSetup(): UseDraftSetupReturn {
   }, [config, setData, loadingSet]);
 
   const isConfigValid = useMemo(() => validationErrors.length === 0, [validationErrors]);
+
+  // ============================================================================
+  // DRAFT CONFIG CREATION
+  // ============================================================================
+
+  const createDraftConfig = useCallback((): DraftConfig | null => {
+    if (!setData) {
+      setSetError('Set data not loaded');
+      return null;
+    }
+
+    if (!isConfigValid) {
+      setSetError('Configuration is invalid');
+      return null;
+    }
+
+    return {
+      setCode: config.setCode,
+      setData: setData,
+      playerCount: config.playerCount,
+      humanPlayerId: 'human-1',
+      botPersonalities: config.botPersonalities
+    };
+  }, [setData, config, isConfigValid]);
 
   // ============================================================================
   // EFFECTS

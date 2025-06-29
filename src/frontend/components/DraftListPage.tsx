@@ -139,25 +139,19 @@ export const DraftListPage: React.FC<DraftListPageProps> = ({
         <div className="max-w-6xl mx-auto px-6 py-4">
           <div className="flex justify-between items-center">
             <div>
-              <h1 className="text-2xl font-bold text-gray-900">Saved Drafts</h1>
+              <h1 className="text-3xl font-bold text-gray-900">FlashDraft</h1>
               <p className="text-gray-600">
                 {drafts.length} {drafts.length === 1 ? 'draft' : 'drafts'} saved
               </p>
             </div>
             
-            <div className="flex space-x-3">
-              <button
-                onClick={onNavigateHome}
-                className="border border-gray-300 text-gray-700 px-4 py-2 rounded hover:bg-gray-50 transition-colors"
-              >
-                🏠 Home
-              </button>
-              
+            <div className="flex items-center">
               <button
                 onClick={onNavigateToNewDraft}
-                className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded transition-colors"
+                className="bg-blue-600 hover:bg-blue-700 text-white px-6 py-3 rounded-lg font-medium transition-colors shadow-md hover:shadow-lg flex items-center gap-2"
               >
-                🎲 New Draft
+                <span className="text-xl">+</span>
+                <span>New Draft</span>
               </button>
               
               {drafts.length > 0 && (
@@ -178,17 +172,18 @@ export const DraftListPage: React.FC<DraftListPageProps> = ({
         {drafts.length === 0 ? (
           // Empty state
           <div className="text-center py-12">
-            <div className="text-6xl mb-4">📦</div>
-            <h2 className="text-xl font-semibold text-gray-700 mb-2">No Saved Drafts</h2>
-            <p className="text-gray-500 mb-6">
-              Start your first draft to see it appear here
+            <div className="text-6xl mb-4">🎴</div>
+            <h2 className="text-2xl font-semibold text-gray-700 mb-2">Welcome to FlashDraft</h2>
+            <p className="text-gray-500 mb-8 text-lg">
+              Practice MTG drafts with realistic AI opponents
             </p>
             
             <button
               onClick={onNavigateToNewDraft}
-              className="bg-blue-600 hover:bg-blue-700 text-white px-6 py-3 rounded-lg font-medium transition-colors"
+              className="bg-blue-600 hover:bg-blue-700 text-white px-8 py-4 rounded-lg font-medium text-lg transition-colors shadow-lg hover:shadow-xl inline-flex items-center gap-2"
             >
-              🎲 Start New Draft
+              <span className="text-xl">+</span>
+              <span>Start Your First Draft</span>
             </button>
           </div>
         ) : (
