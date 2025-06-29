@@ -39,15 +39,17 @@ export const NewCard: React.FC<NewCardProps> = ({
   const [imageError, setImageError] = useState(false);
 
   const handleMouseEnter = useCallback(() => {
-    if (canInteract && onHover) {
-      onHover(true);
-    }
+    // Temporarily disabled for debugging
+    // if (canInteract && onHover) {
+    //   onHover(true);
+    // }
   }, [canInteract, onHover]);
 
   const handleMouseLeave = useCallback(() => {
-    if (onHover) {
-      onHover(false);
-    }
+    // Temporarily disabled for debugging  
+    // if (onHover) {
+    //   onHover(false);
+    // }
   }, [onHover]);
 
   const handleClick = useCallback(() => {
@@ -92,6 +94,20 @@ export const NewCard: React.FC<NewCardProps> = ({
   };
 
   const manaColors = getManaCostColors(card.manaCost || '');
+
+  // Debug logging
+  React.useEffect(() => {
+    console.log('NewCard received card data:', {
+      id: card.id,
+      name: card.name,
+      imageUrl: card.imageUrl,
+      manaCost: card.manaCost,
+      image_uris: (card as any).image_uris,
+      mana_cost: (card as any).mana_cost,
+      hasImageUrl: !!card.imageUrl,
+      imageUrlLength: card.imageUrl?.length || 0
+    });
+  }, [card]);
 
   return (
     <div

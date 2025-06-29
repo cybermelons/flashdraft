@@ -6,6 +6,7 @@
  */
 
 import type { Card, Pack, MTGSetData } from '../types/core';
+import { toDraftCard } from '../../shared/utils/cardUtils';
 
 // ============================================================================
 // PACK CONFIGURATION TYPES
@@ -125,6 +126,7 @@ export class PackGenerator {
     
     // Always reset used cards for each individual pack to avoid duplicates within the pack
     this.usedCards.clear();
+    console.log(`[PackGen] Starting pack generation for ${packId}, usedCards cleared`);
 
     const packCards: Card[] = [];
     const availableCards = this.categorizeCards(setData.cards || []);
@@ -152,9 +154,26 @@ export class PackGenerator {
     // Shuffle pack for realistic feel
     this.shuffleArray(packCards);
 
+    // Check for duplicates in the generated pack
+    const cardIds = packCards.map(card => card.id);
+    const uniqueIds = new Set(cardIds);
+    if (cardIds.length !== uniqueIds.size) {
+      console.error(`[PackGen] DUPLICATE CARDS DETECTED in pack ${packId}:`);
+      const duplicates = cardIds.filter((id, index) => cardIds.indexOf(id) !== index);
+      duplicates.forEach(dupId => {
+        const card = packCards.find(c => c.id === dupId);
+        console.error(`[PackGen] Duplicate: ${card?.name} (${dupId})`);
+      });
+    } else {
+      console.log(`[PackGen] Pack ${packId} generated successfully with ${packCards.length} unique cards`);
+    }
+
+    // Convert MTGCards to DraftCards for component compatibility
+    const draftCards = packCards.map(card => toDraftCard(card));
+
     return {
       id: packId,
-      cards: packCards,
+      cards: draftCards,
       round,
       originalPlayerPosition: playerPosition
     };
@@ -298,10 +317,15 @@ export class PackGenerator {
 
     if (availableCards.length === 0) {
       // If we run out of unused cards, allow duplicates
-      return cards[Math.floor(this.rng() * cards.length)];
+      console.warn(`[PackGen] No unused cards available, allowing duplicate from pool of ${cards.length} cards`);
+      const selectedCard = cards[Math.floor(this.rng() * cards.length)];
+      console.warn(`[PackGen] Selected duplicate card: ${selectedCard.name} (${selectedCard.id})`);
+      return selectedCard;
     }
 
-    return availableCards[Math.floor(this.rng() * availableCards.length)];
+    const selectedCard = availableCards[Math.floor(this.rng() * availableCards.length)];
+    console.log(`[PackGen] Selected card: ${selectedCard.name} (${selectedCard.id}), remaining unused: ${availableCards.length - 1}`);
+    return selectedCard;
   }
 
   private selectWeightedCard(cards: Card[], weights: number[]): Card | null {
