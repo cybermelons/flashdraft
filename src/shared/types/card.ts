@@ -177,6 +177,10 @@ export interface DraftCard extends MTGCard {
   pick_priority?: number;
   archetype_scores?: Record<string, number>;
   synergy_tags?: string[];
+  
+  // Component-friendly camelCase properties
+  imageUrl?: string;
+  manaCost?: string;
 }
 
 export interface DraftPack {

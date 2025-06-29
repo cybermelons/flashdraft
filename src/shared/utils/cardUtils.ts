@@ -279,9 +279,12 @@ export function generateBoosterPack(
 export function toDraftCard(card: MTGCard): DraftCard {
   return {
     ...card,
+    // Convert snake_case to camelCase for component compatibility
+    imageUrl: card.image_uris?.normal || card.image_uris?.large || card.image_uris?.small || '',
+    manaCost: card.mana_cost || '',
     pick_priority: calculateBasicPickPriority(card),
     synergy_tags: generateSynergyTags(card)
-  };
+  } as DraftCard;
 }
 
 /**

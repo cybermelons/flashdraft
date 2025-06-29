@@ -123,10 +123,8 @@ export class PackGenerator {
     const packId = `pack-r${round}-p${playerPosition}-${this.generateId()}`;
     const template = this.config.template;
     
-    // Reset used cards if avoidDuplicates is disabled
-    if (!this.config.avoidDuplicates) {
-      this.usedCards.clear();
-    }
+    // Always reset used cards for each individual pack to avoid duplicates within the pack
+    this.usedCards.clear();
 
     const packCards: Card[] = [];
     const availableCards = this.categorizeCards(setData.cards || []);
