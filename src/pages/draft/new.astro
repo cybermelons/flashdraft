@@ -1,0 +1,23 @@
+---
+/**
+ * FlashDraft - New Draft Page
+ * 
+ * Direct route to start a new draft with the new architecture.
+ */
+
+import Layout from '../../layouts/Layout.astro';
+import { NewDraftApp } from '../../frontend/components';
+---
+
+<Layout title="FlashDraft - New Draft">
+  <NewDraftApp client:load className="min-h-screen" />
+</Layout>
+
+<style>
+  /* Ensure full height for the app */
+  html, body {
+    height: 100%;
+    margin: 0;
+    padding: 0;
+  }
+</style>
