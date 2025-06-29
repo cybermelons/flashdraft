@@ -5,7 +5,8 @@
  * including specialized boundaries for different component types.
  */
 
-import React, { Component, ReactNode } from 'react';
+import React, { Component } from 'react';
+import type { ReactNode } from 'react';
 
 // ============================================================================
 // ERROR TYPES

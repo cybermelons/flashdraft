@@ -6,13 +6,19 @@
  */
 
 import Layout from '../layouts/Layout.astro';
-import DraftOverview from '../frontend/components/DraftOverview';
+import { DraftListPage } from '../frontend/components';
 ---
 
 <Layout title="FlashDraft - Draft Overview">
-  <main>
-    <div id="draft-overview-root">
-      <DraftOverview client:visible />
-    </div>
-  </main>
+  <DraftListPage 
+    client:load 
+    onNavigateHome={() => window.location.href = '/'}
+    onNavigateToNewDraft={() => window.location.href = '/draft/new'}
+    onNavigateToDraft={(draftId, round, pick) => {
+      const path = round && pick 
+        ? `/draft/${draftId}/p${round}p${pick}`
+        : `/draft/${draftId}`;
+      window.location.href = path;
+    }}
+  />
 </Layout>
