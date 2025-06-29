@@ -31,13 +31,15 @@ export interface DraftEngineState {
 
 export interface DraftEngineActions {
   // Engine lifecycle
-  createDraft: (config: DraftConfig) => Promise<boolean>;
+  createDraft: (config: DraftConfig) => Promise<DraftSession | null>;
   loadDraft: (draftId: string) => Promise<boolean>;
   saveDraft: () => Promise<boolean>;
   
   // Draft actions
   addPlayer: (playerId: string, name: string, isHuman: boolean, personality?: string) => boolean;
+  addPlayerToEngine: (engine: DraftSession, playerId: string, name: string, isHuman: boolean, personality?: string) => DraftSession | null;
   startDraft: () => boolean;
+  startDraftOnEngine: (engine: DraftSession) => DraftSession | null;
   makePick: (cardId: string) => boolean;
   
   // Utility
@@ -90,7 +92,7 @@ export function useDraftEngine(initialDraftId?: string): UseDraftEngineReturn {
   // ENGINE LIFECYCLE ACTIONS
   // ============================================================================
 
-  const createDraft = useCallback(async (config: DraftConfig): Promise<boolean> => {
+  const createDraft = useCallback(async (config: DraftConfig): Promise<DraftSession | null> => {
     try {
       setLoading(true);
       setError(null);
@@ -102,13 +104,13 @@ export function useDraftEngine(initialDraftId?: string): UseDraftEngineReturn {
       const saveResult = await persistence.save(newEngine.state.id, newEngine.serialize());
       if (!saveResult) {
         setError('Failed to save new draft');
-        return false;
+        return null;
       }
       
-      return true;
+      return newEngine;
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to create draft');
-      return false;
+      return null;
     } finally {
       setLoading(false);
     }
@@ -196,15 +198,85 @@ export function useDraftEngine(initialDraftId?: string): UseDraftEngineReturn {
     return true;
   }, [engine, persistence]);
 
-  const addPlayer = useCallback((playerId: string, name: string, isHuman: boolean, personality?: string): boolean => {
-    return applyAction({
-      type: 'ADD_PLAYER',
+  const addPlayerToEngine = useCallback((engine: DraftSession, playerId: string, name: string, isHuman: boolean, personality?: string): DraftSession | null => {
+    console.log('addPlayerToEngine called with:', { playerId, name, isHuman, personality });
+    console.log('Engine state:', {
+      status: engine.state.status,
+      playerCount: engine.state.players.length,
+      players: engine.state.players.map(p => ({ id: p.id, name: p.name, isHuman: p.isHuman }))
+    });
+
+    const action = {
+      type: 'ADD_PLAYER' as const,
       playerId,
       name,
       isHuman,
       personality: personality as any
+    };
+    
+    console.log('Applying action to engine:', action);
+    const result = engine.applyAction(action);
+    
+    if (!result.success) {
+      console.error('Action failed:', result.error);
+      setError(result.error.message);
+      return null;
+    }
+
+    console.log('Action applied successfully');
+    const newEngine = result.data;
+    setEngine(newEngine);
+    
+    // Auto-save after successful action
+    persistence.save(newEngine.state.id, newEngine.serialize()).catch(err => {
+      console.warn('Auto-save failed:', err);
     });
-  }, [applyAction]);
+    
+    return newEngine;
+  }, [persistence]);
+
+  const addPlayer = useCallback((playerId: string, name: string, isHuman: boolean, personality?: string): boolean => {
+    console.log('addPlayer called with:', { playerId, name, isHuman, personality });
+    console.log('Current engine state:', engine ? 'exists' : 'null');
+    
+    if (!engine) {
+      console.error('addPlayer failed: No engine available');
+      return false;
+    }
+    
+    const result = addPlayerToEngine(engine, playerId, name, isHuman, personality);
+    return result !== null;
+  }, [addPlayerToEngine, engine]);
+
+  const startDraftOnEngine = useCallback((engine: DraftSession): DraftSession | null => {
+    console.log('startDraftOnEngine called');
+    console.log('Engine state:', {
+      status: engine.state.status,
+      playerCount: engine.state.players.length
+    });
+
+    const action = { type: 'START_DRAFT' as const };
+    
+    console.log('Applying START_DRAFT action to engine:', action);
+    const result = engine.applyAction(action);
+    
+    if (!result.success) {
+      console.error('Start draft action failed:', result.error);
+      setError(result.error.message);
+      return null;
+    }
+
+    console.log('Start draft action applied successfully');
+    const newEngine = result.data;
+    setEngine(newEngine);
+    
+    // Auto-save after successful action
+    persistence.save(newEngine.state.id, newEngine.serialize()).catch(err => {
+      console.warn('Auto-save failed:', err);
+    });
+    
+    return newEngine;
+  }, [persistence]);
 
   const startDraft = useCallback((): boolean => {
     return applyAction({ type: 'START_DRAFT' });
@@ -269,7 +341,9 @@ export function useDraftEngine(initialDraftId?: string): UseDraftEngineReturn {
     loadDraft,
     saveDraft,
     addPlayer,
+    addPlayerToEngine,
     startDraft,
+    startDraftOnEngine,
     makePick,
     canMakePick,
     getDraftId,
