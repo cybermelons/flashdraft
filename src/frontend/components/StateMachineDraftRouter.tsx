@@ -43,14 +43,17 @@ export function StateMachineDraftRouter({
           break;
 
         case 'draft':
-          if (draftId === 'new' || !draftId) {
-            // Create new draft
-            await createNewDraft();
+          if (draftId === 'new') {
+            // Show set selection screen (don't auto-create draft)
+            setLoading(false);
+          } else if (!draftId) {
+            // No draft ID - show overview
+            setLoading(false);
           } else {
             // Load existing draft (if we had persistence)
             setError('Loading existing drafts not implemented yet');
+            setLoading(false);
           }
-          setLoading(false);
           break;
 
         case 'position':
@@ -140,10 +143,17 @@ export function StateMachineDraftRouter({
 
     case 'draft':
     case 'position':
-      if (draft) {
-        return <StateMachineDraft />;
-      } else {
+      // Show set selection for new drafts
+      if (draftId === 'new' && !draft) {
         return <DraftSetup />;
+      }
+      // Show active draft if one exists
+      else if (draft) {
+        return <StateMachineDraft />;
+      }
+      // Default to overview
+      else {
+        return <DraftOverview />;
       }
 
     default:
@@ -180,13 +190,38 @@ function DraftOverview() {
 
 // Simple draft setup component
 function DraftSetup() {
-  const [sets] = useState([
-    { code: 'DTK', name: 'Dragons of Tarkir' },
-    { code: 'FIN', name: 'Final Fantasy' },
-  ]);
+  const [sets, setSets] = useState<Array<{code: string, name: string}>>([]);
+  const [loading, setLoading] = useState(true);
+  const [starting, setStarting] = useState(false);
+
+  useEffect(() => {
+    loadAvailableSets();
+  }, []);
+
+  const loadAvailableSets = async () => {
+    try {
+      const response = await fetch('/api/sets');
+      if (!response.ok) {
+        throw new Error('Failed to load sets');
+      }
+      
+      const availableSets = await response.json();
+      setSets(availableSets);
+      setLoading(false);
+    } catch (error) {
+      console.error('Failed to load sets:', error);
+      // Fallback to known sets
+      setSets([
+        { code: 'DTK', name: 'Dragons of Tarkir' },
+        { code: 'FIN', name: 'Final Fantasy' },
+      ]);
+      setLoading(false);
+    }
+  };
 
   const handleSetSelect = async (setCode: string) => {
     try {
+      setStarting(true);
       const response = await fetch(`/api/sets/${setCode}`);
       if (!response.ok) {
         throw new Error('Failed to load set data');
@@ -198,26 +233,53 @@ function DraftSetup() {
     } catch (error) {
       console.error('Failed to start draft:', error);
       alert('Failed to start draft. Please try again.');
+      setStarting(false);
     }
   };
+
+  if (loading) {
+    return (
+      <div className="container mx-auto px-4 py-8">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto mb-4"></div>
+          <p className="text-gray-600">Loading available sets...</p>
+        </div>
+      </div>
+    );
+  }
+
+  if (starting) {
+    return (
+      <div className="container mx-auto px-4 py-8">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto mb-4"></div>
+          <p className="text-gray-600">Starting draft...</p>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="container mx-auto px-4 py-8">
       <div className="max-w-2xl mx-auto">
         <h1 className="text-3xl font-bold text-center mb-8">Choose a Set</h1>
         
-        <div className="grid gap-4">
-          {sets.map(set => (
-            <button
-              key={set.code}
-              onClick={() => handleSetSelect(set.code)}
-              className="p-6 border rounded-lg hover:bg-gray-50 text-left transition-colors"
-            >
-              <h3 className="font-semibold text-lg">{set.name}</h3>
-              <p className="text-gray-600 text-sm">{set.code}</p>
-            </button>
-          ))}
-        </div>
+        {sets.length === 0 ? (
+          <p className="text-center text-gray-600">No sets available</p>
+        ) : (
+          <div className="grid gap-4">
+            {sets.map(set => (
+              <button
+                key={set.code}
+                onClick={() => handleSetSelect(set.code)}
+                className="p-6 border rounded-lg hover:bg-gray-50 text-left transition-colors"
+              >
+                <h3 className="font-semibold text-lg">{set.name}</h3>
+                <p className="text-gray-600 text-sm">{set.code}</p>
+              </button>
+            ))}
+          </div>
+        )}
         
         <div className="mt-8 text-center">
           <button
