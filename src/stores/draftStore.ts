@@ -332,12 +332,15 @@ function generatePacks(setData: MTGSetData, count: number): Pack[] {
  */
 function generateSinglePack(setData: MTGSetData): DraftCard[] {
   const cards = setData.cards || [];
+  console.log(`[PackGen] Generating pack from ${cards.length} total cards in set ${setData.set_code}`);
   
   // Categorize cards by rarity
   const commons = cards.filter(c => c.rarity === 'common' && c.booster);
   const uncommons = cards.filter(c => c.rarity === 'uncommon' && c.booster);
   const rares = cards.filter(c => c.rarity === 'rare' && c.booster);
   const mythics = cards.filter(c => c.rarity === 'mythic' && c.booster);
+  
+  console.log(`[PackGen] Card distribution - Commons: ${commons.length}, Uncommons: ${uncommons.length}, Rares: ${rares.length}, Mythics: ${mythics.length}`);
   
   const packCards: DraftCard[] = [];
   const usedCardIds = new Set<string>();
@@ -399,6 +402,7 @@ function generateId(): string {
 
 export const draftActions = {
   create: (setData: MTGSetData) => {
+    console.log('[DraftStore] Creating draft with set:', setData.set_code, 'Cards:', setData.cards?.length || 0);
     const newDraft = createDraft(setData);
     draftStore.set(newDraft);
     return newDraft;
@@ -408,6 +412,7 @@ export const draftActions = {
     const current = draftStore.get();
     if (!current) throw new Error('No draft to start');
     
+    console.log('[DraftStore] Starting draft with set:', current.setData.set_code);
     const started = startDraft(current);
     draftStore.set(started);
     return started;
