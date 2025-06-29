@@ -56,6 +56,7 @@ export interface Player {
   position: number; // 0-7 seat position
   pickedCards: Card[];
   personality?: BotPersonality; // For bot players
+  currentPack?: Pack | null; // Pack currently being drafted
 }
 
 export interface Pack {
@@ -76,17 +77,8 @@ export type DraftAction =
   | { type: 'TIME_OUT_PICK'; playerId: string } // Auto-pick for timer
   | { type: 'UNDO_LAST_ACTION' }; // For development/testing
 
-export type ActionResult<T> = 
-  | { success: true; data: T }
-  | { success: false; error: DraftError };
-
-export type DraftError = 
-  | { type: 'INVALID_PICK'; message: string; cardId: string }
-  | { type: 'WRONG_PLAYER'; message: string; playerId: string }
-  | { type: 'DRAFT_NOT_ACTIVE'; message: string }
-  | { type: 'INVALID_ACTION'; message: string }
-  | { type: 'PLAYER_NOT_FOUND'; message: string; playerId: string }
-  | { type: 'CARD_NOT_AVAILABLE'; message: string; cardId: string };
+// Re-export error types from errors module
+export type { ActionResult, DraftError } from './errors';
 
 // ============================================================================
 // DRAFT STATUS & METADATA
@@ -106,7 +98,7 @@ export interface DraftContext {
 // BOT INTEGRATION
 // ============================================================================
 
-export type BotPersonality = 'bronze' | 'silver' | 'gold' | 'mythic';
+export type BotPersonality = 'bronze' | 'silver' | 'gold' | 'mythic' | 'ml-17lands' | 'ml-custom';
 
 export interface DraftBot {
   selectCard(
@@ -129,6 +121,7 @@ export type { MTGCard as Card, MTGSetData, DraftCard } from '../../shared/types/
 // ============================================================================
 
 export interface SerializedDraft {
+  id: string; // Original draft ID
   config: DraftConfig;
   history: DraftAction[];
   timestamp: number;
