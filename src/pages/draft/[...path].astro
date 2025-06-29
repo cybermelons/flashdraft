@@ -9,7 +9,7 @@
  */
 
 import Layout from '../../layouts/Layout.astro';
-import DraftRouter from '../../frontend/components/DraftRouter';
+import { StateMachineDraftRouter } from '../../frontend/components/StateMachineDraftRouter';
 
 export const prerender = false;
 
@@ -70,8 +70,8 @@ if (!path || (path.length === 0)) {
 <Layout title={`FlashDraft - ${routeType === 'overview' ? 'Draft Overview' : 'Draft'}`}>
   <main>
     <div id="draft-app-root">
-      <DraftRouter
-        client:visible
+      <StateMachineDraftRouter
+        client:load
         routeType={routeType}
         draftId={draftId}
         round={round}

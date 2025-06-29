@@ -6,11 +6,11 @@
  */
 
 import Layout from '../../layouts/Layout.astro';
-import { NewDraftApp } from '../../frontend/components';
+import { StateMachineDraftRouter } from '../../frontend/components/StateMachineDraftRouter';
 ---
 
 <Layout title="FlashDraft - New Draft">
-  <NewDraftApp client:load className="min-h-screen" />
+  <StateMachineDraftRouter client:load routeType="draft" draftId="new" />
 </Layout>
 
 <style>
