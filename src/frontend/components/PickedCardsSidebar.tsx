@@ -83,7 +83,7 @@ export const PickedCardsSidebar: React.FC<PickedCardsSidebarProps> = ({
           <div className="grid grid-cols-4 gap-2">
             {playerCards.map((card) => (
               <NewCard
-                key={card.id}
+                key={card.instanceId}
                 card={card}
                 size="small"
                 canInteract={true}

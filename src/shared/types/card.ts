@@ -173,6 +173,9 @@ export interface MTGSetData {
 
 // Draft-specific types
 export interface DraftCard extends MTGCard {
+  // Unique instance ID for React keys
+  instanceId: string;
+  
   // Additional properties for draft simulation
   pick_priority?: number;
   archetype_scores?: Record<string, number>;

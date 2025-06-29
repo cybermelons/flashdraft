@@ -10,6 +10,7 @@ import * as React from 'react';
 import { useState, useCallback, useMemo } from 'react';
 import type { DraftCard, MTGCard } from '../../shared/types/card';
 import type { GeneratedPack } from '../utils/clientPackGenerator';
+import { ensureDraftCardInstanceId } from '../../shared/utils/cardUtils';
 import Card from './Card';
 
 // Client-safe utility functions
@@ -61,7 +62,7 @@ export const PackDisplay: React.FC<PackDisplayProps> = ({
 
   // Sort and filter cards
   const sortedCards = useMemo(() => {
-    let cards = [...pack.cards];
+    let cards = [...pack.cards].map(card => ensureDraftCardInstanceId(card, 'pack'));
 
     // Apply filters
     if (filterBy) {
@@ -253,7 +254,7 @@ export const PackDisplay: React.FC<PackDisplayProps> = ({
         <div className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-5 lg:grid-cols-6 xl:grid-cols-7 gap-2 sm:gap-3 auto-rows-max">
           {sortedCards.map((card) => (
             <Card
-              key={card.id}
+              key={card.instanceId}
               card={card}
               size="normal"
               selected={selectedCard?.id === card.id}

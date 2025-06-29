@@ -218,8 +218,8 @@ class PackGenerator {
       [pack[i], pack[j]] = [pack[j], pack[i]];
     }
 
-    // Convert to draft cards
-    const draftCards = pack.map(toDraftCard);
+    // Convert to draft cards with pack context
+    const draftCards = pack.map(card => toDraftCard(card, `pack-${packId}`));
 
     return {
       id: packId,

@@ -173,7 +173,7 @@ export const DraftInterface: React.FC<DraftInterfaceProps> = ({ className = '' }
                 <div className="grid grid-cols-8 gap-1 max-w-2xl">
                   {humanPlayer.picked_cards.map((card) => (
                     <Card
-                      key={card.id}
+                      key={card.instanceId}
                       card={card}
                       size="small"
                       showDetails={false}
@@ -338,7 +338,7 @@ export const DraftInterface: React.FC<DraftInterfaceProps> = ({ className = '' }
               <div className="grid grid-cols-4 gap-2">
                 {humanPlayer.picked_cards.map((card) => (
                   <Card
-                    key={card.id}
+                    key={card.instanceId}
                     card={card}
                     size="small"
                     showDetails={true}
