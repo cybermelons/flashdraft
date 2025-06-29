@@ -3,27 +3,16 @@
  * Draft List Page Component
  * 
  * Shows list of saved drafts with management actions.
- * Purely presentational component using draft persistence hooks.
+ * Uses simple <a> links for navigation.
  */
 
 import * as React from 'react';
-import { useEffect, useState } from 'react';
 import { useDraftListManager } from '../hooks/useDraftPersistence';
 import type { DraftMetadata } from '../services/DraftPersistenceService';
 import LoadingScreen from './LoadingScreen';
 import ErrorScreen from './ErrorScreen';
 
-export interface DraftListPageProps {
-  onNavigateHome: () => void;
-  onNavigateToNewDraft: () => void;
-  onNavigateToDraft: (draftId: string, round?: number, pick?: number) => void;
-}
-
-export const DraftListPage: React.FC<DraftListPageProps> = ({
-  onNavigateHome,
-  onNavigateToNewDraft,
-  onNavigateToDraft
-}) => {
+export const DraftListPage: React.FC = () => {
   const {
     draftList,
     refreshDraftList,
@@ -114,7 +103,6 @@ export const DraftListPage: React.FC<DraftListPageProps> = ({
         onRetry={async () => {
           await refreshDraftList();
         }}
-        onNavigateHome={onNavigateHome}
         className="h-full"
       />
     );
@@ -134,13 +122,13 @@ export const DraftListPage: React.FC<DraftListPageProps> = ({
             </div>
             
             <div className="flex items-center">
-              <button
-                onClick={onNavigateToNewDraft}
+              <a
+                href="/draft/new"
                 className="bg-blue-600 hover:bg-blue-700 text-white px-6 py-3 rounded-lg font-medium transition-colors shadow-md hover:shadow-lg flex items-center gap-2"
               >
                 <span className="text-xl">+</span>
                 <span>New Draft</span>
-              </button>
+              </a>
               
               {draftList.length > 0 && (
                 <button
@@ -166,19 +154,22 @@ export const DraftListPage: React.FC<DraftListPageProps> = ({
               Practice MTG drafts with realistic AI opponents
             </p>
             
-            <button
-              onClick={onNavigateToNewDraft}
+            <a
+              href="/draft/new"
               className="bg-blue-600 hover:bg-blue-700 text-white px-8 py-4 rounded-lg font-medium text-lg transition-colors shadow-lg hover:shadow-xl inline-flex items-center gap-2"
             >
               <span className="text-xl">+</span>
               <span>Start Your First Draft</span>
-            </button>
+            </a>
           </div>
         ) : (
           // Drafts list
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
             {draftList.map((draft) => {
               const summary = getDraftSummary(draft);
+              const draftPath = summary.currentRound && summary.currentPick 
+                ? `/draft/${draft.id}/p${summary.currentRound}p${summary.currentPick}`
+                : `/draft/${draft.id}`;
               
               return (
                 <div key={draft.id} className="bg-white rounded-lg shadow-md hover:shadow-lg transition-shadow">
@@ -239,12 +230,12 @@ export const DraftListPage: React.FC<DraftListPageProps> = ({
 
                     {/* Actions */}
                     <div className="flex space-x-2">
-                      <button
-                        onClick={() => onNavigateToDraft(draft.id, summary.currentRound, summary.currentPick)}
-                        className="flex-1 bg-blue-600 hover:bg-blue-700 text-white py-2 px-3 rounded text-sm font-medium transition-colors"
+                      <a
+                        href={draftPath}
+                        className="flex-1 bg-blue-600 hover:bg-blue-700 text-white py-2 px-3 rounded text-sm font-medium transition-colors text-center"
                       >
                         {summary.status === 'complete' ? 'View' : 'Continue'}
-                      </button>
+                      </a>
                       
                       <button
                         onClick={() => handleDeleteDraft(draft.id)}

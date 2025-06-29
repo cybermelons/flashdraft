@@ -4,15 +4,5 @@ import { DraftListPage } from '../frontend/components';
 ---
 
 <Layout title="FlashDraft - MTG Draft Simulator & Learning Platform">
-  <DraftListPage 
-    client:load 
-    onNavigateHome={() => {/* Already on home */}}
-    onNavigateToNewDraft={() => window.location.href = '/draft/new'}
-    onNavigateToDraft={(draftId, round, pick) => {
-      const path = round && pick 
-        ? `/draft/${draftId}/p${round}p${pick}`
-        : `/draft/${draftId}`;
-      window.location.href = path;
-    }}
-  />
+  <DraftListPage client:load />
 </Layout>
