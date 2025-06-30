@@ -136,6 +136,8 @@ function applyHumanPick(state: SeededDraftState, action: { type: 'HUMAN_PICK'; c
   
   const card = humanPlayer.currentPack.cards.find(c => c.id === cardId);
   if (!card) {
+    console.error(`[applyHumanPick] Card ${cardId} not found in pack. Available cards:`, 
+      humanPlayer.currentPack.cards.map(c => c.id));
     throw new Error(`Card ${cardId} not found in human player's pack`);
   }
   

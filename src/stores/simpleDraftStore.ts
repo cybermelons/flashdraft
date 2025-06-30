@@ -135,7 +135,9 @@ export const draftActions = {
       draftLoadingStore.set(true);
       draftErrorStore.set(null);
       
+      console.log(`[draftActions] Loading position ${seed} p${round}p${pick}`);
       const state = await draftService.navigateToPosition(seed, round, pick);
+      console.log(`[draftActions] Loaded state, human player pack has ${state.players.find(p => p.isHuman)?.currentPack?.cards.length} cards`);
       draftStore.set(state);
       
       // No URL update - URL already reflects the target position

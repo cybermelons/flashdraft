@@ -101,6 +101,9 @@ function CurrentPack({ draft }: { draft: SeededDraftState }) {
 
   const handleCardClick = async (cardId: string) => {
     try {
+      console.log(`[DraftInterface] Attempting to pick card: ${cardId}`);
+      console.log(`[DraftInterface] Current pack has ${currentPack?.cards.length} cards:`, 
+        currentPack?.cards.map(c => c.id));
       await draftActions.makeHumanPick(cardId);
       // Navigation handled automatically by draftActions
     } catch (error) {
