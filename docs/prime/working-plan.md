@@ -1,6 +1,6 @@
 # Working Plan: Static Set Data Integration with Scryfall
 
-## Progress: 10/13 tasks complete
+## Progress: 12/13 tasks complete
 
 **Current Issue**: Draft creation fails with "Set data not found: FIN" because the draft engine expects set data to be loaded before creating drafts. Need to download MTG set data from Scryfall API and store it statically.
 
@@ -19,7 +19,8 @@
 - [x] **Build integration** - Set data properly bundled (4MB chunk includes JSON data) ✅
 
 ### Phase 3: UI Integration & Styling
-- [ ] **Fix Tailwind CSS** - Ensure Tailwind is properly configured and loading
+- [x] **Fix Tailwind CSS** - Modern dark theme with glass-morphism effects applied ✅
+- [x] **Component styling** - DraftHeader and PackDisplay updated with professional UI ✅
 - [ ] **Set selection UI** - Update new.astro to show available sets dynamically
 - [ ] **Pack generation testing** - Verify cards load and display correctly
 

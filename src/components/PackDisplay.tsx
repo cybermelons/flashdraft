@@ -154,66 +154,127 @@ export function PackDisplay({ pack, onCardPick, canPick, className = '' }: PackD
   };
 
   return (
-    <div className={`pack-display ${getViewModeClass()} ${className}`}>
-      <div className="pack-header">
-        <div className="pack-info">
-          <h2>Pack {pack.id}</h2>
-          <span className="card-count">{displayCards.length} cards</span>
-        </div>
-        
-        <div className="pack-controls">
-          <button
-            onClick={() => setQuickPickMode(!quickPickMode)}
-            className={`btn btn-sm ${quickPickMode ? 'btn-primary' : 'btn-secondary'}`}
-            title={quickPickMode ? 'Quick pick: ON' : 'Quick pick: OFF'}
-          >
-            Quick Pick
-          </button>
+    <div className={`${className}`}>
+      {/* Pack Header */}
+      <div className="bg-slate-800/50 backdrop-blur-sm rounded-2xl p-6 border border-slate-700/50 mb-6">
+        <div className="flex items-center justify-between">
+          <div className="flex items-center gap-4">
+            <div>
+              <h2 className="text-2xl font-bold text-white">Current Pack</h2>
+              <div className="flex items-center gap-3 mt-1">
+                <span className="bg-slate-700/50 text-slate-300 px-3 py-1 rounded-full text-sm font-medium">
+                  {pack.id}
+                </span>
+                <span className="text-slate-400 text-sm">
+                  {displayCards.length} cards remaining
+                </span>
+              </div>
+            </div>
+          </div>
           
-          {selectedCard && (
+          <div className="flex items-center gap-3">
             <button
-              onClick={() => onCardPick(selectedCard.id)}
-              disabled={!canPick}
-              className="btn btn-primary"
+              onClick={() => setQuickPickMode(!quickPickMode)}
+              className={`px-4 py-2 rounded-xl font-medium transition-colors ${
+                quickPickMode 
+                  ? 'bg-blue-600 hover:bg-blue-500 text-white' 
+                  : 'bg-slate-700/50 hover:bg-slate-600/50 text-slate-300 hover:text-white'
+              }`}
+              title={quickPickMode ? 'Quick pick: ON - Click to pick immediately' : 'Quick pick: OFF - Click to select, double-click to pick'}
             >
-              Pick {selectedCard.name}
+              <svg className="w-4 h-4 inline mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M13 10V3L4 14h7v7l9-11h-7z"></path>
+              </svg>
+              Quick Pick
             </button>
-          )}
+            
+            {selectedCard && (
+              <button
+                onClick={() => onCardPick(selectedCard.id)}
+                disabled={!canPick}
+                className="bg-gradient-to-r from-green-600 to-green-500 hover:from-green-500 hover:to-green-400 disabled:from-slate-600 disabled:to-slate-600 text-white px-6 py-2 rounded-xl font-semibold transition-all duration-200 disabled:cursor-not-allowed"
+              >
+                <svg className="w-4 h-4 inline mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M5 13l4 4L19 7"></path>
+                </svg>
+                Pick {selectedCard.name}
+              </button>
+            )}
+          </div>
         </div>
       </div>
       
+      {/* Pack Cards Grid */}
       <div 
-        className="pack-cards"
-        style={getGridStyle()}
+        className={`grid gap-4 ${
+          packViewMode === 'list' 
+            ? 'grid-cols-1' 
+            : packViewMode === 'compact'
+            ? 'grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6'
+            : 'grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5'
+        }`}
+        style={packViewMode !== 'list' ? getGridStyle() : undefined}
       >
         {displayCards.map((card, index) => (
-          <CardComponent
-            key={card.id}
-            card={card}
-            isSelected={selectedCard?.id === card.id}
-            isHovered={hoveredCard?.id === card.id}
-            canInteract={canPick}
-            quickPickNumber={index < 9 ? index + 1 : undefined}
-            onClick={() => handleCardClick(card)}
-            onMouseEnter={() => handleCardHover(card)}
-            onMouseLeave={() => handleCardHover(null)}
-            className="pack-card"
-          />
+          <div key={card.id} className="relative group">
+            {index < 9 && (
+              <div className="absolute -top-2 -left-2 w-6 h-6 bg-blue-600 text-white rounded-full flex items-center justify-center text-xs font-bold z-10 shadow-lg">
+                {index + 1}
+              </div>
+            )}
+            <CardComponent
+              card={card}
+              isSelected={selectedCard?.id === card.id}
+              isHovered={hoveredCard?.id === card.id}
+              canInteract={canPick}
+              quickPickNumber={index < 9 ? index + 1 : undefined}
+              onClick={() => handleCardClick(card)}
+              onMouseEnter={() => handleCardHover(card)}
+              onMouseLeave={() => handleCardHover(null)}
+              className={`transition-all duration-200 ${
+                selectedCard?.id === card.id 
+                  ? 'ring-2 ring-blue-500 ring-offset-2 ring-offset-slate-900 scale-105' 
+                  : 'hover:scale-105 hover:shadow-xl'
+              } ${
+                canPick ? 'cursor-pointer' : 'cursor-default opacity-75'
+              }`}
+            />
+          </div>
         ))}
       </div>
       
+      {/* Empty State */}
       {displayCards.length === 0 && (
-        <div className="pack-empty">
-          <p>No cards match the current filters.</p>
+        <div className="bg-slate-800/30 backdrop-blur-sm rounded-2xl p-12 border border-slate-700/30 text-center">
+          <div className="text-slate-400 mb-4">
+            <svg className="w-16 h-16 mx-auto" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M7 4V2a1 1 0 011-1h8a1 1 0 011 1v2m-9 0h10a2 2 0 012 2v10a2 2 0 01-2 2H6a2 2 0 01-2-2V6a2 2 0 012-2z"></path>
+            </svg>
+          </div>
+          <h3 className="text-lg font-medium text-slate-300 mb-2">No Cards Available</h3>
+          <p className="text-slate-400">No cards match the current filters.</p>
         </div>
       )}
       
-      {canPick && (
-        <div className="pack-hints">
-          <p>
-            Click a card to select, double-click to pick. 
-            Use number keys 1-{Math.min(9, displayCards.length)} for quick selection.
-          </p>
+      {/* Keyboard Hints */}
+      {canPick && displayCards.length > 0 && (
+        <div className="mt-6 bg-blue-500/10 backdrop-blur-sm rounded-xl p-4 border border-blue-500/20">
+          <div className="flex items-start gap-3">
+            <div className="text-blue-400 mt-0.5">
+              <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+              </svg>
+            </div>
+            <div className="text-sm text-blue-300">
+              <p className="font-medium mb-1">Keyboard Controls:</p>
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 text-blue-200">
+                <div>• Numbers <span className="bg-blue-500/20 px-1.5 py-0.5 rounded font-mono">1-{Math.min(9, displayCards.length)}</span> for quick pick</div>
+                <div>• <span className="bg-blue-500/20 px-1.5 py-0.5 rounded font-mono">Enter</span> to pick selected card</div>
+                <div>• <span className="bg-blue-500/20 px-1.5 py-0.5 rounded font-mono">Arrow keys</span> to navigate</div>
+                <div>• <span className="bg-blue-500/20 px-1.5 py-0.5 rounded font-mono">Double-click</span> to pick directly</div>
+              </div>
+            </div>
+          </div>
         </div>
       )}
     </div>
