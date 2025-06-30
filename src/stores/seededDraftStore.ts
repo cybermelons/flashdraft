@@ -126,12 +126,19 @@ export const seededDraftActions = {
       console.log(`[SeededDraftStore] Using draft from store`);
       draft = currentDraft;
     } else if (setData) {
-      // Load from storage using provided setData
-      console.log(`[SeededDraftStore] Loading draft from storage`);
+      // Try to load from storage first
+      console.log(`[SeededDraftStore] Trying to load draft from storage`);
       draft = await loadSeededDraftWithSetData(draftId, setData);
+      
       if (!draft) {
-        console.error(`[SeededDraftStore] Draft ${draftId} not found in storage`);
-        return { success: false, error: 'Draft not found' };
+        // Draft doesn't exist - create it fresh from the seed!
+        // This is the magic of deterministic drafts - we can always recreate them
+        console.log(`[SeededDraftStore] Draft not found, creating fresh draft from seed ${draftId}`);
+        draft = createSeededDraft({ seed: draftId, setData });
+        draft = startSeededDraft(draft);
+        
+        // Save it for future use
+        saveSeededDraft(draft);
       }
     } else {
       console.error(`[SeededDraftStore] No setData provided and draft not in store`);
@@ -258,9 +265,9 @@ export function shouldUseSeededEngine(): boolean {
     if (flag === 'false') return false;
   }
   
-  // Default to legacy engine until full migration is complete
-  // TODO: Make this configurable per environment
-  return false;
+  // Enable seeded engine to fix state consistency issues
+  // The legacy system has race conditions that the seeded engine solves
+  return true;
 }
 
 // ============================================================================

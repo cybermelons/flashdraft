@@ -88,11 +88,12 @@ export function StateMachineDraftRouter({
           try {
             if (useSeeded) {
               // For seeded drafts, we need to load set data first
-              const setCode = await getSetCodeForDraft(draftId);
+              let setCode = await getSetCodeForDraft(draftId);
+              
+              // If no set code found, try a default (this might be a legacy URL)
               if (!setCode) {
-                setError('Draft not found');
-                setLoading(false);
-                break;
+                console.log(`[Router] No set code found for ${draftId}, trying DTK as fallback`);
+                setCode = 'DTK'; // Default fallback
               }
               
               const setData = await loadSetData(setCode);
