@@ -4,9 +4,9 @@
  * Exports both legacy components (for backward compatibility) and new engine-based components.
  */
 
-// Legacy components (using Zustand store)
-export { default as DraftApp } from './DraftApp';
-export { default as DraftInterface } from './DraftInterface';
+// Legacy components (using Zustand store) - TEMPORARILY DISABLED DURING REFACTOR
+// export { default as DraftApp } from './DraftApp';
+// export { default as DraftInterface } from './DraftInterface';
 export { default as PackDisplay } from './PackDisplay';
 export { default as Card } from './Card';
 export { default as DecklistView } from './DecklistView';
@@ -49,8 +49,8 @@ export { default as ErrorLoadingStateDemo } from './ErrorLoadingStateDemo';
 export { default as UserFlowTests } from './UserFlowTests';
 
 // Type exports
-export type { NewDraftAppProps } from './NewDraftApp';
-export type { NewDraftInterfaceProps } from './NewDraftInterface';
+// export type { NewDraftAppProps } from './NewDraftApp';
+// export type { NewDraftInterfaceProps } from './NewDraftInterface';
 export type { NewPackDisplayProps } from './NewPackDisplay';
 export type { NewCardProps } from './NewCard';
 export type { DraftSetupScreenProps } from './DraftSetupScreen';

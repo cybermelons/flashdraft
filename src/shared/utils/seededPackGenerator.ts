@@ -8,6 +8,13 @@
 import { SeededRandom } from './seededRandom';
 import type { MTGCard } from '../types/card';
 
+/**
+ * Generate a unique identifier string
+ */
+export function generateUniqueId(): string {
+  return Date.now().toString(36) + Math.random().toString(36).substr(2, 9);
+}
+
 export interface DraftCard {
   id: string;
   name: string;
