@@ -15,7 +15,7 @@ import {
   $sidebarOpen,
   $sortBy,
   $filterBy,
-  uiStateActions 
+  uiActions 
 } from '@/stores/uiStore';
 import { Card } from './Card';
 
@@ -37,11 +37,11 @@ export function DraftSidebar({ className = '' }: DraftSidebarProps) {
   if (!currentDraft) return null;
 
   const toggleSidebar = () => {
-    uiStateActions.toggleSidebar();
+    uiActions.toggleSidebar();
   };
 
   const handleSortChange = (newSort: string) => {
-    uiStateActions.setSortBy(newSort as any);
+    uiActions.setSortBy(newSort as any);
   };
 
   const handleColorFilter = (color: string) => {
@@ -50,11 +50,11 @@ export function DraftSidebar({ className = '' }: DraftSidebarProps) {
       ? currentColors.filter(c => c !== color)
       : [...currentColors, color];
     
-    uiStateActions.updateFilters({ colors: newColors });
+    uiActions.updateFilters({ colors: newColors });
   };
 
   const clearFilters = () => {
-    uiStateActions.clearFilters();
+    uiActions.clearFilters();
   };
 
   const getColorStats = () => {

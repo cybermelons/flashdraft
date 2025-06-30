@@ -2,15 +2,58 @@
 /**
  * FlashDraft - New Draft Page
  * 
- * Direct route to start a new draft with the new architecture.
+ * Simple page to redirect users to create a new draft.
  */
 
 import Layout from '../../layouts/Layout.astro';
-import { SimpleDraftRouter } from '../../frontend/components/SimpleDraftRouter';
 ---
 
 <Layout title="FlashDraft - New Draft">
-  <SimpleDraftRouter client:load routeType="draft" draftId="new" />
+  <main class="container mx-auto px-4 py-8">
+    <div class="text-center">
+      <h1 class="text-3xl font-bold text-gray-900 mb-4">Start New Draft</h1>
+      <p class="text-gray-600 mb-8">Choose a set to begin your draft session</p>
+      
+      <div class="max-w-md mx-auto space-y-4">
+        <div class="bg-white border border-gray-200 rounded-lg p-4 hover:shadow-md transition-shadow">
+          <h3 class="font-medium text-gray-900 mb-2">Final Fantasy (FFB)</h3>
+          <p class="text-sm text-gray-600 mb-4">Magic: The Gathering × Final Fantasy Booster Set</p>
+          <button 
+            onclick="startDraft('FFB')"
+            class="w-full bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg font-medium transition-colors"
+          >
+            Start FFB Draft
+          </button>
+        </div>
+        
+        <div class="bg-white border border-gray-200 rounded-lg p-4 hover:shadow-md transition-shadow">
+          <h3 class="font-medium text-gray-900 mb-2">Dragons of Tarkir (DTK)</h3>
+          <p class="text-sm text-gray-600 mb-4">Classic Magic set with iconic dragons</p>
+          <button 
+            onclick="startDraft('DTK')"
+            class="w-full bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg font-medium transition-colors"
+          >
+            Start DTK Draft
+          </button>
+        </div>
+      </div>
+    </div>
+  </main>
+
+  <script>
+    async function startDraft(setCode) {
+      try {
+        // Generate a unique draft ID
+        const draftId = 'draft_' + Date.now() + '_' + Math.random().toString(36).substr(2, 9);
+        
+        // Navigate to the draft with the ID
+        window.location.href = `/draft/${draftId}`;
+      } catch (error) {
+        console.error('Failed to start draft:', error);
+        alert('Failed to start draft. Please try again.');
+      }
+    }
+  </script>
 </Layout>
 
 <style>

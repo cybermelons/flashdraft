@@ -68,6 +68,13 @@ export class DraftEngine {
   }
 
   /**
+   * Get current storage adapter
+   */
+  getStorage(): DraftStorageAdapter | undefined {
+    return this.storage;
+  }
+
+  /**
    * Load set data for pack generation
    */
   loadSetData(setData: SetData): void {

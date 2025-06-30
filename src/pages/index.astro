@@ -1,7 +1,106 @@
 ---
 import Layout from '../layouts/Layout.astro';
+import { DraftDashboard } from '../components/DraftDashboard';
 ---
 
 <Layout title="FlashDraft - MTG Draft Simulator & Learning Platform">
-  list of all unifnished drafts and recent drafts. 
+  <main class="container mx-auto px-4 py-8">
+    <!-- Hero Section -->
+    <section class="text-center mb-12">
+      <h1 class="text-4xl font-bold text-gray-900 mb-4">
+        FlashDraft
+      </h1>
+      <p class="text-xl text-gray-600 mb-8 max-w-2xl mx-auto">
+        Practice Magic: The Gathering drafts with realistic AI opponents trained on 17lands data. 
+        Draft → Deck Building → Goldfishing → Iteration.
+      </p>
+      
+      <!-- Quick Actions -->
+      <div class="flex flex-col sm:flex-row gap-4 justify-center">
+        <a 
+          href="/draft/new" 
+          class="bg-blue-600 hover:bg-blue-700 text-white px-6 py-3 rounded-lg font-medium transition-colors"
+        >
+          Start New Draft
+        </a>
+        <a 
+          href="/draft" 
+          class="bg-gray-200 hover:bg-gray-300 text-gray-800 px-6 py-3 rounded-lg font-medium transition-colors"
+        >
+          View All Drafts
+        </a>
+      </div>
+    </section>
+
+    <!-- Draft Dashboard -->
+    <section class="mb-12">
+      <h2 class="text-2xl font-semibold text-gray-900 mb-6">Your Drafts</h2>
+      
+      <!-- Draft List Container (populated by React component) -->
+      <DraftDashboard client:load />
+    </section>
+
+    <!-- Features Section -->
+    <section class="grid md:grid-cols-3 gap-8 mb-12">
+      <div class="text-center">
+        <div class="bg-blue-100 w-16 h-16 rounded-full flex items-center justify-center mx-auto mb-4">
+          <svg class="w-8 h-8 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"></path>
+          </svg>
+        </div>
+        <h3 class="text-lg font-semibold text-gray-900 mb-2">Ultra-Fast Transitions</h3>
+        <p class="text-gray-600">
+          &lt;150ms between draft picks, deck building, and playtesting modes for seamless learning flow.
+        </p>
+      </div>
+      
+      <div class="text-center">
+        <div class="bg-green-100 w-16 h-16 rounded-full flex items-center justify-center mx-auto mb-4">
+          <svg class="w-8 h-8 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9.75 17L9 20l-1 1h8l-1-1-.75-3M3 13h18M5 17h14a2 2 0 002-2V5a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"></path>
+          </svg>
+        </div>
+        <h3 class="text-lg font-semibold text-gray-900 mb-2">Realistic AI Opponents</h3>
+        <p class="text-gray-600">
+          Bots trained on 17lands data with &gt;70% human pick agreement across Bronze, Gold, and Mythic skill levels.
+        </p>
+      </div>
+      
+      <div class="text-center">
+        <div class="bg-purple-100 w-16 h-16 rounded-full flex items-center justify-center mx-auto mb-4">
+          <svg class="w-8 h-8 text-purple-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z"></path>
+          </svg>
+        </div>
+        <h3 class="text-lg font-semibold text-gray-900 mb-2">Learning-Focused</h3>
+        <p class="text-gray-600">
+          Goldfishing-oriented playtesting with visual feedback and rapid iteration cycles for skill building.
+        </p>
+      </div>
+    </section>
+
+    <!-- Getting Started -->
+    <section class="bg-gray-50 rounded-lg p-6">
+      <h2 class="text-xl font-semibold text-gray-900 mb-4">Getting Started</h2>
+      <div class="space-y-3 text-gray-700">
+        <div class="flex items-start space-x-3">
+          <span class="bg-blue-600 text-white text-sm rounded-full w-6 h-6 flex items-center justify-center font-medium mt-0.5">1</span>
+          <p><strong>Start a Draft:</strong> Choose from available MTG sets and begin drafting with AI opponents</p>
+        </div>
+        <div class="flex items-start space-x-3">
+          <span class="bg-blue-600 text-white text-sm rounded-full w-6 h-6 flex items-center justify-center font-medium mt-0.5">2</span>
+          <p><strong>Build Your Deck:</strong> Real-time mana curve analysis and deck composition feedback</p>
+        </div>
+        <div class="flex items-start space-x-3">
+          <span class="bg-blue-600 text-white text-sm rounded-full w-6 h-6 flex items-center justify-center font-medium mt-0.5">3</span>
+          <p><strong>Goldfish & Learn:</strong> Manual playtesting to understand your deck's patterns and improve</p>
+        </div>
+        <div class="flex items-start space-x-3">
+          <span class="bg-blue-600 text-white text-sm rounded-full w-6 h-6 flex items-center justify-center font-medium mt-0.5">4</span>
+          <p><strong>Iterate:</strong> Quick reset cycles to try different strategies and build expertise</p>
+        </div>
+      </div>
+    </section>
+  </main>
+
 </Layout>
