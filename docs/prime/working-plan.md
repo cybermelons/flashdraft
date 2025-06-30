@@ -1,6 +1,6 @@
 # Working Plan: Clean Two-Layer Architecture with Independent Persistence
 
-## Progress: 4/14 tasks complete
+## Progress: 5/16 tasks complete
 
 ### Phase 1: Core Draft Engine (Pure In-Memory Logic) ✅ COMPLETE
 - [x] **Create DraftEngine core** - Pure event-sourced state machine ✅
@@ -9,10 +9,12 @@
 - [x] **Build action application system** - Pure functions for state transitions ✅
 
 ### Phase 2: Draft Engine Persistence Layer
-- [ ] **Create DraftStorageAdapter interface** - Abstract persistence for draft engine
-- [ ] **Implement DraftLocalStorageAdapter** - Draft state + action history persistence
+- [x] **Create DraftStorageAdapter interface** - Abstract persistence for draft engine ✅
+- [ ] **Implement DraftLocalStorageAdapter** - With storage monitoring and error handling
 - [ ] **Add draft serialization** - Efficient draft state encoding/decoding
-- [ ] **Integrate persistence with engine** - Engine saves/loads its own state
+- [ ] **Integrate persistence with engine** - Auto-save on human actions only
+- [ ] **Add multi-tab sync** - localStorage events for cross-tab synchronization
+- [ ] **Implement storage audit** - Monitor usage and handle quota errors
 
 ### Phase 3: UI Layer (Nanostores + React)
 - [ ] **Create UI stores with nanostores** - Reactive UI state management
@@ -47,14 +49,14 @@
 ```
 
 ### Draft Engine (Core Layer)
-- **File**: `src/engine/DraftEngine.ts`
+- **File**: `src/lib/engine/DraftEngine.ts`
 - **Pure Functions**: No side effects, fully testable
 - **Event Sourcing**: All state changes through actions
 - **Deterministic**: Seeded random for reproducible drafts
 - **Self-Persisting**: Uses DraftStorageAdapter for its own persistence
 
 ### Draft Storage Adapter (Engine Persistence)
-- **File**: `src/engine/storage/DraftStorageAdapter.ts`
+- **File**: `src/lib/engine/storage/DraftStorageAdapter.ts`
 - **Purpose**: Draft state and action history persistence
 - **Data**: Complete draft state, action sequences, replay capability
 - **Backends**: LocalStorage (default), IndexedDB (future), Server (future)
@@ -123,16 +125,28 @@ UI Storage    Update UI Store  Engine Storage      UI Reacts
 
 #### 1. Draft Engine Persistence Integration
 **Issue**: Engine needs to know WHEN to save
-**Solution**: 
+**Solution**: Save only on human actions to avoid excessive saves
 ```typescript
 class DraftEngine {
-  private storage: DraftStorageAdapter;
+  private storage?: DraftStorageAdapter;
   
   applyAction(action: DraftAction): DraftState {
     const newState = this.processAction(action);
-    // Auto-save after every action
-    await this.storage.saveDraft(newState);
+    
+    // Only save on human actions (not bot picks)
+    if (this.storage && action.type === 'HUMAN_PICK') {
+      this.storage.saveDraft(newState).catch(error => {
+        console.error('Storage failed:', error);
+        // Continue anyway - draft is in memory
+      });
+    }
+    
     return newState;
+  }
+  
+  // Optional storage injection
+  setStorage(storage: DraftStorageAdapter): void {
+    this.storage = storage;
   }
 }
 ```
@@ -190,39 +204,41 @@ interface UIStorageAdapter {
 }
 ```
 
-## File Structure (Target)
+## File Structure (Actual)
 ```
 src/
-├── engine/                 # Pure draft logic
-│   ├── DraftEngine.ts      # Core state machine with persistence
-│   ├── actions.ts          # Action types and creators
-│   ├── seededRandom.ts     # Deterministic randomization
-│   ├── packGenerator.ts    # Seeded pack creation
-│   └── storage/            # Engine persistence layer
-│       ├── DraftStorageAdapter.ts      # Abstract interface
-│       ├── DraftLocalStorageAdapter.ts # LocalStorage implementation
-│       └── DraftIndexedDBAdapter.ts    # Future: IndexedDB
+├── lib/
+│   └── engine/                 # Pure draft logic
+│       ├── DraftEngine.ts      # Core state machine
+│       ├── actions.ts          # Action types and creators
+│       ├── SeededRandom.ts     # Deterministic randomization
+│       ├── PackGenerator.ts    # Seeded pack creation
+│       └── storage/            # Engine persistence layer
+│           ├── DraftStorageAdapter.ts      # Abstract interface ✅
+│           ├── types.ts                    # Storage types ✅
+│           └── LocalStorageAdapter.ts      # LocalStorage implementation (TODO)
 │
 ├── stores/                 # UI state (nanostores)
-│   ├── draftStore.ts       # Current draft UI state
-│   ├── uiStore.ts          # UI-specific state (selections, etc.)
+│   ├── draftStore.ts       # Current draft UI state (TODO)
+│   ├── uiStore.ts          # UI-specific state (TODO)
 │   └── storage/            # UI persistence layer
-│       ├── UIStorageAdapter.ts         # Abstract interface
-│       └── UILocalStorageAdapter.ts    # LocalStorage implementation
+│       └── UIStorageAdapter.ts  # UI state persistence (TODO)
 │
 ├── components/             # React UI components
-│   ├── SimpleDraftRouter.tsx # Route handling
-│   ├── DraftInterface.tsx  # Main draft interface
-│   ├── PackDisplay.tsx     # Pack and card grid
-│   └── Card.tsx            # Individual card component
+│   ├── SimpleDraftRouter.tsx    # Route handling (TODO)
+│   ├── DraftInterface.tsx       # Main draft interface (TODO)
+│   ├── PackDisplay.tsx          # Pack and card grid (TODO)
+│   ├── Card.tsx                 # Individual card component (TODO)
+│   └── ui/                      # shadcn/ui components ✅
+│       └── hover-card.tsx       # Existing hover card ✅
 │
-├── utils/                  # Shared utilities
-│   └── navigation.ts       # URL parsing and navigation helpers
+├── utils/                  # App-specific utilities
+│   └── navigation.ts       # URL parsing and navigation (TODO)
 │
-└── pages/                  # Astro pages (preserved)
-    ├── index.astro         # Home page
-    ├── draft.astro         # Draft list
-    └── draft/[...path].astro # Dynamic routes
+└── pages/                  # Astro pages ✅
+    ├── index.astro         # Home page ✅
+    ├── draft.astro         # Draft list ✅
+    └── draft/[...path].astro # Dynamic routes ✅
 ```
 
 ## Success Criteria
@@ -248,12 +264,21 @@ src/
 - [ ] Clear data ownership boundaries
 
 ## Current State
-**Starting Phase 2**: Need to create Draft Storage Adapter and integrate with engine.
-All Phase 1 (engine core) is complete.
-Ready to implement engine persistence layer.
+**Phase 2 In Progress**: 
+- ✅ Created DraftStorageAdapter interface and types
+- 🔄 Need to implement LocalStorageAdapter with error handling
+- 🔄 Need to integrate selective auto-save (human actions only)
+- 🔄 Need to add multi-tab sync via localStorage events
 
-## Next Steps
-1. Create DraftStorageAdapter interface and LocalStorage implementation
-2. Integrate auto-save into DraftEngine
-3. Add draft loading and resume capability
-4. Create UI stores with direct engine access
+## Key Implementation Notes
+1. **Auto-save timing**: Only save on HUMAN_PICK actions to avoid excessive saves
+2. **Storage failures**: Log errors but don't break draft - memory is primary
+3. **Multi-tab sync**: Use window.addEventListener('storage', ...) for cross-tab updates
+4. **Storage audit**: Track usage to prevent quota exceeded errors
+5. **UI hydration**: UI state loads immediately, draft data loads async
+
+## Next Immediate Steps
+1. Implement LocalStorageAdapter with error handling and monitoring
+2. Update DraftEngine to optionally accept storage adapter
+3. Add selective auto-save logic (human actions only)
+4. Create storage audit system for monitoring usage

@@ -47,32 +47,39 @@ export class PackGenerator {
 
     // Standard booster pack composition:
     // 10-11 commons, 3-4 uncommons, 1 rare/mythic (1/8 chance of mythic)
-
-    // Add commons (10-11 cards)
-    const commonCount = this.rng.nextInt(10, 12);
-    const commons = this.rng.sample(cardsByRarity.common, commonCount);
-    cards.push(...commons);
+    // Total must be exactly 15 cards
 
     // Add uncommons (3-4 cards)
     const uncommonCount = this.rng.nextInt(3, 5);
     const uncommons = this.rng.sample(cardsByRarity.uncommon, uncommonCount);
     cards.push(...uncommons);
 
+    // Add commons to fill remaining slots (leaving 1 slot for rare/mythic)
+    const remainingSlots = 14 - uncommonCount; // 15 total - uncommons - 1 rare = commons needed
+    const commons = this.rng.sample(cardsByRarity.common, remainingSlots);
+    cards.push(...commons);
+
     // Add rare or mythic (1 card)
     const isMythic = this.rng.next() < 0.125; // 1/8 chance
-    const rarePool = isMythic ? cardsByRarity.mythic : cardsByRarity.rare;
+    let rarePool = isMythic && cardsByRarity.mythic.length > 0 
+      ? cardsByRarity.mythic 
+      : cardsByRarity.rare;
     
-    if (rarePool.length > 0) {
+    // If no rares available, use mythics; if no mythics, use rares
+    if (rarePool.length === 0) {
+      rarePool = cardsByRarity.rare.length > 0 ? cardsByRarity.rare : cardsByRarity.mythic;
+    }
+    
+    if (rarePool.length === 0) {
+      console.warn('No rare or mythic cards available for pack generation!', {
+        packId,
+        rareCount: cardsByRarity.rare.length,
+        mythicCount: cardsByRarity.mythic.length,
+        totalCards: this.setData.cards.length
+      });
+    } else {
       const rareCard = this.rng.choice(rarePool);
       cards.push(rareCard);
-    }
-
-    // Ensure we have exactly 15 cards (adjust with commons if needed)
-    while (cards.length < 15 && cardsByRarity.common.length > 0) {
-      const extraCommon = this.rng.choice(cardsByRarity.common);
-      if (!cards.find(c => c.id === extraCommon.id)) {
-        cards.push(extraCommon);
-      }
     }
 
     // Shuffle the final pack
@@ -80,7 +87,7 @@ export class PackGenerator {
 
     return {
       id: packId,
-      cards: shuffledCards.slice(0, 15), // Ensure exactly 15 cards
+      cards: shuffledCards, // Should be exactly 15 cards
       setCode: this.setData.setCode,
     };
   }
