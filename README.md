@@ -99,33 +99,46 @@ flashdraft/
 
 ## **Architecture**
 
-### **Three-Layer Architecture**
+### **Two-Layer Architecture with Independent Persistence**
 ```
-UI Layer (nanostores + localStorage) ↔ Storage Module ↔ Draft Engine (in-memory)
+┌─────────────────┐    ┌─────────────────┐
+│   UI Layer      │◄──►│ Draft Engine    │
+│                 │    │                 │
+│ • Nanostores    │    │ • Pure Logic    │
+│ • React         │    │ • Event Source  │
+│ • User Input    │    │ • Deterministic │
+│ • Selected Card │    │ • In-Memory     │
+│ • UI Prefs      │    │                 │
+└─────────────────┘    └─────────────────┘
+         │                       │
+         ▼                       ▼
+┌─────────────────┐    ┌─────────────────┐
+│ UI LocalStorage │    │Draft LocalStorage│
+│                 │    │                 │
+│ • Selected card │    │ • Draft state   │
+│ • UI preferences│    │ • Action history│
+│ • Loading state │    │ • Persistence   │
+└─────────────────┘    └─────────────────┘
 ```
 
 ### **Draft Engine** ✅ (Core Layer)
-- **Pure In-Memory State**: Event-sourced draft state with action replay
+- **Pure In-Memory Logic**: Event-sourced draft state with zero dependencies
 - **Action Types**: CREATE_DRAFT, START_DRAFT, HUMAN_PICK, BOT_PICK, PASS_PACKS, ADVANCE_POSITION, START_ROUND, COMPLETE_DRAFT
-- **Deterministic Logic**: Seeded pack generation using Linear Congruential Generator
-- **Source of Truth**: All draft logic isolated from UI and persistence concerns
-
-### **Storage Module** (Data Layer) 
-- **Persistence Interface**: Handles draft state save/load operations
-- **Multiple Backends**: LocalStorage, URL state, future database support
-- **State Synchronization**: Bridges draft engine with UI persistence needs
+- **Deterministic Logic**: Seeded pack generation using Linear Congruential Generator  
+- **Self-Persisting**: Uses DraftStorageAdapter for automatic save/load
 
 ### **UI Layer** (Presentation Layer)
-- **Nanostores**: Reactive UI state management with localStorage persistence
-- **State Sync**: Reads from draft engine via storage module for truth
+- **Nanostores**: Reactive UI state management
+- **Direct Engine Access**: UI calls engine methods directly, no intermediary
+- **Independent Persistence**: UIStorageAdapter for UI state (selected cards, preferences)
 - **Components**: shadcn/ui + Tailwind CSS for consistent design
 - **Framework**: Astro + React islands with TypeScript
 
 ### **Key Design Principles**
-- **Separation of Concerns**: Draft logic, persistence, and UI are completely independent
-- **Single Source of Truth**: Draft engine state is authoritative
-- **Event Sourcing**: All state changes go through actions for perfect reproducibility
-- **Pure Functions**: Draft engine has no side effects for reliable testing
+- **Dual Independence**: Each layer manages its own persistence completely
+- **Direct Communication**: UI directly imports and calls Draft Engine
+- **Storage Adapter Pattern**: Easy to swap backends (LocalStorage → IndexedDB → Server)
+- **Event Sourcing in Engine Only**: Perfect reproducibility where it matters
 
 ## **Development Commands**
 
