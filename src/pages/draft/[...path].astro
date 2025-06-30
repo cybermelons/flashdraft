@@ -3,80 +3,25 @@
  * FlashDraft - Dynamic Draft Routes
  * 
  * Handles:
- * - /draft -> Current draft or overview
- * - /draft/[draftId] -> Specific draft
- * - /draft/[draftId]/[round]p[pick] -> Specific position in draft
+ * - /draft/[draftId] -> Specific draft interface
+ * - /draft/[draftId]/p[round]p[pick] -> Specific position in draft
  */
 
 import Layout from '../../layouts/Layout.astro';
-import { StateMachineDraftRouter } from '../../frontend/components/StateMachineDraftRouter';
+import { DraftInterface } from '../../components/DraftInterface';
 
 export const prerender = false;
-
-const { path } = Astro.params;
-const searchParams = Astro.url.searchParams;
-
-// Debug logging
-console.log('Draft route path:', path);
-console.log('Path type:', typeof path);
-console.log('Path array check:', Array.isArray(path));
-
-// Parse the path to determine what to show
-let routeType = 'overview';
-let draftId = null;
-let round = null;
-let pick = null;
-
-if (path) {
-  // Handle both array and string cases for Astro [...path] parameter
-  let segments;
-  if (Array.isArray(path)) {
-    segments = path;
-  } else if (typeof path === 'string') {
-    // If it's a string, split on '/' to get segments
-    segments = path.split('/').filter(Boolean);
-  } else {
-    segments = [path];
-  }
-  
-  console.log('Original path:', path);
-  console.log('Parsed segments:', segments);
-  
-  if (segments.length >= 1) {
-    draftId = segments[0];
-    routeType = 'draft';
-    console.log('Draft ID extracted:', draftId);
-    
-    if (segments.length >= 2) {
-      // Parse p1p3 format (pack 1 pick 3)
-      const positionMatch = segments[1].match(/^p?(\d+)p(\d+)$/);
-      console.log('Position match attempt on:', segments[1], 'Result:', positionMatch);
-      if (positionMatch) {
-        round = parseInt(positionMatch[1]);
-        pick = parseInt(positionMatch[2]);
-        routeType = 'position';
-        console.log('Position parsed:', { round, pick, routeType });
-      }
-    }
-  }
-}
-
-// If no path or invalid draftId, show overview
-if (!path || (path.length === 0)) {
-  routeType = 'overview';
-}
 ---
 
-<Layout title={`FlashDraft - ${routeType === 'overview' ? 'Draft Overview' : 'Draft'}`}>
-  <main>
-    <div id="draft-app-root">
-      <StateMachineDraftRouter
-        client:load
-        routeType={routeType}
-        draftId={draftId}
-        round={round}
-        pick={pick}
-      />
-    </div>
-  </main>
+<Layout title="FlashDraft - Draft Interface">
+  <DraftInterface client:load />
 </Layout>
+
+<style>
+  /* Ensure full height for the app */
+  html, body {
+    height: 100%;
+    margin: 0;
+    padding: 0;
+  }
+</style>

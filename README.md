@@ -2,24 +2,24 @@
 
 ## **Project Overview**
 
-FlashDraft is a complete Magic: The Gathering draft simulation application that enables unlimited practice with AI opponents. Learn Limited formats through rapid iteration without the cost and time constraints of Arena or MTGO.
+FlashDraft is a Magic: The Gathering draft simulator and playtesting platform built with Astro, React, and Python. The core workflow is: Draft → Deck Building → Goldfishing → Iteration. The platform combines AI-powered draft opponents with a streamlined digital playmat for rapid deck testing and learning.
 
 **🎯 Core Features**
-- **Complete Draft Simulation**: 8-player drafts with intelligent AI bots (4 skill levels)
+- **Complete Draft Simulation**: 8-player drafts with deterministic AI bots
 - **Real MTG Sets**: Final Fantasy and Dragons of Tarkir with full Scryfall integration
-- **Professional Deck Analysis**: Mana curve, color distribution, card categorization
-- **Instant Performance**: <150ms transitions, responsive mobile design
-- **Persistent Sessions**: Draft IDs, localStorage auto-save, shareable permalinks
-- **Modern Interface**: React + Astro + Tailwind CSS with shadcn/ui components
+- **URL-based Navigation**: Shareable permalinks with position tracking (/draft/{seed}/p{round}p{pick})
+- **Event-sourced State**: Deterministic draft replay from action history
+- **Modern Interface**: React + Astro + TypeScript with shadcn/ui components
+- **Performance-First**: <150ms transitions between draft/deckbuild/playtest modes
 
-**Status**: 🚀 **Production Ready** - Fully functional application ready for MTG players!
+**Status**: 🔄 **Active Development** - Draft engine complete with comprehensive tests (54/54 passing), working on persistence layer
 
 ## **Getting Started**
 
 ### Prerequisites
 - Node.js 18+
 - Python 3.9+
-- pnpm (recommended package manager)
+- npm (package manager)
 
 ### Installation
 ```bash
@@ -32,112 +32,165 @@ pnpm install
 
 # Install Python dependencies
 pip install -r requirements.txt
+
+# Download MTG card data
+python scripts/download_scryfall_data.py
 ```
 
 ### Development
 ```bash
 # Start the development server
-pnpm dev
+pnpm run dev
 
-# Run the draft bot training
-python src/train_bots.py
+# Build for production
+pnpm run build
 
-# Run linting
-pnpm lint
+# Run tests
+pnpm test
 
-# Format code
-pnpm format
+# Run linting and formatting
+pnpm run lint
+pnpm run format
 ```
 
 ## **🎮 How to Use**
 
-1. **Start a Draft**: Visit `/draft` to see your draft overview or start a new draft
+1. **Start a Draft**: Visit `http://localhost:4321/draft` to begin
 2. **Select a Set**: Choose from Final Fantasy (FIN) or Dragons of Tarkir (DTK)
-3. **Draft Cards**: Pick cards from packs, AI bots will pick alongside you
-4. **View Your Deck**: Click "📋 Deck" to see detailed deck analysis with mana curve
-5. **Share Drafts**: Use the "🔗 Share" button to share permalink URLs
-6. **Resume Anytime**: All drafts auto-save to localStorage with unique IDs
+3. **Draft Cards**: Pick cards from packs in a deterministic 8-player draft
+4. **Navigate**: Use URL permalinks to jump to any position in the draft
+5. **Complete Draft**: View deck composition after p3p15
 
-**🔗 Routing Examples**:
-- `/draft` - Draft overview page
-- `/draft/abc123` - Resume specific draft
-- `/draft/abc123/p1p3` - Go to pack 1, pick 3 of a draft
+**🔗 URL Navigation**:
+- `/draft` - Draft selection and overview
+- `/draft/{seed}` - Specific draft by seed
+- `/draft/{seed}/p{pack}p{pick}` - Navigate to exact position (e.g., `/draft/abc123/p2p5`)
+
+**Current Features**:
+- ✅ Deterministic draft simulation with action replay
+- ✅ URL-based position navigation and sharing
+- ✅ Complete Scryfall card data integration
+- ✅ Round transitions and draft completion flow
+- ✅ Comprehensive test suite (54 tests) for draft engine
+- ✅ Fixed pack generation bug (rare/mythic cards)
+- 🔄 Persistence layer implementation in progress
 
 ## **Project Structure**
 
 ```
 flashdraft/
-├── src/                    # Source code
-│   ├── frontend/          # React frontend application
-│   │   ├── components/    # UI components
-│   │   ├── pages/        # Page components
-│   │   ├── hooks/        # Custom React hooks
-│   │   ├── stores/       # Zustand state management
-│   │   └── utils/        # Utility functions
+├── src/
+│   ├── lib/                    # Core library code
+│   │   ├── engine/            # Draft engine (pure logic) ✅
+│   │   │   ├── DraftEngine.ts        # Main state machine ✅
+│   │   │   ├── DraftEngine.test.ts   # Engine tests (18 tests) ✅
+│   │   │   ├── actions.ts            # Action types & creators ✅
+│   │   │   ├── SeededRandom.ts       # Deterministic randomization ✅
+│   │   │   ├── SeededRandom.test.ts  # Random tests (18 tests) ✅
+│   │   │   ├── PackGenerator.ts      # Seeded pack creation ✅
+│   │   │   ├── PackGenerator.test.ts # Pack tests (18 tests) ✅
+│   │   │   └── storage/              # Engine persistence layer
+│   │   │       ├── DraftStorageAdapter.ts  # Abstract interface ✅
+│   │   │       ├── LocalStorageAdapter.ts  # LocalStorage implementation 🔄
+│   │   │       └── types.ts                # Storage types ✅
 │   │
-│   ├── backend/           # Python backend
-│   │   ├── api/          # FastAPI routes
-│   │   ├── models/       # ML models and training
-│   │   ├── services/     # Business logic
-│   │   └── utils/        # Backend utilities
+│   ├── components/            # React UI components
+│   │   ├── SimpleDraftRouter.tsx # Route handling
+│   │   ├── DraftInterface.tsx    # Main draft interface
+│   │   ├── PackDisplay.tsx       # Pack and card grid
+│   │   └── ui/                   # shadcn/ui components
 │   │
-│   └── shared/           # Shared types and constants
+│   ├── stores/               # UI state (nanostores)
+│   │   ├── draftStore.ts         # Current draft UI state
+│   │   ├── uiStore.ts            # UI-specific state (selections, etc.)
+│   │   └── storage/              # UI persistence layer
+│   │       └── UIStorageAdapter.ts # UI state persistence
+│   │
+│   ├── utils/               # App-specific utilities
+│   │   └── navigation.ts        # URL parsing and navigation
+│   │
+│   └── pages/               # Astro pages
+│       ├── index.astro          # Home page
+│       ├── draft.astro          # Draft list
+│       └── draft/[...path].astro # Dynamic routes
 │
-├── data/                 # Data directory
-│   ├── raw/             # Raw 17lands data
-│   ├── processed/       # Processed datasets
-│   └── models/          # Trained model files
-│
-├── docs/                # Documentation
-│   └── prime/           # Development plans and progress
-│
-├── tests/              # Test suites
-│   ├── frontend/       # Frontend tests
-│   └── backend/        # Backend tests
-│
-└── scripts/            # Utility scripts
+├── data/sets/           # Downloaded MTG set data (DTK, FIN)
+├── docs/prime/          # Development context and working plans
+├── scripts/             # Data download and processing scripts
+└── tests/               # Test suites for core logic
 ```
 
-## **Core Features**
+## **Architecture**
 
-### **Draft Simulation Engine**
-- Realistic 8-player draft experience with human-like opponent behavior
-- AI opponents trained on 17lands data with multiple skill levels
-- Format-specific training (supports multiple MTG sets)
-- Context-aware picking (deck state, color signals, pick position)
+### **Two-Layer Architecture with Independent Persistence**
+```
+┌─────────────────┐    ┌─────────────────┐
+│   UI Layer      │◄──►│ Draft Engine    │
+│                 │    │                 │
+│ • Nanostores    │    │ • Pure Logic    │
+│ • React         │    │ • Event Source  │
+│ • User Input    │    │ • Deterministic │
+│ • Selected Card │    │ • In-Memory     │
+│ • UI Prefs      │    │                 │
+└─────────────────┘    └─────────────────┘
+         │                       │
+         ▼                       ▼
+┌─────────────────┐    ┌─────────────────┐
+│ UI LocalStorage │    │Draft LocalStorage│
+│                 │    │                 │
+│ • Selected card │    │ • Draft state   │
+│ • UI preferences│    │ • Action history│
+│ • Loading state │    │ • Persistence   │
+└─────────────────┘    └─────────────────┘
+```
 
-### **Digital Playmat Interface**
-- Drag-and-drop card manipulation for rapid playtesting
-- Quick opponent deck loading from 17lands successful builds
-- Keyboard shortcuts for speed (optimized for goldfishing)
-- Real-time mana curve and deck composition analysis
+### **Draft Engine** ✅ (Core Layer - `src/lib/engine/`)
+- **Pure In-Memory Logic**: Event-sourced draft state with zero dependencies ✅
+- **Action Types**: CREATE_DRAFT, START_DRAFT, HUMAN_PICK, BOT_PICK, PASS_PACKS, ADVANCE_POSITION, START_ROUND, COMPLETE_DRAFT ✅
+- **Deterministic Logic**: Seeded pack generation using Linear Congruential Generator ✅
+- **Comprehensive Testing**: 54 tests covering all functionality (DraftEngine: 18, PackGenerator: 18, SeededRandom: 18) ✅
+- **Bug Fixes**: Fixed rare/mythic card truncation in pack generation ✅
+- **Self-Persisting**: Uses DraftStorageAdapter for automatic save/load 🔄
+- **Multi-Tab Sync**: localStorage events for cross-tab synchronization 🔄
+- **Error Handling**: Storage monitoring and graceful degradation 🔄
 
-### **Integrated Learning Loop**
-- Seamless transition: Draft → Deck Building → Playtesting → Iteration
-- <150ms transitions between modes for rapid skill development
-- Visual feedback connecting draft picks to deck performance
-- Pattern recognition tools for accelerated learning
+### **UI Layer** (Presentation Layer - `src/components/`, `src/stores/`)
+- **Nanostores**: Reactive UI state management with localStorage persistence
+- **Direct Engine Access**: UI calls engine methods directly via clean imports
+- **Independent Persistence**: UIStorageAdapter for UI state (selected cards, preferences)
+- **Components**: shadcn/ui + Tailwind CSS for consistent design
+- **Framework**: Astro + React islands with TypeScript
+- **Hydration Strategy**: UI state loads first, draft data loads asynchronously
+
+### **Key Design Principles**
+- **Dual Independence**: Each layer manages its own persistence completely
+- **Direct Communication**: UI directly imports engine via `@/lib/engine/DraftEngine`
+- **Storage Adapter Pattern**: Easy to swap backends (LocalStorage → IndexedDB → Server)  
+- **Event Sourcing in Engine Only**: Perfect reproducibility where it matters
+- **Colocated Dependencies**: Related code stays together in logical directories
+- **Clean Import Paths**: Follows Astro/Next.js conventions with `src/lib/` pattern
 
 ## **Development Commands**
 
 | Command | Action |
 |---------|--------|
-| `pnpm dev` | Start development server at `localhost:4321` |
-| `pnpm build` | Build production site to `./dist/` |
-| `pnpm preview` | Preview production build locally |
-| `pnpm lint` | Run ESLint on source code |
-| `pnpm format` | Format code with Prettier |
-| `python scripts/download_data.py` | Download 17lands data |
-| `python scripts/train_models.py` | Train AI draft bots |
+| `pnpm run dev` | Start development server at `localhost:4321` |
+| `pnpm run build` | Build production site to `./dist/` |
+| `pnpm run preview` | Preview production build locally |
+| `pnpm test` | Run test suite (54 tests for draft engine) |
+| `pnpm run lint` | Run ESLint on source code |
+| `pnpm run format` | Format code with Prettier |
+| `python scripts/download_scryfall_data.py` | Download MTG card data from Scryfall |
 
 ## **Technology Stack**
 
 - **Frontend**: Astro + React islands + TypeScript
-- **UI**: Tailwind CSS + shadcn/ui components
-- **State Management**: Zustand for performance-optimized state
-- **Backend**: Astro endpoints + Python FastAPI
-- **ML**: scikit-learn for pairwise ranking models
-- **Data**: 17lands datasets + Scryfall API for card data
+- **UI**: Tailwind CSS + shadcn/ui components  
+- **State Management**: Draft engine (`src/lib/engine/`) + Independent storage adapters + UI state (nanostores)
+- **Data**: Scryfall API for card data and images
+- **Testing**: Comprehensive test suite (54 tests) covering all draft engine functionality
+- **Package Manager**: pnpm for fast, efficient dependency management
+- **Architecture**: Two-layer separation with dual persistence: UI ↔ Draft Engine, each with independent storage adapters
 
 ## **License**
 

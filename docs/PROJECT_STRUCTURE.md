@@ -1,3 +1,12 @@
+# issues
+
+1. auto-save timing: the engine should save after each user action.
+2. ui loads from its ui state first, while waiting draft state. it can hydrate in place without anyone noticing. maybe SSR improves this
+3. if localstorage is full, throw errors and make sure it's added to a log for visibility. it should print some sort of audit of our storage
+4. the same draft in multiple tabs should sync through the localstorage, right? is there some HTML5 wizardry for this.
+5. the engine is a singleton. explain what it would be per draft.
+
+
 # FlashDraft Project Structure
 
 ## Directory Layout
@@ -5,25 +14,15 @@
 ```
 flashdraft/
 ├── src/                    # Source code
-│   ├── frontend/          # React frontend application
-│   │   ├── components/    # UI components
-│   │   ├── pages/        # Page components
-│   │   ├── hooks/        # Custom React hooks
-│   │   ├── stores/       # Zustand state management
-│   │   └── utils/        # Utility functions
-│   │
-│   ├── backend/           # Python backend
-│   │   ├── api/          # FastAPI routes
-│   │   ├── models/       # ML models and training
-│   │   ├── services/     # Business logic
-│   │   └── utils/        # Backend utilities
-│   │
+│   ├── components/    # UI components
+│   ├── pages/        # Page components
+│   ├── hooks/        # Custom React hooks
+│   ├── stores/       # Zustand state management
+│   └── utils/        # Utility functions
 │   └── shared/           # Shared types and constants
 │
-├── data/                 # Data directory
-│   ├── raw/             # Raw 17lands data
-│   ├── processed/       # Processed datasets
-│   └── models/          # Trained model files
+├── draft-ai/                 # ai draft-model training
+│   └── TBD
 │
 ├── docs/                # Documentation
 │   ├── api/            # API documentation
@@ -31,12 +30,6 @@ flashdraft/
 │   └── guides/         # User guides
 │
 ├── tests/              # Test suites
-│   ├── frontend/       # Frontend tests
-│   └── backend/        # Backend tests
-│
-├── scripts/            # Utility scripts
-│   ├── download_data.py
-│   └── train_models.py
 │
 └── public/             # Static assets
     └── images/         # Card images, icons

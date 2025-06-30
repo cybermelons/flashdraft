@@ -1,433 +1,355 @@
 /**
- * Draft State Machine - Pure Functions with Nanostores
+ * Draft Store - Reactive UI state for draft operations
  * 
- * Treats MTG draft as a deterministic state machine.
- * No React dependencies - just pure state transitions.
+ * Manages current draft state, UI interactions, and direct engine access.
+ * Uses nanostores for reactive state management with React components.
  */
 
-import { atom } from 'nanostores';
-// Types defined locally for now
-interface MTGSetData {
-  set_code: string;
-  name: string;
-  cards: any[];
-}
+import { atom, map, computed } from 'nanostores';
+import { DraftEngine, type DraftState } from '@/lib/engine/DraftEngine';
+import { LocalStorageAdapter } from '@/lib/engine/storage/LocalStorageAdapter';
+import type { DraftAction } from '@/lib/engine/actions';
+import type { Card, SetData } from '@/lib/engine/PackGenerator';
 
-// ============================================================================
-// CORE TYPES
-// ============================================================================
+// Initialize draft engine with storage
+const storage = new LocalStorageAdapter();
+const draftEngine = new DraftEngine(storage);
 
-export interface DraftCard {
-  id: string;
-  name: string;
-  manaCost: string;
-  imageUrl: string;
-  rarity: string;
-  colors: string[];
-  cmc: number;
-}
+// Core draft state
+export const $currentDraftId = atom<string | null>(null);
+export const $currentDraft = atom<DraftState | null>(null);
+export const $isLoading = atom<boolean>(false);
+export const $error = atom<string | null>(null);
 
-export interface Pack {
-  id: string;
-  cards: DraftCard[];
-}
+// UI interaction state
+export const $selectedCard = atom<Card | null>(null);
+export const $hoveredCard = atom<Card | null>(null);
+export const $isPickingCard = atom<boolean>(false);
 
-export interface DraftPlayer {
-  id: string;
-  name: string;
-  position: number; // 0-7
-  isHuman: boolean;
-  currentPack: Pack | null;
-  pickedCards: DraftCard[];
-  personality?: 'bronze' | 'silver' | 'gold' | 'mythic';
-}
-
-export interface DraftState {
-  id: string;
-  status: 'setup' | 'active' | 'complete';
-  round: 1 | 2 | 3;
-  pick: number; // 1-15 per round
-  direction: 'clockwise' | 'counterclockwise';
-  players: DraftPlayer[];
-  humanPlayerId: string;
-  setData: MTGSetData;
-  createdAt: number;
-}
-
-// ============================================================================
-// NANOSTORES
-// ============================================================================
-
-export const draftStore = atom<DraftState | null>(null);
-
-// ============================================================================
-// PURE STATE MACHINE FUNCTIONS
-// ============================================================================
-
-/**
- * Create a new draft state
- */
-export function createDraft(setData: MTGSetData, humanPlayerId: string = 'human-1'): DraftState {
-  const draftId = generateId();
+// Draft progress state
+export const $currentPack = computed([$currentDraft], (draft) => {
+  if (!draft) return null;
   
-  // Create 8 players (1 human + 7 bots)
-  const players: DraftPlayer[] = [
-    {
-      id: humanPlayerId,
-      name: 'You',
-      position: 0,
-      isHuman: true,
-      currentPack: null,
-      pickedCards: [],
-    },
-    ...Array.from({ length: 7 }, (_, i) => ({
-      id: `bot-${i + 1}`,
-      name: `Bot ${i + 1}`,
-      position: i + 1,
-      isHuman: false,
-      currentPack: null,
-      pickedCards: [],
-      personality: (['bronze', 'silver', 'gold', 'mythic'] as const)[i % 4],
-    }))
-  ];
+  const { currentRound, humanPlayerIndex } = draft;
+  const roundPacks = draft.packs[currentRound];
+  return roundPacks?.[humanPlayerIndex] || null;
+});
 
+export const $humanDeck = computed([$currentDraft], (draft) => {
+  if (!draft) return [];
+  
+  const { humanPlayerIndex } = draft;
+  return draft.playerDecks[humanPlayerIndex] || [];
+});
+
+export const $draftProgress = computed([$currentDraft], (draft) => {
+  if (!draft) return null;
+  
+  const totalPicks = 3 * 15; // 3 rounds, 15 picks each
+  const currentPick = (draft.currentRound - 1) * 15 + draft.currentPick;
+  
   return {
-    id: draftId,
-    status: 'setup',
-    round: 1,
-    pick: 1,
-    direction: 'clockwise',
-    players,
-    humanPlayerId,
-    setData,
-    createdAt: Date.now(),
+    currentRound: draft.currentRound,
+    currentPick: draft.currentPick,
+    totalRounds: 3,
+    totalPicks,
+    progress: (currentPick - 1) / totalPicks,
+    isComplete: draft.status === 'completed',
   };
-}
+});
 
-/**
- * Start the draft by generating and distributing packs
- */
-export function startDraft(state: DraftState): DraftState {
-  if (state.status !== 'setup') {
-    throw new Error('Draft must be in setup status to start');
+// Derived state for UI
+export const $canPick = computed(
+  [$currentDraft, $isLoading, $isPickingCard], 
+  (draft, loading, picking) => {
+    return draft && 
+           draft.status === 'active' && 
+           !loading && 
+           !picking;
   }
+);
 
-  // Generate 8 packs for round 1
-  const round1Packs = generatePacks(state.setData, 8);
+export const $currentPosition = computed([$currentDraft], (draft) => {
+  if (!draft) return null;
   
-  // Distribute packs to players
-  const playersWithPacks = state.players.map((player, index) => ({
-    ...player,
-    currentPack: round1Packs[index] || null,
-  }));
-
   return {
-    ...state,
-    status: 'active',
-    players: playersWithPacks,
+    round: draft.currentRound,
+    pick: draft.currentPick,
+    urlPath: `/draft/${draft.draftId}/p${draft.currentRound}p${draft.currentPick}`,
   };
-}
+});
 
-/**
- * Core state transition: Process a human pick
- * This is the main state machine function
- */
-export function processPick(state: DraftState, playerId: string, cardId: string): DraftState {
-  if (state.status !== 'active') {
-    throw new Error('Draft must be active to make picks');
-  }
-
-  // 1. Apply human pick (Pick N)
-  const stateAfterHumanPick = applyPlayerPick(state, playerId, cardId);
-  
-  // 2. Process all bots for the SAME pick number (Pick N)
-  const stateAfterBotPicks = processAllBotsForCurrentPick(stateAfterHumanPick, state.pick);
-  
-  // 3. Pass all packs (everyone has now made Pick N)
-  const stateAfterPackPassing = passAllPacks(stateAfterBotPicks);
-  
-  // 4. Increment pick counter ONCE (Pick N → Pick N+1)
-  const newState = {
-    ...stateAfterPackPassing,
-    pick: state.pick + 1
-  };
-  
-  // 5. Check for round/draft completion
-  return checkForCompletion(newState);
-}
-
-/**
- * Apply a single player's pick
- */
-function applyPlayerPick(state: DraftState, playerId: string, cardId: string): DraftState {
-  const player = state.players.find(p => p.id === playerId);
-  if (!player || !player.currentPack) {
-    throw new Error(`Player ${playerId} has no pack to pick from`);
-  }
-
-  const card = player.currentPack.cards.find(c => c.id === cardId);
-  if (!card) {
-    throw new Error(`Card ${cardId} not found in player's pack`);
-  }
-
-  const updatedPlayers = state.players.map(p => {
-    if (p.id === playerId) {
-      return {
-        ...p,
-        pickedCards: [...p.pickedCards, card],
-        currentPack: {
-          ...p.currentPack!,
-          cards: p.currentPack!.cards.filter(c => c.id !== cardId)
-        }
-      };
-    }
-    return p;
-  });
-
-  return {
-    ...state,
-    players: updatedPlayers,
-  };
-}
-
-/**
- * Process all bots for the current pick number
- * All bots make their Pick N simultaneously with the human
- */
-function processAllBotsForCurrentPick(state: DraftState, pickNumber: number): DraftState {
-  console.log(`[DraftEngine] Processing all bots for Pick ${pickNumber}`);
-  
-  let currentState = state;
-  
-  // Each bot makes exactly one pick for this pick number
-  for (const player of state.players) {
-    if (!player.isHuman && player.currentPack && player.currentPack.cards.length > 0) {
-      const botChoice = makeBotChoice(player.currentPack);
-      console.log(`[DraftEngine] Bot ${player.id} picks ${botChoice.name} for Pick ${pickNumber}`);
-      currentState = applyPlayerPick(currentState, player.id, botChoice.id);
-    }
-  }
-  
-  return currentState;
-}
-
-/**
- * Pass all packs to next players
- */
-function passAllPacks(state: DraftState): DraftState {
-  const { direction, players } = state;
-  const playerCount = players.length;
-  
-  console.log(`[DraftEngine] Passing packs ${direction} for Pick ${state.pick}`);
-  
-  const playersWithPassedPacks = players.map((player, index) => {
-    // Calculate which player's pack this player should receive
-    let sourceIndex: number;
-    if (direction === 'clockwise') {
-      sourceIndex = (index - 1 + playerCount) % playerCount;
-    } else {
-      sourceIndex = (index + 1) % playerCount;
-    }
-    
-    const sourcePack = players[sourceIndex].currentPack;
-    const packSize = sourcePack?.cards.length || 0;
-    
-    if (player.isHuman) {
-      console.log(`[DraftEngine] Human receives pack from position ${sourceIndex} with ${packSize} cards`);
-    }
-    
-    return {
-      ...player,
-      currentPack: sourcePack && sourcePack.cards.length > 0 ? sourcePack : null,
-    };
-  });
-
-  return {
-    ...state,
-    players: playersWithPassedPacks,
-  };
-}
-
-/**
- * Check for round/draft completion after pick increment
- */
-function checkForCompletion(state: DraftState): DraftState {
-  // Check if round is complete (pick 16 means we've done picks 1-15)
-  if (state.pick > 15) {
-    // Round complete - advance to next round
-    if (state.round >= 3) {
-      // Draft complete
-      console.log(`[DraftEngine] Draft complete after Round ${state.round}`);
-      return {
-        ...state,
-        status: 'complete',
-      };
-    } else {
-      // Start next round
-      console.log(`[DraftEngine] Round ${state.round} complete, starting Round ${state.round + 1}`);
-      return startNextRound(state);
-    }
-  }
-  
-  // Continue current round
-  console.log(`[DraftEngine] Round ${state.round}, Pick ${state.pick} ready`);
-  return state;
-}
-
-/**
- * Start the next round
- */
-function startNextRound(state: DraftState): DraftState {
-  const nextRound = (state.round + 1) as 1 | 2 | 3;
-  const newDirection = nextRound === 2 ? 'counterclockwise' : 'clockwise';
-  
-  // Generate new packs for the round
-  const newPacks = generatePacks(state.setData, state.players.length);
-  
-  const playersWithNewPacks = state.players.map((player, index) => ({
-    ...player,
-    currentPack: newPacks[index] || null,
-  }));
-
-  return {
-    ...state,
-    round: nextRound,
-    pick: 1,
-    direction: newDirection,
-    players: playersWithNewPacks,
-  };
-}
-
-// ============================================================================
-// HELPER FUNCTIONS
-// ============================================================================
-
-/**
- * Simple bot decision making
- */
-function makeBotChoice(pack: Pack): DraftCard {
-  // For now, just pick the first card (can be improved with AI later)
-  return pack.cards[0];
-}
-
-/**
- * Generate booster packs
- */
-function generatePacks(setData: MTGSetData, count: number): Pack[] {
-  const packs: Pack[] = [];
-  
-  for (let i = 0; i < count; i++) {
-    const packCards = generateSinglePack(setData);
-    packs.push({
-      id: `pack-${i}-${Date.now()}`,
-      cards: packCards,
-    });
-  }
-  
-  return packs;
-}
-
-/**
- * Generate a single 15-card booster pack (avoiding duplicates)
- */
-function generateSinglePack(setData: MTGSetData): DraftCard[] {
-  const cards = setData.cards || [];
-  console.log(`[PackGen] Generating pack from ${cards.length} total cards in set ${setData.set_code}`);
-  
-  // Categorize cards by rarity
-  const commons = cards.filter(c => c.rarity === 'common' && c.booster);
-  const uncommons = cards.filter(c => c.rarity === 'uncommon' && c.booster);
-  const rares = cards.filter(c => c.rarity === 'rare' && c.booster);
-  const mythics = cards.filter(c => c.rarity === 'mythic' && c.booster);
-  
-  console.log(`[PackGen] Card distribution - Commons: ${commons.length}, Uncommons: ${uncommons.length}, Rares: ${rares.length}, Mythics: ${mythics.length}`);
-  
-  const packCards: DraftCard[] = [];
-  const usedCardIds = new Set<string>();
-  
-  // Helper to pick unique card
-  const pickUniqueCard = (pool: any[]) => {
-    const available = pool.filter(c => !usedCardIds.has(c.id));
-    if (available.length === 0) return null;
-    const card = available[Math.floor(Math.random() * available.length)];
-    usedCardIds.add(card.id);
-    return card;
-  };
-  
-  // 1 rare/mythic (1/8 chance for mythic)
-  const rarePool = Math.random() < 0.125 && mythics.length > 0 ? mythics : rares;
-  const rareCard = pickUniqueCard(rarePool);
-  if (rareCard) packCards.push(toDraftCard(rareCard));
-  
-  // 3 uncommons
-  for (let i = 0; i < 3; i++) {
-    const card = pickUniqueCard(uncommons);
-    if (card) packCards.push(toDraftCard(card));
-  }
-  
-  // 11 commons
-  for (let i = 0; i < 11; i++) {
-    const card = pickUniqueCard(commons);
-    if (card) packCards.push(toDraftCard(card));
-  }
-  
-  return packCards;
-}
-
-/**
- * Convert MTG card to draft card format
- */
-function toDraftCard(card: any): DraftCard {
-  return {
-    id: card.id,
-    name: card.name,
-    manaCost: card.mana_cost || '',
-    imageUrl: card.image_uris?.normal || `https://cards.scryfall.io/normal/front/${card.id.slice(0, 1)}/${card.id.slice(1, 2)}/${card.id}.jpg`,
-    rarity: card.rarity,
-    colors: card.colors || [],
-    cmc: card.cmc || 0,
-  };
-}
-
-/**
- * Generate unique ID
- */
-function generateId(): string {
-  return Date.now().toString(36) + Math.random().toString(36).substr(2, 9);
-}
-
-// ============================================================================
-// STORE ACTIONS
-// ============================================================================
-
+// Draft management actions
 export const draftActions = {
-  create: (setData: MTGSetData) => {
-    console.log('[DraftStore] Creating draft with set:', setData.set_code, 'Cards:', setData.cards?.length || 0);
-    const newDraft = createDraft(setData);
-    draftStore.set(newDraft);
-    return newDraft;
-  },
-  
-  start: () => {
-    const current = draftStore.get();
-    if (!current) throw new Error('No draft to start');
+  /**
+   * Create a new draft
+   */
+  async createDraft(seed: string, setCode: string): Promise<string> {
+    $isLoading.set(true);
+    $error.set(null);
     
-    console.log('[DraftStore] Starting draft with set:', current.setData.set_code);
-    const started = startDraft(current);
-    draftStore.set(started);
-    return started;
+    try {
+      const draftId = `draft_${seed}_${Date.now()}`;
+      
+      const action: DraftAction = {
+        type: 'CREATE_DRAFT',
+        payload: {
+          draftId,
+          seed,
+          setCode,
+          playerCount: 8,
+          humanPlayerIndex: 0,
+        },
+        timestamp: Date.now(),
+      };
+      
+      const newDraft = draftEngine.applyAction(action);
+      
+      $currentDraftId.set(draftId);
+      $currentDraft.set(newDraft);
+      
+      return draftId;
+    } catch (error) {
+      const message = error instanceof Error ? error.message : 'Failed to create draft';
+      $error.set(message);
+      throw error;
+    } finally {
+      $isLoading.set(false);
+    }
   },
-  
-  pick: (cardId: string) => {
-    const current = draftStore.get();
-    if (!current) throw new Error('No active draft');
+
+  /**
+   * Load an existing draft
+   */
+  async loadDraft(draftId: string): Promise<void> {
+    $isLoading.set(true);
+    $error.set(null);
     
-    const updated = processPick(current, current.humanPlayerId, cardId);
-    draftStore.set(updated);
-    return updated;
+    try {
+      const draft = await draftEngine.loadDraft(draftId);
+      
+      if (!draft) {
+        throw new Error(`Draft not found: ${draftId}`);
+      }
+      
+      $currentDraftId.set(draftId);
+      $currentDraft.set(draft);
+    } catch (error) {
+      const message = error instanceof Error ? error.message : 'Failed to load draft';
+      $error.set(message);
+      throw error;
+    } finally {
+      $isLoading.set(false);
+    }
   },
-  
-  reset: () => {
-    draftStore.set(null);
+
+  /**
+   * Start the draft (generate initial packs)
+   */
+  async startDraft(): Promise<void> {
+    const draftId = $currentDraftId.get();
+    if (!draftId) throw new Error('No current draft');
+    
+    $isLoading.set(true);
+    
+    try {
+      const action: DraftAction = {
+        type: 'START_DRAFT',
+        payload: { draftId },
+        timestamp: Date.now(),
+      };
+      
+      const updatedDraft = draftEngine.applyAction(action);
+      $currentDraft.set(updatedDraft);
+    } catch (error) {
+      const message = error instanceof Error ? error.message : 'Failed to start draft';
+      $error.set(message);
+      throw error;
+    } finally {
+      $isLoading.set(false);
+    }
   },
+
+  /**
+   * Pick a card for the human player
+   */
+  async pickCard(cardId: string): Promise<void> {
+    const draftId = $currentDraftId.get();
+    if (!draftId) throw new Error('No current draft');
+    
+    $isPickingCard.set(true);
+    $error.set(null);
+    
+    try {
+      const action: DraftAction = {
+        type: 'HUMAN_PICK',
+        payload: { draftId, cardId },
+        timestamp: Date.now(),
+      };
+      
+      const updatedDraft = draftEngine.applyAction(action);
+      $currentDraft.set(updatedDraft);
+      $selectedCard.set(null); // Clear selection after pick
+    } catch (error) {
+      const message = error instanceof Error ? error.message : 'Failed to pick card';
+      $error.set(message);
+      throw error;
+    } finally {
+      $isPickingCard.set(false);
+    }
+  },
+
+  /**
+   * Simulate bot picks for all other players
+   */
+  async processBotPicks(): Promise<void> {
+    const draft = $currentDraft.get();
+    const draftId = $currentDraftId.get();
+    
+    if (!draft || !draftId) throw new Error('No current draft');
+    
+    $isLoading.set(true);
+    
+    try {
+      let currentState = draft;
+      
+      // Process picks for all non-human players
+      for (let playerIndex = 1; playerIndex < draft.playerCount; playerIndex++) {
+        const currentPack = currentState.packs[currentState.currentRound]?.[playerIndex];
+        if (currentPack && currentPack.cards.length > 0) {
+          // Simple bot logic: pick first card (can be enhanced later)
+          const cardToPickId = currentPack.cards[0].id;
+          
+          const action: DraftAction = {
+            type: 'BOT_PICK',
+            payload: { draftId, playerIndex, cardId: cardToPickId },
+            timestamp: Date.now(),
+          };
+          
+          currentState = draftEngine.applyAction(action);
+        }
+      }
+      
+      $currentDraft.set(currentState);
+    } catch (error) {
+      const message = error instanceof Error ? error.message : 'Failed to process bot picks';
+      $error.set(message);
+      throw error;
+    } finally {
+      $isLoading.set(false);
+    }
+  },
+
+  /**
+   * Navigate to a specific position in the draft
+   */
+  async navigateToPosition(round: number, pick: number): Promise<void> {
+    const draftId = $currentDraftId.get();
+    if (!draftId) throw new Error('No current draft');
+    
+    $isLoading.set(true);
+    
+    try {
+      const replayedState = draftEngine.replayToPosition(draftId, round, pick);
+      $currentDraft.set(replayedState);
+    } catch (error) {
+      const message = error instanceof Error ? error.message : 'Failed to navigate to position';
+      $error.set(message);
+      throw error;
+    } finally {
+      $isLoading.set(false);
+    }
+  },
+
+  /**
+   * Get list of all drafts
+   */
+  async listDrafts() {
+    try {
+      return await draftEngine.listDrafts();
+    } catch (error) {
+      const message = error instanceof Error ? error.message : 'Failed to list drafts';
+      $error.set(message);
+      return [];
+    }
+  },
+
+  /**
+   * Delete a draft
+   */
+  async deleteDraft(draftId: string): Promise<void> {
+    try {
+      await draftEngine.deleteDraft(draftId);
+      
+      // If we deleted the current draft, clear the current state
+      if ($currentDraftId.get() === draftId) {
+        $currentDraftId.set(null);
+        $currentDraft.set(null);
+      }
+    } catch (error) {
+      const message = error instanceof Error ? error.message : 'Failed to delete draft';
+      $error.set(message);
+      throw error;
+    }
+  },
+
+  /**
+   * Clear all state (useful for logout/reset)
+   */
+  clearState(): void {
+    $currentDraftId.set(null);
+    $currentDraft.set(null);
+    $selectedCard.set(null);
+    $hoveredCard.set(null);
+    $isLoading.set(false);
+    $isPickingCard.set(false);
+    $error.set(null);
+  }
 };
+
+// UI interaction actions
+export const uiActions = {
+  /**
+   * Select a card (for detailed view, pick preparation)
+   */
+  selectCard(card: Card | null): void {
+    $selectedCard.set(card);
+  },
+
+  /**
+   * Hover over a card (for tooltips, previews)
+   */
+  hoverCard(card: Card | null): void {
+    $hoveredCard.set(card);
+  },
+
+  /**
+   * Clear error state
+   */
+  clearError(): void {
+    $error.set(null);
+  }
+};
+
+// Set data management
+export const $setData = map<Record<string, SetData>>({});
+
+export const setDataActions = {
+  /**
+   * Load set data into the engine
+   */
+  loadSetData(setData: SetData): void {
+    draftEngine.loadSetData(setData);
+    $setData.setKey(setData.setCode, setData);
+  },
+
+  /**
+   * Get set data for a specific set
+   */
+  getSetData(setCode: string): SetData | null {
+    return $setData.get()[setCode] || null;
+  }
+};
+
+// Export the engine instance for direct access if needed
+export { draftEngine };
