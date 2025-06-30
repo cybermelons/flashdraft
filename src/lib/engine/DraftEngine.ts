@@ -379,7 +379,87 @@ export class DraftEngine {
       };
     }
 
-    this.state.drafts[draft.draftId] = updatedDraft;
+    // Auto-advance: Check if all players have made their pick for this position
+    const finalDraft = this.autoAdvanceIfReady(updatedDraft);
+    
+    this.state.drafts[draft.draftId] = finalDraft;
+    return finalDraft;
+  }
+
+  /**
+   * Auto-advance engine progression after picks if all players have picked
+   */
+  private autoAdvanceIfReady(draft: DraftState): DraftState {
+    // Check if all players have picked for current position
+    const currentPacks = draft.packs[draft.currentRound];
+    if (!currentPacks) return draft;
+
+    // Count how many players still have cards to pick in their packs
+    const playersWithCards = currentPacks.filter(pack => pack && pack.cards.length > 0).length;
+    
+    if (playersWithCards === 0) {
+      // All players have picked - advance to next position
+      return this.advanceToNextPosition(draft);
+    }
+    
+    // Still waiting for other players to pick
+    return draft;
+  }
+
+  /**
+   * Advance to next position in the draft
+   */
+  private advanceToNextPosition(draft: DraftState): DraftState {
+    let updatedDraft = { ...draft };
+
+    // Advance pick number
+    if (updatedDraft.currentPick < 15) {
+      // Move to next pick in same round
+      updatedDraft.currentPick += 1;
+      
+      // Pass packs after each pick
+      updatedDraft = this.handlePassPacks({
+        type: 'PASS_PACKS',
+        payload: { draftId: draft.draftId },
+        timestamp: Date.now()
+      }, updatedDraft);
+      
+    } else if (updatedDraft.currentRound < 3) {
+      // Move to next round
+      updatedDraft.currentRound += 1;
+      updatedDraft.currentPick = 1;
+      
+      // Start new round (generates new packs)
+      updatedDraft = this.handleStartRound({
+        type: 'START_ROUND',
+        payload: { 
+          draftId: draft.draftId,
+          round: updatedDraft.currentRound 
+        },
+        timestamp: Date.now()
+      }, updatedDraft);
+      
+    } else {
+      // Draft complete
+      updatedDraft = this.handleCompleteDraft({
+        type: 'COMPLETE_DRAFT',
+        payload: { draftId: draft.draftId },
+        timestamp: Date.now()
+      }, updatedDraft);
+    }
+
+    // Add advancement action to history
+    const advanceAction: DraftAction = {
+      type: 'ADVANCE_POSITION',
+      payload: { 
+        draftId: draft.draftId,
+        newRound: updatedDraft.currentRound,
+        newPick: updatedDraft.currentPick
+      },
+      timestamp: Date.now()
+    };
+    updatedDraft.actionHistory = [...updatedDraft.actionHistory, advanceAction];
+
     return updatedDraft;
   }
 
