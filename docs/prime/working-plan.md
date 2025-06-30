@@ -56,109 +56,108 @@ class DraftService {
 
 ## Implementation Checklist
 
-- [ ] **Remove old code**
-  - [ ] Delete complex store logic
-  - [ ] Remove replay engine from UI
-  - [ ] Clean up imports and dependencies
+### Phase 0: Clean Slate
+- [ ] **Delete existing complex code** ⚡ IN PROGRESS
+  - [ ] Remove `seededDraftStore.ts` entirely
+  - [ ] Remove `draftReplayEngine.ts` 
+  - [ ] Remove `StateMachineDraftRouter.tsx`
+  - [ ] Remove `StateMachineDraft.tsx`
+  - [ ] Clean slate - no migration, fresh start
 
-### Phase 1: Create Service Layer
-- [ ] **Create DraftService class**
+### Phase 1: Create Service Layer with Actions
+- [ ] **Define action types**
+  - [ ] `src/services/types/DraftActions.ts`
+  - [ ] Named action types with parameters
+  - [ ] TypeScript discriminated union for type safety
+- [ ] **Create action applicator**:
+  - [ ] `src/services/applyAction.ts`
+  - [ ] Pure function: `(state, action) => newState`
+  - [ ] Handles all action types
+- [ ] **Create DraftService class**:
   - [ ] `src/services/DraftService.ts`
-  - [ ] Pure business logic, no UI dependencies
-  - [ ] All draft operations return complete state
-- [ ] **Core service methods**:
-  - [ ] `createDraft(setData: MTGSetData): DraftState`
-  - [ ] `startDraft(draftId: string): DraftState`
-  - [ ] `makeHumanPick(draftId: string, cardId: string): DraftState`
-  - [ ] `navigateToPosition(draftId: string, round: number, pick: number): DraftState`
-  - [ ] `getDraft(draftId: string): DraftState | null`
-- [ ] **Service handles all complexity**:
-  - [ ] Bot decision making
-  - [ ] Pack passing logic
-  - [ ] Position advancement
-  - [ ] URL generation
-  - [ ] Storage operations
+  - [ ] Single source of truth for draft logic
+  - [ ] `makeHumanPick()` creates and applies actions
+  - [ ] `navigateToPosition()` replays to target
+  - [ ] Handles bot logic, pack passing, round transitions
 
 
-### Phase 2: Simplify UI Store
-- [ ] **Refactor seededDraftStore**
-  - [ ] Remove all business logic
-  - [ ] Keep only current draft state: `atom<DraftState | null>`
-  - [ ] Simple actions that call service
-- [ ] **Clean store actions**:
+### Phase 2: Create Simple UI Store
+- [ ] **Create new simple store**
+  - [ ] `src/stores/draftStore.ts` (fresh start)
+  - [ ] Only holds current draft state: `atom<DraftState | null>`
+  - [ ] No business logic - just UI state
+- [ ] **Simple store actions**:
   ```typescript
   export const draftActions = {
     createDraft: (setData: MTGSetData) => {
       const state = draftService.createDraft(setData);
       draftStore.set(state);
-      updateURL(state);
+      hardNavigateTo(state);  // Creates browser history
     },
     
     makeHumanPick: (cardId: string) => {
       const currentDraft = draftStore.get();
       if (!currentDraft) return;
       
-      const newState = draftService.makeHumanPick(currentDraft.id, cardId);
+      const newState = draftService.makeHumanPick(currentDraft.seed, cardId);
       draftStore.set(newState);
-      updateURL(newState);
+      hardNavigateTo(newState);  // New history entry
     },
     
-    navigateToPosition: (round: number, pick: number) => {
-      const currentDraft = draftStore.get();
-      if (!currentDraft) return;
-      
-      const newState = draftService.navigateToPosition(currentDraft.id, round, pick);
-      draftStore.set(newState);
-      updateURL(newState);
+    // Navigation just loads state at position
+    loadPosition: (seed: string, round: number, pick: number) => {
+      const state = draftService.navigateToPosition(seed, round, pick);
+      draftStore.set(state);
+      // No URL update - URL already reflects position
     }
   };
   ```
 
-### Phase 3: Fix Navigation
-
-hard nvagation, updateurl should be link an <a> tag  navigation.
-
-- [ ] **Single URL update function**
-  - [ ] `updateURL(state: DraftState)` called after every state change
-  - [ ] Always uses `state.seed` and current position
-  - [ ] Consistent URL format: `/draft/{seed}/p{round}p{pick}`
-- [ ] **Router simplification**
-  - [ ] Router just calls `draftService.navigateToPosition()`
-  - [ ] No complex replay logic in router
-  - [ ] Service handles loading and position restoration
-
-### Phase 4: Move Business Logic to Service
-- [ ] **Extract replay engine logic**
-  - [ ] Move `replayDraftToPosition()` into service
-  - [ ] Move `applyDelta()` into service
-  - [ ] Move `processBotPicks()` into service
-- [ ] **Service owns state transitions**
-  - [ ] Service decides when to advance positions
-  - [ ] Service handles bot processing timing
-  - [ ] Service manages pack passing
-- [ ] **Storage abstraction**
-  - [ ] Service calls storage layer
-  - [ ] Storage layer is separate from service
-  - [ ] Clean interface: `save(state)`, `load(id)`, `list()`
-
-### Phase 5: Component Simplification
-- [ ] **Update UI components**
-  - [ ] Components only call `draftActions.X()`
-  - [ ] Remove direct replay engine calls
-  - [ ] Remove complex state logic from components
-- [ ] **Clean component methods**:
+### Phase 3: Implement Hard Navigation
+- [ ] **Hard navigation function**
   ```typescript
-  function handlePick(cardId: string) {
-    draftActions.makeHumanPick(cardId);
-    // That's it! Service handles everything
-  }
-  
-  function handleNavigateNext() {
-    const { round, pick } = calculateNextPosition(draft);
-    draftActions.navigateToPosition(round, pick);
-    // Service handles position validation and state restoration
+  function hardNavigateTo(state: DraftState) {
+    const url = `/draft/${state.seed}/p${state.round}p${state.pick}`;
+    window.location.href = url;  // Creates browser history entry
   }
   ```
+- [ ] **Simple router**
+  - [ ] Router parses URL: `/draft/{seed}/p{round}p{pick}`
+  - [ ] Calls `draftActions.loadPosition(seed, round, pick)`
+  - [ ] No complex logic - just load state and display
+- [ ] **Navigation links as `<a>` tags**
+  - [ ] Previous/Next buttons are actual links
+  - [ ] `<a href="/draft/{seed}/p{round}p{pick-1}">← Previous</a>`
+  - [ ] Browser handles navigation naturally
+
+### Phase 4: Create New Simple Components
+- [ ] **Create new draft components**
+  - [ ] `src/components/Draft.tsx` (simple, clean)
+  - [ ] `src/components/DraftRouter.tsx` (minimal routing)
+  - [ ] No complex logic - just display current state
+- [ ] **Component responsibilities**:
+  - [ ] Read state from store
+  - [ ] Render cards and UI
+  - [ ] Call `draftActions.makeHumanPick(cardId)` on clicks
+  - [ ] That's it - no business logic
+- [ ] **Navigation components**:
+  - [ ] `<a>` tags for Previous/Next
+  - [ ] Browser handles back/forward automatically
+  - [ ] Immutable history just works
+
+### Phase 5: Storage Layer
+- [ ] **Create storage interface**
+  - [ ] `src/services/DraftStorage.ts`
+  - [ ] Stores only seed + action history
+  - [ ] 90%+ smaller than current storage
+- [ ] **Storage operations**:
+  - [ ] `save(seed, actions)` - persist action history
+  - [ ] `load(seed)` - load action history
+  - [ ] `list()` - draft metadata
+- [ ] **Action serialization**:
+  - [ ] Serialize actions as `{type: 'playerPick', payload: {cardId}}`
+  - [ ] Deserialize back to action functions
+  - [ ] Compact format for localStorage
 
 ### Phase 6: Testing & Validation
 - [ ] **Service layer tests**
@@ -172,29 +171,79 @@ hard nvagation, updateurl should be link an <a> tag  navigation.
 
 ## Technical Considerations
 
-### Service Layer Design
+### Action-Based Architecture
 ```typescript
-type Action = (previous: DraftState) => DraftState
+// Named actions with parameters (like Redux)
+type DraftAction = 
+  | { type: 'CREATE_DRAFT', setData: MTGSetData }
+  | { type: 'START_DRAFT' }
+  | { type: 'HUMAN_PICK', cardId: string }
+  | { type: 'BOT_PICK', playerId: string, cardId: string }
+  | { type: 'PASS_PACKS' }
+  | { type: 'START_ROUND', round: number }
+  | { type: 'COMPLETE_DRAFT' };
 
-type Actions = {
-  'PlayerPick', 'BotPick', 'Player Pass'
+// State = seed + action history
+interface DraftState {
+  seed: string;
+  actionHistory: DraftAction[];
+  // Current state fields (derived from replaying actions)
+  round: number;
+  pick: number;
+  players: Player[];
+  status: 'setup' | 'active' | 'complete';
 }
-type ActionName = keyof Actions
 
-const currentState: DraftState = createDraftState('seed', replayQueue: Action[])
+// Apply action to state (pure function)
+function applyAction(state: DraftState, action: DraftAction): DraftState {
+  switch (action.type) {
+    case 'HUMAN_PICK':
+      // Remove card from pack, add to picks, etc.
+      return { ...state, /* updated fields */ };
+    case 'BOT_PICK':
+      // Bot picks from their pack
+      return { ...state, /* updated fields */ };
+    case 'PASS_PACKS':
+      // Pass packs in current direction
+      return { ...state, /* updated fields */ };
+    // ... other actions
+  }
+}
 
+// Service applies actions and manages history
 export class DraftService {
   constructor(private storage: DraftStorage) {}
   
-
-  // All methods return complete state
-  // Service is stateless - state lives in storage
   makeHumanPick(draftId: string, cardId: string): DraftState {
     const draft = this.storage.load(draftId);
     if (!draft) throw new Error('Draft not found');
     
-    // Apply pick
-    const withHumanPick = this.applyHumanPick(draft, cardId);
+    // Create actions for the complete pick sequence
+    const actions: DraftAction[] = [
+      { type: 'HUMAN_PICK', cardId },
+      ...this.createBotPickActions(draft),  // All bots pick
+      { type: 'PASS_PACKS' },
+      // Check if round complete, etc.
+    ];
+    
+    // Add to history and replay from beginning
+    const newHistory = [...draft.actionHistory, ...actions];
+    const newState = this.replayFromSeed(draft.seed, newHistory);
+    
+    this.storage.save(newState);
+    return newState;
+  }
+  
+  navigateToPosition(seed: string, round: number, pick: number): DraftState {
+    const draft = this.storage.load(seed);
+    if (!draft) throw new Error('Draft not found');
+    
+    // Calculate how many actions to apply
+    const targetPosition = (round - 1) * 15 + pick;
+    const actionsToApply = this.getActionsUpToPosition(draft.actionHistory, targetPosition);
+    
+    return this.replayFromSeed(seed, actionsToApply);
+  }
     
     // Process bots
     const withBotPicks = this.processBotPicks(withHumanPick);
@@ -215,16 +264,42 @@ export class DraftService {
 ### Storage Interface
 ```typescript
 interface DraftStorage {
-  save(draft: DraftState): void;
+  save(draft: DraftState): void;  // Saves seed + action history
   load(id: string): DraftState | null;
   list(): DraftMetadata[];
   delete(id: string): boolean;
 }
+
+// Storage format (minimal):
+interface StoredDraft {
+  seed: string;
+  actions: SerializedAction[];  // Much smaller than full state
+  metadata: { created: number; set: string; };
+}
 ```
 
-### URL Management
+### URL Management & Browser History
+```typescript
+// Hard navigation - each pick creates new browser history entry
+function navigateToPosition(state: DraftState) {
+  const url = `/draft/${state.seed}/p${state.round}p${state.pick}`;
+  
+  // Use window.location.href for hard navigation
+  // This creates browser history entries for back/forward
+  window.location.href = url;
+}
 
-do a hard navigation. we want each pick to be in history. if click back on the browser, it takes them back to the immutable pick they had before. if they were deciding what to pick on p1p3, they can press back twice on their browser to go to the previous pick states, and see their immutable pick.
+// Example flow:
+// User at p1p1 → makes pick → hard navigate to p1p2
+// Browser back button → returns to p1p1 (immutable state)
+// Browser forward → returns to p1p2
+```
+
+**Browser History Behavior:**
+- Each pick creates new URL in browser history
+- Back/Forward buttons navigate through pick states
+- Each position shows immutable historical state
+- Perfect for reviewing draft decisions
 
 ## Benefits of This Architecture
 
@@ -250,10 +325,12 @@ do a hard navigation. we want each pick to be in history. if click back on the b
 
 ## Success Criteria
 - [ ] Navigation works reliably (p1p1 → p1p2 after pick)
-- [ ] Bots pick from their pack and pack sizes decrease
+- [ ] Bots pick from their pack and pack sizes decrease  
+- [ ] Browser back/forward shows immutable history
 - [ ] URL always reflects current position
 - [ ] Components have simple, predictable methods
 - [ ] Draft logic is easily testable
+- [ ] Action history is readable and debuggable
 - [ ] Single source of truth for draft state
 
 ## Migration Strategy
