@@ -75,21 +75,37 @@ npm run format
 ```
 flashdraft/
 ├── src/
-│   ├── frontend/           # React components and UI
-│   │   ├── components/     # Draft interface, card display, navigation
-│   │   ├── pages/         # Astro page components
-│   │   └── stores/        # UI state (nanostores with localStorage persistence)
+│   ├── lib/                    # Core library code
+│   │   ├── engine/            # Draft engine (pure logic)
+│   │   │   ├── DraftEngine.ts        # Main state machine
+│   │   │   ├── actions.ts            # Action types & creators
+│   │   │   ├── SeededRandom.ts       # Deterministic randomization
+│   │   │   ├── PackGenerator.ts      # Seeded pack creation
+│   │   │   └── storage/              # Engine persistence layer
+│   │   │       ├── DraftStorageAdapter.ts  # Abstract interface
+│   │   │       ├── LocalStorageAdapter.ts  # LocalStorage implementation
+│   │   │       └── types.ts                # Storage types
+│   │   └── utils.ts           # General utilities
 │   │
-│   ├── services/          # Draft engine (pure in-memory logic)
-│   │   ├── applyAction.ts # Event sourcing and action application
-│   │   ├── DraftEngine.ts # Core draft logic (no dependencies)
-│   │   └── StorageModule.ts # Persistence interface layer
+│   ├── components/            # React UI components
+│   │   ├── SimpleDraftRouter.tsx # Route handling
+│   │   ├── DraftInterface.tsx    # Main draft interface
+│   │   ├── PackDisplay.tsx       # Pack and card grid
+│   │   └── ui/                   # shadcn/ui components
 │   │
-│   ├── shared/           # Types, utilities, and constants
-│   │   ├── types/        # TypeScript definitions
-│   │   └── utils/        # Seeded pack generation, random utils
+│   ├── stores/               # UI state (nanostores)
+│   │   ├── draftStore.ts         # Current draft UI state
+│   │   ├── uiStore.ts            # UI-specific state (selections, etc.)
+│   │   └── storage/              # UI persistence layer
+│   │       └── UIStorageAdapter.ts # UI state persistence
 │   │
-│   └── pages/api/        # Astro API endpoints
+│   ├── utils/               # App-specific utilities
+│   │   └── navigation.ts        # URL parsing and navigation
+│   │
+│   └── pages/               # Astro pages
+│       ├── index.astro          # Home page
+│       ├── draft.astro          # Draft list
+│       └── draft/[...path].astro # Dynamic routes
 │
 ├── data/sets/           # Downloaded MTG set data (DTK, FIN)
 ├── docs/prime/          # Development context and working plans
@@ -121,24 +137,29 @@ flashdraft/
 └─────────────────┘    └─────────────────┘
 ```
 
-### **Draft Engine** ✅ (Core Layer)
+### **Draft Engine** ✅ (Core Layer - `src/lib/engine/`)
 - **Pure In-Memory Logic**: Event-sourced draft state with zero dependencies
 - **Action Types**: CREATE_DRAFT, START_DRAFT, HUMAN_PICK, BOT_PICK, PASS_PACKS, ADVANCE_POSITION, START_ROUND, COMPLETE_DRAFT
 - **Deterministic Logic**: Seeded pack generation using Linear Congruential Generator  
 - **Self-Persisting**: Uses DraftStorageAdapter for automatic save/load
+- **Multi-Tab Sync**: localStorage events for cross-tab synchronization
+- **Error Handling**: Storage monitoring and graceful degradation
 
-### **UI Layer** (Presentation Layer)
-- **Nanostores**: Reactive UI state management
-- **Direct Engine Access**: UI calls engine methods directly, no intermediary
+### **UI Layer** (Presentation Layer - `src/components/`, `src/stores/`)
+- **Nanostores**: Reactive UI state management with localStorage persistence
+- **Direct Engine Access**: UI calls engine methods directly via clean imports
 - **Independent Persistence**: UIStorageAdapter for UI state (selected cards, preferences)
 - **Components**: shadcn/ui + Tailwind CSS for consistent design
 - **Framework**: Astro + React islands with TypeScript
+- **Hydration Strategy**: UI state loads first, draft data loads asynchronously
 
 ### **Key Design Principles**
 - **Dual Independence**: Each layer manages its own persistence completely
-- **Direct Communication**: UI directly imports and calls Draft Engine
-- **Storage Adapter Pattern**: Easy to swap backends (LocalStorage → IndexedDB → Server)
+- **Direct Communication**: UI directly imports engine via `@/lib/engine/DraftEngine`
+- **Storage Adapter Pattern**: Easy to swap backends (LocalStorage → IndexedDB → Server)  
 - **Event Sourcing in Engine Only**: Perfect reproducibility where it matters
+- **Colocated Dependencies**: Related code stays together in logical directories
+- **Clean Import Paths**: Follows Astro/Next.js conventions with `src/lib/` pattern
 
 ## **Development Commands**
 
@@ -155,10 +176,10 @@ flashdraft/
 
 - **Frontend**: Astro + React islands + TypeScript
 - **UI**: Tailwind CSS + shadcn/ui components  
-- **State Management**: Draft engine (in-memory) + Storage module + UI state (nanostores + localStorage)
+- **State Management**: Draft engine (`src/lib/engine/`) + Independent storage adapters + UI state (nanostores)
 - **Data**: Scryfall API for card data and images
 - **Testing**: Comprehensive test suite for core draft engine
-- **Architecture**: Three-layer separation: UI (nanostores + localStorage) ↔ Storage Module ↔ Draft Engine (in-memory)
+- **Architecture**: Two-layer separation with dual persistence: UI ↔ Draft Engine, each with independent storage adapters
 
 ## **License**
 
