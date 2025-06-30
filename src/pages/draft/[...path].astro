@@ -9,7 +9,7 @@
  */
 
 import Layout from '../../layouts/Layout.astro';
-import { TempDraftPlaceholder } from '../../frontend/components/TempDraftPlaceholder';
+import { SimpleDraftRouter } from '../../frontend/components/SimpleDraftRouter';
 
 export const prerender = false;
 
@@ -70,7 +70,7 @@ if (!path || (path.length === 0)) {
 <Layout title={`FlashDraft - ${routeType === 'overview' ? 'Draft Overview' : 'Draft'}`}>
   <main>
     <div id="draft-app-root">
-      <TempDraftPlaceholder
+      <SimpleDraftRouter
         client:load
         routeType={routeType}
         draftId={draftId}

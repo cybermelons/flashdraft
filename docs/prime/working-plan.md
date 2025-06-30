@@ -64,29 +64,35 @@ class DraftService {
   - [x] Remove `StateMachineDraft.tsx` ✅
   - [x] Clean slate - no migration, fresh start ✅
 
-### Phase 1: Create Service Layer with Actions
+### Phase 1: Create Service Layer with Actions ✅ COMPLETE
 - [x] **Define action types** ✅ COMPLETE
   - [x] `src/services/types/DraftActions.ts` ✅
   - [x] Named action types with parameters ✅
   - [x] TypeScript discriminated union for type safety ✅
-- [ ] **Create action applicator**: ⚡ IN PROGRESS
-  - [ ] `src/services/applyAction.ts`
-  - [ ] Pure function: `(state, action) => newState`
-  - [ ] Handles all action types
-- [ ] **Create DraftService class**:
-  - [ ] `src/services/DraftService.ts`
-  - [ ] Single source of truth for draft logic
-  - [ ] `makeHumanPick()` creates and applies actions
-  - [ ] `navigateToPosition()` replays to target
-  - [ ] Handles bot logic, pack passing, round transitions
+  - [x] Actions use simple parameters (setCode instead of MTGSetData) ✅
+- [x] **Create action applicator** ✅ COMPLETE
+  - [x] `src/services/applyAction.ts` ✅
+  - [x] Pure function: `(state, action, context?) => newState` ✅
+  - [x] Handles all action types ✅
+  - [x] Context parameter for external data loading ✅
+- [x] **Create DraftService class** ✅ COMPLETE
+  - [x] `src/services/DraftService.ts` ✅
+  - [x] Single source of truth for draft logic ✅
+  - [x] `makeHumanPick()` creates and applies actions ✅
+  - [x] `navigateToPosition()` replays to target ✅
+  - [x] Handles bot logic, pack passing, round transitions ✅
+  - [x] Clean separation of concerns ✅
+  - [x] Temporary placeholder components for build compatibility ✅
 
 
 ### Phase 2: Create Simple UI Store
-- [ ] **Create new simple store**
-  - [ ] `src/stores/draftStore.ts` (fresh start)
-  - [ ] Only holds current draft state: `atom<DraftState | null>`
-  - [ ] No business logic - just UI state
-- [ ] **Simple store actions**:
+- [x] **Create new simple store** ✅ COMPLETE
+  - [x] `src/stores/simpleDraftStore.ts` (fresh start) ✅
+  - [x] Only holds current draft state: `atom<SeededDraftState | null>` ✅
+  - [x] No business logic - just UI state ✅
+  - [x] Loading and error state atoms ✅
+  - [x] React integration helpers ✅
+- [x] **Simple store actions** ✅ COMPLETE:
   ```typescript
   export const draftActions = {
     createDraft: (setData: MTGSetData) => {
@@ -113,22 +119,21 @@ class DraftService {
   };
   ```
 
-### Phase 3: Implement Hard Navigation
-- [ ] **Hard navigation function**
-  ```typescript
-  function hardNavigateTo(state: DraftState) {
-    const url = `/draft/${state.seed}/p${state.round}p${state.pick}`;
-    window.location.href = url;  // Creates browser history entry
-  }
-  ```
-- [ ] **Simple router**
-  - [ ] Router parses URL: `/draft/{seed}/p{round}p{pick}`
-  - [ ] Calls `draftActions.loadPosition(seed, round, pick)`
-  - [ ] No complex logic - just load state and display
-- [ ] **Navigation links as `<a>` tags**
-  - [ ] Previous/Next buttons are actual links
-  - [ ] `<a href="/draft/{seed}/p{round}p{pick-1}">← Previous</a>`
-  - [ ] Browser handles navigation naturally
+### Phase 3: Implement Hard Navigation ✅ COMPLETE
+- [x] **Hard navigation function** ✅ COMPLETE
+  - [x] `src/utils/navigation.ts` with hardNavigateTo function ✅
+  - [x] Creates browser history entries ✅
+  - [x] Proper URL format: `/draft/{seed}/p{round}p{pick}` ✅
+- [x] **Simple router** ✅ COMPLETE
+  - [x] `SimpleDraftRouter.tsx` parses URLs ✅
+  - [x] Calls `draftActions.loadPosition(seed, round, pick)` ✅
+  - [x] No complex logic - just load state and display ✅
+  - [x] Integrated with existing Astro routes ✅
+- [x] **Navigation links as `<a>` tags** ✅ COMPLETE
+  - [x] Previous/Next buttons are actual links ✅
+  - [x] `getPreviousLinkProps` and `getNextLinkProps` utilities ✅
+  - [x] Browser handles navigation naturally ✅
+  - [x] Proper URL validation and bounds checking ✅
 
 ### Phase 4: Create New Simple Components
 - [ ] **Create new draft components**

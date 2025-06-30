@@ -6,11 +6,11 @@
  */
 
 import Layout from '../../layouts/Layout.astro';
-import { TempDraftPlaceholder } from '../../frontend/components/TempDraftPlaceholder';
+import { SimpleDraftRouter } from '../../frontend/components/SimpleDraftRouter';
 ---
 
 <Layout title="FlashDraft - New Draft">
-  <TempDraftPlaceholder client:load routeType="draft" draftId="new" />
+  <SimpleDraftRouter client:load routeType="draft" draftId="new" />
 </Layout>
 
 <style>
