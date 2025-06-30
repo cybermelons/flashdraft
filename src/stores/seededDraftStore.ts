@@ -258,9 +258,9 @@ export function shouldUseSeededEngine(): boolean {
     if (flag === 'false') return false;
   }
   
-  // Default to seeded engine for new development
+  // Default to legacy engine until full migration is complete
   // TODO: Make this configurable per environment
-  return true;
+  return false;
 }
 
 // ============================================================================
