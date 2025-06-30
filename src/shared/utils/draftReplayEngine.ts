@@ -98,6 +98,8 @@ export function startSeededDraft(draft: SeededDraftState): SeededDraftState {
  * Replay a draft to a specific position
  */
 export function replayDraftToPosition(params: ReplayDraftParams): SeededDraftState {
+  console.log(`[ReplayEngine] Replaying to position ${params.targetPosition}, total deltas: ${params.deltas.length}`);
+  
   // Start with fresh draft
   let draft = createSeededDraft({
     seed: params.seed,
@@ -106,15 +108,19 @@ export function replayDraftToPosition(params: ReplayDraftParams): SeededDraftSta
   
   // Start the draft
   draft = startSeededDraft(draft);
+  console.log(`[ReplayEngine] After start - human picks: ${draft.players.find(p => p.isHuman)?.pickedCards.length}`);
   
   // Apply deltas up to target position
   const targetPosition = params.targetPosition || params.deltas.length;
   const deltasToApply = params.deltas.slice(0, targetPosition);
   
+  console.log(`[ReplayEngine] Applying ${deltasToApply.length} deltas`);
   for (const delta of deltasToApply) {
+    console.log(`[ReplayEngine] Applying delta:`, delta);
     draft = applyDelta(draft, delta);
   }
   
+  console.log(`[ReplayEngine] Final state - human picks: ${draft.players.find(p => p.isHuman)?.pickedCards.length}`);
   return draft;
 }
 
@@ -164,19 +170,32 @@ export function applyDelta(draft: SeededDraftState, delta: DraftDelta): SeededDr
   // Add delta to history
   const updatedDeltas = [...draft.deltas, delta];
   
+  // Calculate next position after the pick
+  const nextPick = delta.pick_number + 1;
+  const nextRound = nextPick > 15 ? (delta.pack_number + 1) as 1 | 2 | 3 : delta.pack_number as 1 | 2 | 3;
+  const actualNextPick = nextPick > 15 ? 1 : nextPick;
+  
   // Update draft state with new position info
   let updatedDraft: SeededDraftState = {
     ...draft,
-    round: delta.pack_number as 1 | 2 | 3,
-    pick: delta.pick_number,
-    direction: getPackDirection(delta.pack_number),
+    round: nextRound,
+    pick: actualNextPick,
+    direction: getPackDirection(nextRound),
     players: updatedPlayers,
     deltas: updatedDeltas,
     lastModified: Date.now()
   };
   
+  // Process bot picks for this pick number (all players pick simultaneously)
+  updatedDraft = processBotPicks(updatedDraft, delta.pick_number);
+  
   // Pass packs after each pick (this simulates the pack passing in MTG)
   updatedDraft = passPacks(updatedDraft);
+  
+  // If we've moved to a new round, distribute new packs
+  if (nextRound > delta.pack_number && nextRound <= 3) {
+    updatedDraft = startNewRound(updatedDraft, nextRound);
+  }
   
   // Check for round/draft completion
   updatedDraft = checkCompletion(updatedDraft);
@@ -228,6 +247,87 @@ function checkCompletion(draft: SeededDraftState): SeededDraftState {
   }
   
   return draft;
+}
+
+/**
+ * Process bot picks for the current pick number
+ * All bots make their picks simultaneously with the human
+ */
+function processBotPicks(draft: SeededDraftState, pickNumber: number): SeededDraftState {
+  const botDecisionMakers = createBotDecisionMakers(draft.seed);
+  
+  let updatedDraft = draft;
+  
+  // Process each bot's pick
+  for (const player of draft.players) {
+    if (!player.isHuman && player.currentPack && player.currentPack.cards.length > 0) {
+      // Get bot's decision maker (position 1-7 maps to array index 0-6)
+      const botIndex = player.position - 1;
+      const botDecisionMaker = botDecisionMakers[botIndex];
+      
+      if (!botDecisionMaker) {
+        console.error(`No bot decision maker found for position ${player.position}`);
+        continue;
+      }
+      
+      // Make bot choice (deterministic based on seed)
+      const choice = botDecisionMaker.makePick(player.currentPack.cards);
+      
+      // Create delta for bot pick
+      const botDelta = {
+        event_type: 'pick' as const,
+        pack_number: draft.round,
+        pick_number: pickNumber,
+        pick: choice.id,
+        player_id: player.id,
+        timestamp: Date.now(),
+        pick_time_ms: 1000 // Bots pick instantly
+      };
+      
+      // Apply bot pick (but don't recurse into bot processing again)
+      updatedDraft = applyBotPick(updatedDraft, botDelta);
+    }
+  }
+  
+  return updatedDraft;
+}
+
+/**
+ * Apply a bot pick without triggering additional bot processing
+ */
+function applyBotPick(draft: SeededDraftState, delta: DraftDelta): SeededDraftState {
+  const playerIndex = draft.players.findIndex(p => p.id === delta.player_id);
+  if (playerIndex === -1) return draft;
+  
+  const player = draft.players[playerIndex];
+  if (!player.currentPack) return draft;
+  
+  const cardIndex = player.currentPack.cards.findIndex(c => c.id === delta.pick);
+  if (cardIndex === -1) return draft;
+  
+  const pickedCard = player.currentPack.cards[cardIndex];
+  
+  // Update only this player's state
+  const updatedPlayers = draft.players.map((p, index) => {
+    if (index === playerIndex) {
+      return {
+        ...p,
+        pickedCards: [...p.pickedCards, pickedCard],
+        currentPack: {
+          ...p.currentPack!,
+          cards: p.currentPack!.cards.filter((_, i) => i !== cardIndex)
+        }
+      };
+    }
+    return p;
+  });
+  
+  return {
+    ...draft,
+    players: updatedPlayers,
+    deltas: [...draft.deltas, delta],
+    lastModified: Date.now()
+  };
 }
 
 /**

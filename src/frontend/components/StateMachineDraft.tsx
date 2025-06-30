@@ -1,23 +1,27 @@
 /**
  * State Machine Draft Interface
  * 
- * React component that directly reads from nanostores.
+ * React component that directly reads from seeded draft nanostores.
  * No props - just direct store references.
  */
 
 import React from 'react';
 import { useStore } from '@nanostores/react';
-import { draftStore, draftActions, type DraftCard } from '../../stores/draftStore';
-import { seededDraftStore, seededDraftActions, toLegacyDraftState, shouldUseSeededEngine } from '../../stores/seededDraftStore';
+import { seededDraftStore, seededDraftActions } from '../../stores/seededDraftStore';
+import type { DraftCard, SeededDraftState } from '../../shared/types/seededDraftState';
 
 export function StateMachineDraft() {
-  const legacyDraft = useStore(draftStore);
-  const seededDraft = useStore(seededDraftStore);
-  
-  // Use seeded engine if enabled, otherwise use legacy
-  const useSeeded = shouldUseSeededEngine();
-  const draft = useSeeded ? (seededDraft ? toLegacyDraftState(seededDraft) : null) : legacyDraft;
-  const actions = useSeeded ? seededDraftActions : draftActions;
+  const draft = useStore(seededDraftStore);
+  const actions = seededDraftActions;
+
+  // Debug logging
+  if (draft) {
+    console.log('[StateMachineDraft] Seeded draft state:', draft);
+    const human = draft.players.find(p => p.isHuman);
+    console.log('[StateMachineDraft] Human player:', human);
+    console.log('[StateMachineDraft] Human pack:', human?.currentPack);
+    console.log('[StateMachineDraft] Pack cards count:', human?.currentPack?.cards.length);
+  }
 
   if (!draft) {
     return <div>No draft loaded</div>;
@@ -27,7 +31,7 @@ export function StateMachineDraft() {
     return (
       <div>
         <h1>Draft Setup</h1>
-        <button onClick={() => draftActions.start()}>
+        <button onClick={() => actions.start()}>
           Start Draft
         </button>
       </div>
@@ -50,7 +54,7 @@ export function StateMachineDraft() {
   // Check if we're viewing a past position
   const currentPosition = (draft.round - 1) * 15 + draft.pick;
   const totalPicksMade = human?.pickedCards.length || 0;
-  const isViewingPastPosition = currentPosition <= totalPicksMade;
+  const isViewingPastPosition = currentPosition < totalPicksMade + 1;
 
   return (
     <div className="p-4">
@@ -81,7 +85,7 @@ export function StateMachineDraft() {
 }
 
 function DraftHeader() {
-  const draft = useStore(draftStore);
+  const draft = useStore(seededDraftStore);
   if (!draft) return null;
 
   const human = draft.players.find(p => p.id === draft.humanPlayerId);
@@ -95,7 +99,7 @@ function DraftHeader() {
   const humanPlayer = draft.players.find(p => p.id === draft.humanPlayerId);
   const totalPicksMade = humanPlayer?.pickedCards.length || 0;
   const canGoNext = currentPosition < totalPicksMade + 1;
-  const isViewingPastPosition = currentPosition <= totalPicksMade;
+  const isViewingPastPosition = currentPosition < totalPicksMade + 1;
   
   const handlePrevious = () => {
     if (!canGoPrevious) return;
@@ -109,7 +113,7 @@ function DraftHeader() {
     }
     
     // Navigate to previous position
-    window.location.href = `/draft/${draft.id}/p${newRound}p${newPick}`;
+    window.location.href = `/draft/${draft.seed}/p${newRound}p${newPick}`;
   };
   
   const handleNext = () => {
@@ -124,7 +128,7 @@ function DraftHeader() {
     }
     
     // Navigate to next position
-    window.location.href = `/draft/${draft.id}/p${newRound}p${newPick}`;
+    window.location.href = `/draft/${draft.seed}/p${newRound}p${newPick}`;
   };
 
   return (
@@ -225,7 +229,7 @@ function CardDisplay({ card, actions }: { card: DraftCard, actions: any }) {
 }
 
 function PlayerStatus() {
-  const draft = useStore(draftStore);
+  const draft = useStore(seededDraftStore);
   if (!draft) return null;
 
   const human = draft.players.find(p => p.id === draft.humanPlayerId);
@@ -247,7 +251,7 @@ function PlayerStatus() {
 }
 
 function DraftResults() {
-  const draft = useStore(draftStore);
+  const draft = useStore(seededDraftStore);
   if (!draft) return null;
 
   const human = draft.players.find(p => p.id === draft.humanPlayerId);
@@ -267,7 +271,7 @@ function DraftResults() {
       
       <button 
         className="mt-4 px-4 py-2 bg-blue-500 text-white rounded"
-        onClick={() => draftActions.reset()}
+        onClick={() => seededDraftActions.reset()}
       >
         New Draft
       </button>
@@ -277,7 +281,7 @@ function DraftResults() {
 
 // Development helper
 export function DraftDebug() {
-  const draft = useStore(draftStore);
+  const draft = useStore(seededDraftStore);
   
   if (!draft) return (
     <div className="fixed bottom-4 right-4 bg-black text-white p-2 rounded text-xs">
@@ -291,13 +295,15 @@ export function DraftDebug() {
   
   return (
     <div className="fixed bottom-4 right-4 bg-black text-white p-3 rounded text-xs max-w-xs space-y-1">
-      <div className="font-bold">Draft Debug</div>
+      <div className="font-bold">Draft Debug (Seeded)</div>
+      <div>Seed: {draft.seed.slice(0, 8)}...</div>
       <div>Status: {draft.status}</div>
       <div>Round {draft.round}, Pick {draft.pick}</div>
       <div>Direction: {draft.direction}</div>
       <div>---</div>
       <div>Human picks made: {humanPicks}</div>
       <div>Current pack size: {humanPackSize}</div>
+      <div>Deltas: {draft.deltas.length}</div>
       <div>---</div>
       <div>Expected behavior:</div>
       <div>• Pick 1 → Pick 2 (not Pick 9)</div>

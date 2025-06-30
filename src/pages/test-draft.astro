@@ -9,7 +9,7 @@ import Layout from '../layouts/Layout.astro';
 
 <script>
   import { StateMachineDraft, DraftDebug } from '../frontend/components/StateMachineDraft';
-  import { draftActions } from '../stores/draftStore';
+  import { seededDraftActions } from '../stores/seededDraftStore';
   import React from 'react';
   import { createRoot } from 'react-dom/client';
 
@@ -86,7 +86,7 @@ import Layout from '../layouts/Layout.astro';
       const root = createRoot(container);
       
       // Create initial draft
-      draftActions.create(mockSetData);
+      seededDraftActions.create(mockSetData);
 
       root.render(React.createElement('div', { className: 'w-full' }, [
         React.createElement(StateMachineDraft, { key: 'draft' }),

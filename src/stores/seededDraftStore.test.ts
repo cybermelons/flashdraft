@@ -43,7 +43,7 @@ Object.defineProperty(globalThis, 'localStorage', {
 });
 
 // Now import the modules
-import { seededDraftActions, seededDraftStore, toLegacyDraftState } from './seededDraftStore';
+import { seededDraftActions, seededDraftStore } from './seededDraftStore';
 
 // Mock set data
 const createMockSetData = () => ({
@@ -278,43 +278,4 @@ describe('seededDraftStore', () => {
     });
   });
 
-  describe('toLegacyDraftState', () => {
-    test('converts seeded draft to legacy format', () => {
-      const setData = createMockSetData();
-      const created = seededDraftActions.create(setData, 'legacy123');
-      const started = seededDraftActions.start();
-      
-      const legacy = toLegacyDraftState(started);
-      
-      expect(legacy.id).toBe('legacy123');
-      expect(legacy.status).toBe('active');
-      expect(legacy.round).toBe(1);
-      expect(legacy.pick).toBe(1);
-      expect(legacy.players).toBe(started.players);
-      expect(legacy.seed).toBe('legacy123');
-      expect(legacy.pickHistory).toEqual([]);
-    });
-    
-    test('converts deltas to pickHistory', () => {
-      const setData = createMockSetData();
-      const created = seededDraftActions.create(setData, 'history123');
-      const started = seededDraftActions.start();
-      
-      // Make a pick to create a delta
-      const humanPlayer = started.players.find(p => p.isHuman)!;
-      const firstCard = humanPlayer.currentPack!.cards[0];
-      const updated = seededDraftActions.pick(firstCard.id);
-      
-      const legacy = toLegacyDraftState(updated);
-      
-      expect(legacy.pickHistory).toHaveLength(1);
-      expect(legacy.pickHistory[0]).toEqual({
-        playerId: humanPlayer.id,
-        cardId: firstCard.id,
-        packId: `pack-1-${humanPlayer.id}`,
-        position: 1,
-        timestamp: expect.any(Number)
-      });
-    });
-  });
 });

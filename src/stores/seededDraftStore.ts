@@ -135,9 +135,9 @@ export const seededDraftActions = {
         // This is the magic of deterministic drafts - we can always recreate them
         console.log(`[SeededDraftStore] Draft not found, creating fresh draft from seed ${draftId}`);
         draft = createSeededDraft({ seed: draftId, setData });
-        draft = startSeededDraft(draft);
+        // Don't start it here - let replayDraftToPosition handle the start
         
-        // Save it for future use
+        // Save the setup draft for future use
         saveSeededDraft(draft);
       }
     } else {
@@ -146,6 +146,7 @@ export const seededDraftActions = {
     }
     
     // Use the replay engine to navigate to the position
+    console.log(`[SeededDraftStore] Navigating with deltas:`, draft.deltas.length);
     const result = navigateToPosition(draft.seed, draft.setData, draft.deltas, targetRound, targetPick);
     
     if (result.success && result.state) {
@@ -223,52 +224,6 @@ function updateDraftUrl(draft: SeededDraftState) {
   window.history.replaceState({}, '', newUrl);
 }
 
-// ============================================================================
-// LEGACY COMPATIBILITY
-// ============================================================================
-
-/**
- * Convert SeededDraftState to legacy DraftState format for UI compatibility
- * This allows existing UI components to work with the new seeded engine
- */
-export function toLegacyDraftState(seededDraft: SeededDraftState): any {
-  return {
-    id: seededDraft.seed, // Use seed as ID for URL compatibility
-    status: seededDraft.status,
-    round: seededDraft.round,
-    pick: seededDraft.pick,
-    direction: seededDraft.direction,
-    players: seededDraft.players,
-    humanPlayerId: seededDraft.humanPlayerId,
-    setData: seededDraft.setData,
-    createdAt: seededDraft.createdAt,
-    seed: seededDraft.seed,
-    // Convert deltas to pickHistory for UI compatibility
-    pickHistory: seededDraft.deltas.map((delta, index) => ({
-      playerId: delta.player_id,
-      cardId: delta.pick,
-      packId: `pack-${delta.pack_number}-${delta.player_id}`,
-      position: index + 1,
-      timestamp: delta.timestamp
-    }))
-  };
-}
-
-/**
- * Migration helper to check if we should use seeded or legacy storage
- */
-export function shouldUseSeededEngine(): boolean {
-  // Check for environment variable or localStorage feature flag
-  if (typeof window !== 'undefined') {
-    const flag = localStorage.getItem('flashdraft_use_seeded_engine');
-    if (flag === 'true') return true;
-    if (flag === 'false') return false;
-  }
-  
-  // Enable seeded engine to fix state consistency issues
-  // The legacy system has race conditions that the seeded engine solves
-  return true;
-}
 
 // ============================================================================
 // EXPORTS

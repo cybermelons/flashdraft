@@ -1,14 +1,13 @@
 /**
  * State Machine Draft Router
  * 
- * Simple router using nanostore-based draft engine.
+ * Router using seeded draft engine only.
  * Routes between draft setup, active draft, and results.
  */
 
 import React, { useEffect, useState } from 'react';
 import { useStore } from '@nanostores/react';
-import { draftStore, draftActions, type DraftState } from '../../stores/draftStore';
-import { seededDraftStore, seededDraftActions, toLegacyDraftState, shouldUseSeededEngine } from '../../stores/seededDraftStore';
+import { seededDraftStore, seededDraftActions } from '../../stores/seededDraftStore';
 import { StateMachineDraft } from './StateMachineDraft';
 
 export interface StateMachineDraftRouterProps {
@@ -24,15 +23,11 @@ export function StateMachineDraftRouter({
   round, 
   pick 
 }: StateMachineDraftRouterProps) {
-  const legacyDraft = useStore(draftStore);
-  const seededDraft = useStore(seededDraftStore);
+  const draft = useStore(seededDraftStore);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   
-  // Use seeded engine if feature flag is enabled, otherwise use legacy
-  const useSeeded = shouldUseSeededEngine();
-  const draft = useSeeded ? (seededDraft ? toLegacyDraftState(seededDraft) : null) : legacyDraft;
-  const actions = useSeeded ? seededDraftActions : draftActions;
+  const actions = seededDraftActions;
 
   useEffect(() => {
     initializeRoute();
@@ -58,15 +53,9 @@ export function StateMachineDraftRouter({
             setLoading(false);
           } else {
             // Load existing draft
-            if (useSeeded) {
-              // Seeded engine requires set data to load
-              setError('Loading seeded drafts requires set data - this will be handled by position navigation');
-              setLoading(false);
-            } else {
-              // Legacy loading (original implementation)
-              setError('Loading existing drafts not implemented yet');
-              setLoading(false);
-            }
+            // Seeded engine requires set data to load
+            setError('Loading seeded drafts requires set data - this will be handled by position navigation');
+            setLoading(false);
           }
           break;
 
@@ -86,28 +75,20 @@ export function StateMachineDraftRouter({
           
           // Try to navigate to the specific position
           try {
-            if (useSeeded) {
-              // For seeded drafts, we need to load set data first
-              let setCode = await getSetCodeForDraft(draftId);
-              
-              // If no set code found, try a default (this might be a legacy URL)
-              if (!setCode) {
-                console.log(`[Router] No set code found for ${draftId}, trying DTK as fallback`);
-                setCode = 'DTK'; // Default fallback
-              }
-              
-              const setData = await loadSetData(setCode);
-              const result = await seededDraftActions.navigateToPosition(draftId, round, pick, setData);
-              
-              if (!result.success) {
-                setError(result.error || 'Failed to navigate to position');
-              }
-            } else {
-              // Legacy navigation
-              const success = await draftActions.navigateToPosition(draftId, round, pick);
-              if (!success) {
-                setError('Draft not found or position not reached yet');
-              }
+            // For seeded drafts, we need to load set data first
+            let setCode = await getSetCodeForDraft(draftId);
+            
+            // If no set code found, try a default (this might be a legacy URL)
+            if (!setCode) {
+              console.log(`[Router] No set code found for ${draftId}, trying DTK as fallback`);
+              setCode = 'DTK'; // Default fallback
+            }
+            
+            const setData = await loadSetData(setCode);
+            const result = await seededDraftActions.navigateToPosition(draftId, round, pick, setData);
+            
+            if (!result.success) {
+              setError(result.error || 'Failed to navigate to position');
             }
             
             setLoading(false);
@@ -139,19 +120,13 @@ export function StateMachineDraftRouter({
   };
 
   /**
-   * Get set code for a draft (for seeded drafts, this might be stored in metadata)
+   * Get set code for a draft (stored in seeded draft metadata)
    */
   const getSetCodeForDraft = async (draftId: string): Promise<string | null> => {
-    if (useSeeded) {
-      // Get metadata from seeded storage
-      const metadata = seededDraftActions.listDrafts();
-      const draftMeta = metadata.find(m => m.id === draftId);
-      return draftMeta?.set_code || null;
-    } else {
-      // For legacy drafts, try to load from localStorage
-      const draftData = await loadDraftFromStorage(draftId);
-      return draftData?.setData?.set_code || null;
-    }
+    // Get metadata from seeded storage
+    const metadata = seededDraftActions.listDrafts();
+    const draftMeta = metadata.find(m => m.id === draftId);
+    return draftMeta?.set_code || null;
   };
 
   const handleStartNewDraft = () => {
@@ -162,20 +137,6 @@ export function StateMachineDraftRouter({
     window.location.href = '/draft';
   };
 
-  /**
-   * Load draft from localStorage
-   */
-  const loadDraftFromStorage = async (draftId: string): Promise<DraftState | null> => {
-    if (typeof window === 'undefined') return null;
-    
-    try {
-      const data = localStorage.getItem(`flashdraft_draft_${draftId}`);
-      return data ? JSON.parse(data) : null;
-    } catch (error) {
-      console.error('Failed to load draft:', error);
-      return null;
-    }
-  };
 
   if (loading) {
     return (
@@ -292,8 +253,7 @@ function DraftSetup() {
   const [loading, setLoading] = useState(true);
   const [starting, setStarting] = useState(false);
   
-  // Determine which engine to use
-  const useSeeded = shouldUseSeededEngine();
+  // Always use seeded engine
 
   useEffect(() => {
     loadAvailableSets();
@@ -339,17 +299,10 @@ function DraftSetup() {
       
       const setData = await response.json();
       
-      if (useSeeded) {
-        // Create and start seeded draft
-        const newDraft = seededDraftActions.create(setData);
-        seededDraftActions.start();
-        console.log('[DraftRouter] Created new seeded draft:', newDraft.seed);
-      } else {
-        // Create and start legacy draft
-        const newDraft = draftActions.create(setData);
-        draftActions.start();
-        console.log('[DraftRouter] Created new legacy draft:', newDraft.id);
-      }
+      // Create and start seeded draft
+      const newDraft = seededDraftActions.create(setData);
+      seededDraftActions.start();
+      console.log('[DraftRouter] Created new seeded draft:', newDraft.seed);
     } catch (error) {
       console.error('Failed to start draft:', error);
       alert('Failed to start draft. Please try again.');
