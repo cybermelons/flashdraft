@@ -324,6 +324,7 @@ export class DraftService {
     // Count picks to determine where we are
     let currentPickNumber = 1;
     const actionsToApply: DraftAction[] = [];
+    let reachedTargetPosition = false;
     
     for (const action of actions) {
       // Always include setup actions
@@ -332,8 +333,16 @@ export class DraftService {
         continue;
       }
       
-      // If we've reached the target position, stop
-      if (currentPickNumber >= targetPosition) {
+      // If we've already reached the target position, only include round start actions
+      if (reachedTargetPosition) {
+        // Include START_ROUND if we're at a round boundary
+        if (action.type === 'START_ROUND') {
+          const actionRound = action.round;
+          const targetRound = Math.floor((targetPosition - 1) / 15) + 1;
+          if (actionRound === targetRound) {
+            actionsToApply.push(action);
+          }
+        }
         break;
       }
       
@@ -343,6 +352,9 @@ export class DraftService {
       // Track position advancement
       if (action.type === 'ADVANCE_POSITION') {
         currentPickNumber++;
+        if (currentPickNumber >= targetPosition) {
+          reachedTargetPosition = true;
+        }
       }
     }
     
