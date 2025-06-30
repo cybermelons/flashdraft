@@ -73,6 +73,18 @@ export function Card({
     console.log(`Image URIs:`, displayCard.image_uris);
     console.log(`Final image URL:`, imageUrl);
     console.log(`Image error state:`, imageError);
+    
+    // Test if we can fetch the image directly
+    if (imageUrl) {
+      fetch(imageUrl, { method: 'HEAD' })
+        .then(response => {
+          console.log(`🌐 HTTP ${response.status} for ${displayCard.name}:`, imageUrl);
+          console.log(`Headers:`, [...response.headers.entries()]);
+        })
+        .catch(error => {
+          console.error(`🚫 Network error for ${displayCard.name}:`, error);
+        });
+    }
   }, [displayCard.name, displayCard.image_uris, imageUrl, imageError]);
 
   // Color-based styling
@@ -183,13 +195,32 @@ export function Card({
 
       {/* Card image or fallback */}
       <div className="relative w-full h-full bg-gradient-to-br from-slate-800 to-slate-900">
+        {/* Test image - remove this when debugging complete */}
+        {displayCard.name === "Tellah, Great Sage" && (
+          <div className="absolute top-0 left-0 w-full h-full border-4 border-red-500 z-50">
+            <img
+              src="https://via.placeholder.com/200x280/ff0000/ffffff?text=TEST"
+              alt="test"
+              className="w-full h-full object-cover"
+              onLoad={() => console.log("✅ Test placeholder loaded")}
+              onError={() => console.log("❌ Test placeholder failed")}
+            />
+          </div>
+        )}
+        
         {imageUrl && !imageError ? (
           <img
             src={imageUrl}
             alt={displayCard.name}
             loading="lazy"
             className="w-full h-full object-cover"
-            onError={() => setImageError(true)}
+            onError={(e) => {
+              console.error(`❌ Image failed to load for ${displayCard.name}:`, imageUrl, e);
+              setImageError(true);
+            }}
+            onLoad={() => {
+              console.log(`✅ Image loaded successfully for ${displayCard.name}:`, imageUrl);
+            }}
           />
         ) : (
           /* Text fallback when image fails or unavailable */
