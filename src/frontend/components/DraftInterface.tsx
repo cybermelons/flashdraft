@@ -9,7 +9,7 @@
 import * as React from 'react';
 import { useEffect, useCallback, useState } from 'react';
 import type { DraftCard } from '../../shared/types/card';
-import { useDraftStore, selectCurrentPlayer, selectCurrentPack } from '../stores/draftStore';
+import { useDraftStore, selectCurrentPlayer, selectCurrentPack } from '../../stores/draftStore';
 import PackDisplay from './PackDisplay';
 import Card from './Card';
 import DecklistView from './DecklistView';

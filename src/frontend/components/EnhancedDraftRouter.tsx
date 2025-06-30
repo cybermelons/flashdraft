@@ -7,7 +7,7 @@
 
 import React, { useState, useEffect, useCallback } from 'react';
 import { DraftEngineBridge, type DraftBridgeState } from './DraftEngineBridge';
-import { useDraftStore } from '../stores/draftStore';
+import { useDraftStore } from '../../stores/draftStore';
 import type { MTGSetData } from '../../shared/types/card';
 
 // ============================================================================

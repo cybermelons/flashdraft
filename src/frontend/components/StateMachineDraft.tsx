@@ -8,9 +8,16 @@
 import React from 'react';
 import { useStore } from '@nanostores/react';
 import { draftStore, draftActions, type DraftCard } from '../../stores/draftStore';
+import { seededDraftStore, seededDraftActions, toLegacyDraftState, shouldUseSeededEngine } from '../../stores/seededDraftStore';
 
 export function StateMachineDraft() {
-  const draft = useStore(draftStore);
+  const legacyDraft = useStore(draftStore);
+  const seededDraft = useStore(seededDraftStore);
+  
+  // Use seeded engine if enabled, otherwise use legacy
+  const useSeeded = shouldUseSeededEngine();
+  const draft = useSeeded ? (seededDraft ? toLegacyDraftState(seededDraft) : null) : legacyDraft;
+  const actions = useSeeded ? seededDraftActions : draftActions;
 
   if (!draft) {
     return <div>No draft loaded</div>;
@@ -63,7 +70,7 @@ export function StateMachineDraft() {
           </p>
         </div>
       ) : myPack ? (
-        <PackDisplay pack={myPack} />
+        <PackDisplay pack={myPack} actions={actions} />
       ) : (
         <div>Waiting for next pack...</div>
       )}
@@ -168,7 +175,7 @@ function DraftHeader() {
   );
 }
 
-function PackDisplay({ pack }: { pack: { cards: DraftCard[] } }) {
+function PackDisplay({ pack, actions }: { pack: { cards: DraftCard[] }, actions: any }) {
   return (
     <div className="mb-6">
       <h2 className="text-lg font-semibold mb-3">
@@ -176,17 +183,17 @@ function PackDisplay({ pack }: { pack: { cards: DraftCard[] } }) {
       </h2>
       <div className="grid grid-cols-5 gap-2">
         {pack.cards.map(card => (
-          <CardDisplay key={card.instanceId || card.id} card={card} />
+          <CardDisplay key={card.instanceId || card.id} card={card} actions={actions} />
         ))}
       </div>
     </div>
   );
 }
 
-function CardDisplay({ card }: { card: DraftCard }) {
+function CardDisplay({ card, actions }: { card: DraftCard, actions: any }) {
   const handlePick = () => {
     try {
-      draftActions.pick(card.id);
+      actions.pick(card.id);
     } catch (error) {
       console.error('Pick failed:', error);
     }
