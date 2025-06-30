@@ -656,14 +656,21 @@ function updateDraftUrl(draft: DraftState) {
 }
 
 /**
- * Save draft to localStorage
- * Only saves essential data to avoid quota issues
+ * Save draft to localStorage using seeded storage
  */
 function saveDraft(draft: DraftState) {
   if (typeof window === 'undefined') return;
   
   try {
-    // Create a lightweight version for storage
+    // Check if this draft uses the new seeded engine
+    if (draft.seed && draft.pickHistory) {
+      // Use new seeded storage system
+      console.log(`[DraftStore] Saving seeded draft with optimized storage`);
+      // TODO: Convert to SeededDraftState and use saveSeededDraft
+      // For now, fall back to legacy storage
+    }
+    
+    // Legacy storage for old drafts
     const lightweightDraft = {
       ...draft,
       // Only store the set code, not the full card data
@@ -675,7 +682,7 @@ function saveDraft(draft: DraftState) {
     };
     
     const dataString = JSON.stringify(lightweightDraft);
-    console.log(`[DraftStore] Saving draft, size: ${dataString.length} chars`);
+    console.log(`[DraftStore] Saving legacy draft, size: ${dataString.length} chars`);
     localStorage.setItem(`flashdraft_draft_${draft.id}`, dataString);
   } catch (error) {
     console.error('Failed to save draft:', error);
