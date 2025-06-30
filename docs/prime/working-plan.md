@@ -135,34 +135,43 @@ class DraftService {
   - [x] Browser handles navigation naturally ✅
   - [x] Proper URL validation and bounds checking ✅
 
-### Phase 4: Create New Simple Components
-- [ ] **Create new draft components**
-  - [ ] `src/components/Draft.tsx` (simple, clean)
-  - [ ] `src/components/DraftRouter.tsx` (minimal routing)
-  - [ ] No complex logic - just display current state
-- [ ] **Component responsibilities**:
-  - [ ] Read state from store
-  - [ ] Render cards and UI
-  - [ ] Call `draftActions.makeHumanPick(cardId)` on clicks
-  - [ ] That's it - no business logic
-- [ ] **Navigation components**:
-  - [ ] `<a>` tags for Previous/Next
-  - [ ] Browser handles back/forward automatically
-  - [ ] Immutable history just works
+### Phase 4: Create New Simple Components ✅ COMPLETE
+- [x] **Create new draft components** ✅ COMPLETE
+  - [x] `DraftInterface.tsx` (simple, clean) ✅
+  - [x] `DraftSetup.tsx` (new draft creation) ✅
+  - [x] `SimpleDraftRouter.tsx` (minimal routing) ✅
+  - [x] No complex logic - just display current state ✅
+- [x] **Component responsibilities** ✅ COMPLETE:
+  - [x] Read state from store ✅
+  - [x] Render cards and UI ✅
+  - [x] Call `draftActions.makeHumanPick(cardId)` on clicks ✅
+  - [x] That's it - no business logic ✅
+- [x] **Navigation components** ✅ COMPLETE:
+  - [x] `<a>` tags for Previous/Next ✅
+  - [x] Browser handles back/forward automatically ✅
+  - [x] Immutable history just works ✅
 
-### Phase 5: Storage Layer
-- [ ] **Create storage interface**
-  - [ ] `src/services/DraftStorage.ts`
-  - [ ] Stores only seed + action history
-  - [ ] 90%+ smaller than current storage
-- [ ] **Storage operations**:
-  - [ ] `save(seed, actions)` - persist action history
-  - [ ] `load(seed)` - load action history
-  - [ ] `list()` - draft metadata
-- [ ] **Action serialization**:
-  - [ ] Serialize actions as `{type: 'playerPick', payload: {cardId}}`
-  - [ ] Deserialize back to action functions
-  - [ ] Compact format for localStorage
+### Phase 5: Storage Layer ✅ COMPLETE
+- [x] **Create storage interface** ✅ COMPLETE
+  - [x] `src/services/DraftStorage.ts` ✅
+  - [x] Stores only seed + action history ✅
+  - [x] 90%+ smaller than current storage ✅
+  - [x] LocalDraftStorage implementation with localStorage ✅
+- [x] **Storage operations** ✅ COMPLETE:
+  - [x] `save(seed, actions)` - persist action history ✅
+  - [x] `load(seed)` - load action history ✅
+  - [x] `list()` - draft metadata ✅
+  - [x] `delete(seed)` - remove draft ✅
+  - [x] Automatic cleanup of old drafts ✅
+- [x] **Action serialization** ✅ COMPLETE:
+  - [x] Serialize actions with type and payload ✅
+  - [x] Deserialize back to action functions ✅
+  - [x] Compact format for localStorage ✅
+  - [x] Metadata extraction from action history ✅
+- [x] **Integration with DraftService** ✅ COMPLETE:
+  - [x] Storage injected into service constructor ✅
+  - [x] Save/load methods updated ✅
+  - [x] Draft list and delete operations ✅
 
 ### Phase 6: Testing & Validation
 - [ ] **Service layer tests**

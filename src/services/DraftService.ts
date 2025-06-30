@@ -10,21 +10,16 @@ import type { DraftAction } from './types/DraftActions';
 import { applyAction } from './applyAction';
 import type { SeededDraftState, MTGSetData } from '../shared/types/seededDraftState';
 import { generateUniqueId } from '../shared/utils/seededPackGenerator';
+import type { DraftStorage } from './DraftStorage';
+import { draftStorage } from './DraftStorage';
 
 export interface DraftServiceConfig {
-  // Storage abstraction - will be implemented in Phase 5
+  // Storage for persisting draft action history
   storage?: DraftStorage;
   // Set data loader - will be implemented with API integration
   setDataLoader?: SetDataLoader;
 }
 
-// Storage interface for Phase 5
-interface DraftStorage {
-  save(seed: string, actions: DraftAction[]): Promise<void>;
-  load(seed: string): Promise<{ actions: DraftAction[] } | null>;
-  list(): Promise<string[]>;
-  delete(seed: string): Promise<boolean>;
-}
 
 // Set data loader interface
 interface SetDataLoader {
@@ -41,11 +36,11 @@ interface SetDataLoader {
  * 4. Handle navigation between positions
  */
 export class DraftService {
-  private storage?: DraftStorage;
+  private storage: DraftStorage;
   private setDataLoader?: SetDataLoader;
 
   constructor(config: DraftServiceConfig = {}) {
-    this.storage = config.storage;
+    this.storage = config.storage || draftStorage;
     this.setDataLoader = config.setDataLoader;
   }
 
@@ -170,6 +165,22 @@ export class DraftService {
   async getCurrentState(seed: string): Promise<SeededDraftState> {
     const { state } = await this.loadState(seed);
     return state;
+  }
+
+  /**
+   * Get list of all stored drafts
+   * Returns metadata for UI display
+   */
+  async getDraftList() {
+    return this.storage.list();
+  }
+
+  /**
+   * Delete a draft
+   * Removes from storage completely
+   */
+  async deleteDraft(seed: string): Promise<boolean> {
+    return this.storage.delete(seed);
   }
 
   // ============================================================================
@@ -304,25 +315,19 @@ export class DraftService {
    * Save state and action history
    */
   private async saveState(state: SeededDraftState, actions: DraftAction[]): Promise<void> {
-    if (this.storage) {
-      await this.storage.save(state.seed, actions);
-    }
-    // TODO: Implement localStorage fallback for Phase 2
+    await this.storage.save(state.seed, actions);
   }
 
   /**
    * Load state and action history
    */
   private async loadState(seed: string): Promise<{ state: SeededDraftState; actions: DraftAction[] }> {
-    if (this.storage) {
-      const stored = await this.storage.load(seed);
-      if (stored) {
-        const state = await this.replayFromSeed(seed, stored.actions);
-        return { state, actions: stored.actions };
-      }
+    const stored = await this.storage.load(seed);
+    if (stored) {
+      const state = await this.replayFromSeed(seed, stored.actions);
+      return { state, actions: stored.actions };
     }
     
-    // TODO: Implement localStorage fallback for Phase 2
     throw new Error(`Draft with seed ${seed} not found`);
   }
 }
