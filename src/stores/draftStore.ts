@@ -423,6 +423,31 @@ function restoreDraftToPosition(draft: DraftState, targetRound: number, targetPi
     direction: targetRound === 2 ? 'counterclockwise' : 'clockwise',
   };
   
+  // If viewing the current position where we should be picking
+  if (targetPosition === totalPicksMade + 1) {
+    // Need to regenerate packs for this position if they're not there
+    if (!humanPlayer.currentPack || humanPlayer.currentPack.cards.length === 0) {
+      console.log(`[DraftStore] Regenerating packs for round ${targetRound}`);
+      
+      // For position restoration, we'll need to regenerate the appropriate packs
+      // This is a simplified version - in a full implementation we'd need to track pack state
+      const packs = generatePacks(draft.setData, draft.players.length);
+      
+      const restoredPlayers = draft.players.map((player, index) => {
+        return {
+          ...player,
+          currentPack: packs[index] || null,
+        };
+      });
+      
+      return {
+        ...restoredDraft,
+        players: restoredPlayers,
+      };
+    }
+    return restoredDraft;
+  }
+  
   // If viewing a past position, show only the cards that were picked by that point
   if (targetPosition <= totalPicksMade) {
     const picksAtPosition = targetPosition - 1; // Position 1 = 0 picks made, Position 2 = 1 pick made, etc.
@@ -433,11 +458,15 @@ function restoreDraftToPosition(draft: DraftState, targetRound: number, targetPi
         return {
           ...player,
           pickedCards: player.pickedCards.slice(0, picksAtPosition),
-          // Clear current pack for past positions (they're not currently picking)
-          currentPack: targetPosition <= totalPicksMade ? null : player.currentPack,
+          currentPack: null, // No pack to pick from in past positions
         };
       }
-      return player;
+      // For bots, also slice their picks
+      return {
+        ...player,
+        pickedCards: player.pickedCards.slice(0, Math.max(0, picksAtPosition - 1)), // Bots are 1 pick behind
+        currentPack: null,
+      };
     });
     
     return {
@@ -500,38 +529,92 @@ export const draftActions = {
     return null;
   },
   
-  navigateToPosition: (draftId: string, targetRound: number, targetPick: number) => {
-    const draft = loadDraft(draftId);
-    if (!draft) return false;
+  navigateToPosition: async (draftId: string, targetRound: number, targetPick: number) => {
+    console.log(`[DraftStore] Navigating to position p${targetRound}p${targetPick} for draft ${draftId}`);
+    
+    // First try to get from current store
+    let draft = draftStore.get();
+    if (draft && draft.id === draftId && draft.setData.cards && draft.setData.cards.length > 0) {
+      console.log(`[DraftStore] Using draft from store`);
+    } else {
+      // Load from localStorage
+      console.log(`[DraftStore] Loading draft from localStorage`);
+      draft = loadDraft(draftId);
+      if (!draft) {
+        console.error(`[DraftStore] Draft ${draftId} not found in localStorage`);
+        return false;
+      }
+      
+      // If the loaded draft doesn't have full set data, we need to reload it
+      if (!draft.setData.cards || draft.setData.cards.length === 0) {
+        console.log(`[DraftStore] Draft loaded but missing set data, reloading from API...`);
+        
+        // Fetch the set data from API
+        try {
+          const response = await fetch(`/api/sets/${draft.setData.set_code}`);
+          if (response.ok) {
+            const setData = await response.json();
+            draft.setData = setData;
+            console.log(`[DraftStore] Reloaded set data: ${setData.cards?.length || 0} cards`);
+          } else {
+            console.error(`[DraftStore] Failed to reload set data for ${draft.setData.set_code}`);
+            return false;
+          }
+        } catch (error) {
+          console.error(`[DraftStore] Error reloading set data:`, error);
+          return false;
+        }
+      }
+    }
     
     // Validate position
     if (targetRound < 1 || targetRound > 3 || targetPick < 1 || targetPick > 15) {
+      console.error(`[DraftStore] Invalid position: p${targetRound}p${targetPick}`);
       return false;
     }
     
     // Calculate target position
     const targetPosition = (targetRound - 1) * 15 + targetPick;
-    const currentPosition = (draft.round - 1) * 15 + draft.pick;
     const humanPlayer = draft.players.find(p => p.id === draft.humanPlayerId);
     const totalPicksMade = humanPlayer?.pickedCards.length || 0;
     
+    console.log(`[DraftStore] Target position: ${targetPosition}, Total picks made: ${totalPicksMade}`);
+    
     // Can't navigate to positions that haven't been reached yet
     if (targetPosition > totalPicksMade + 1) {
+      console.error(`[DraftStore] Position ${targetPosition} not reached yet (only ${totalPicksMade} picks made)`);
       return false;
     }
     
     // Create a view of the draft at the target position
     const restoredDraft = restoreDraftToPosition(draft, targetRound, targetPick);
     if (restoredDraft) {
+      console.log(`[DraftStore] Successfully restored to position p${targetRound}p${targetPick}`);
       draftStore.set(restoredDraft);
       return true;
     }
     
+    console.error(`[DraftStore] Failed to restore draft to position`);
     return false;
   },
   
   reset: () => {
     draftStore.set(null);
+  },
+  
+  clearAllDrafts: () => {
+    if (typeof window === 'undefined') return;
+    
+    try {
+      const keys = Object.keys(localStorage).filter(k => k.startsWith('flashdraft_draft_'));
+      keys.forEach(key => {
+        console.log(`[DraftStore] Removing draft: ${key}`);
+        localStorage.removeItem(key);
+      });
+      console.log(`[DraftStore] Cleared ${keys.length} drafts from localStorage`);
+    } catch (error) {
+      console.error('Failed to clear drafts:', error);
+    }
   },
 };
 
@@ -547,14 +630,67 @@ function updateDraftUrl(draft: DraftState) {
 
 /**
  * Save draft to localStorage
+ * Only saves essential data to avoid quota issues
  */
 function saveDraft(draft: DraftState) {
   if (typeof window === 'undefined') return;
   
   try {
-    localStorage.setItem(`flashdraft_draft_${draft.id}`, JSON.stringify(draft));
+    // Create a lightweight version for storage
+    const lightweightDraft = {
+      ...draft,
+      // Only store the set code, not the full card data
+      setData: {
+        set_code: draft.setData.set_code,
+        name: draft.setData.name,
+        cards: [], // Don't store full card data to save space
+      }
+    };
+    
+    const dataString = JSON.stringify(lightweightDraft);
+    console.log(`[DraftStore] Saving draft, size: ${dataString.length} chars`);
+    localStorage.setItem(`flashdraft_draft_${draft.id}`, dataString);
   } catch (error) {
     console.error('Failed to save draft:', error);
+    
+    // If still failing, try to clear old drafts
+    if (error instanceof Error && error.name === 'QuotaExceededError') {
+      console.log('[DraftStore] Quota exceeded, clearing old drafts...');
+      clearOldDrafts();
+      // Try saving again
+      try {
+        const lightweightDraft = {
+          ...draft,
+          setData: {
+            set_code: draft.setData.set_code,
+            name: draft.setData.name,
+            cards: [],
+          }
+        };
+        localStorage.setItem(`flashdraft_draft_${draft.id}`, JSON.stringify(lightweightDraft));
+      } catch (retryError) {
+        console.error('Failed to save draft after cleanup:', retryError);
+      }
+    }
+  }
+}
+
+/**
+ * Clear old drafts from localStorage to free up space
+ */
+function clearOldDrafts() {
+  try {
+    const keys = Object.keys(localStorage).filter(k => k.startsWith('flashdraft_draft_'));
+    // Keep only the most recent 3 drafts
+    if (keys.length > 3) {
+      const toDelete = keys.slice(0, keys.length - 3);
+      toDelete.forEach(key => {
+        console.log(`[DraftStore] Removing old draft: ${key}`);
+        localStorage.removeItem(key);
+      });
+    }
+  } catch (error) {
+    console.error('Failed to clear old drafts:', error);
   }
 }
 
@@ -565,8 +701,21 @@ function loadDraft(draftId: string): DraftState | null {
   if (typeof window === 'undefined') return null;
   
   try {
-    const data = localStorage.getItem(`flashdraft_draft_${draftId}`);
-    return data ? JSON.parse(data) : null;
+    const key = `flashdraft_draft_${draftId}`;
+    console.log(`[DraftStore] Looking for localStorage key: ${key}`);
+    
+    // Debug: list all localStorage keys that start with flashdraft
+    const allKeys = Object.keys(localStorage).filter(k => k.startsWith('flashdraft'));
+    console.log(`[DraftStore] All flashdraft keys in localStorage:`, allKeys);
+    
+    const data = localStorage.getItem(key);
+    if (data) {
+      console.log(`[DraftStore] Found draft data, length: ${data.length}`);
+      return JSON.parse(data);
+    } else {
+      console.log(`[DraftStore] No data found for key: ${key}`);
+      return null;
+    }
   } catch (error) {
     console.error('Failed to load draft:', error);
     return null;

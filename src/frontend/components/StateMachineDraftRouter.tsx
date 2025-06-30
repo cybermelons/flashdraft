@@ -72,7 +72,7 @@ export function StateMachineDraftRouter({
           
           // Try to navigate to the specific position
           try {
-            const success = draftActions.navigateToPosition(draftId, round, pick);
+            const success = await draftActions.navigateToPosition(draftId, round, pick);
             
             if (!success) {
               setError('Draft not found or position not reached yet');
