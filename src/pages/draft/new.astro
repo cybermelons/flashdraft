@@ -49,6 +49,9 @@ import Layout from '../../layouts/Layout.astro';
         const seed = Date.now().toString();
         const draftId = await draftActions.createDraft(seed, setCode);
         
+        // Start the draft (generate packs) - this was missing!
+        await draftActions.startDraft();
+        
         // Navigate to the created draft
         window.location.href = `/draft/${draftId}`;
       } catch (error) {

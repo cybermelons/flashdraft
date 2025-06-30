@@ -6,7 +6,7 @@
  */
 
 import { useStore } from '@nanostores/react';
-import { useEffect } from 'react';
+import { useEffect, useState } from 'react';
 import { clearCorruptedDraftData } from '@/utils/storageCleanup';
 import { 
   $currentDraft, 
@@ -33,17 +33,29 @@ interface DraftInterfaceProps {
  * Main draft interface that handles routing and state management
  */
 export function DraftInterface({ className = '' }: DraftInterfaceProps) {
-  const isDarkMode = useStore($isDarkMode);
+  const [clientTheme, setClientTheme] = useState<'light' | 'dark'>('light');
   
   // Clear corrupted data on mount
   useEffect(() => {
     clearCorruptedDraftData();
   }, []);
   
+  // Proper client-side theme detection (no SSR mismatch)
+  useEffect(() => {
+    const mediaQuery = window.matchMedia('(prefers-color-scheme: dark)');
+    setClientTheme(mediaQuery.matches ? 'dark' : 'light');
+    
+    const handleChange = (e: MediaQueryListEvent) => {
+      setClientTheme(e.matches ? 'dark' : 'light');
+    };
+    
+    mediaQuery.addEventListener('change', handleChange);
+    return () => mediaQuery.removeEventListener('change', handleChange);
+  }, []);
+  
   return (
     <div 
-      className={`draft-interface ${isDarkMode ? 'dark' : 'light'} ${className}`}
-      suppressHydrationWarning={true}
+      className={`draft-interface ${clientTheme} ${className}`}
     >
       <SimpleDraftRouter>
         {(routeData) => <DraftInterfaceContent routeData={routeData} />}
