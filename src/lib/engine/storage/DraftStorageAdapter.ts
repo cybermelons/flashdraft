@@ -5,7 +5,7 @@
  * Implementations can be LocalStorage, IndexedDB, or Server-based.
  */
 
-import type { DraftState } from '../DraftEngine/DraftEngine';
+import type { DraftState } from '../DraftEngine';
 import type { DraftAction } from '../actions';
 import type { DraftSummary, StorageAudit, StorageOptions } from './types';
 

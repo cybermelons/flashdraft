@@ -12,7 +12,7 @@ FlashDraft is a Magic: The Gathering draft simulator and playtesting platform bu
 - **Modern Interface**: React + Astro + TypeScript with shadcn/ui components
 - **Performance-First**: <150ms transitions between draft/deckbuild/playtest modes
 
-**Status**: 🔄 **Active Development** - Core draft simulation complete, working on state management and navigation
+**Status**: 🔄 **Active Development** - Draft engine complete with comprehensive tests (54/54 passing), working on persistence layer
 
 ## **Getting Started**
 
@@ -28,7 +28,7 @@ git clone https://github.com/cybermelons/flashdraft.git
 cd flashdraft
 
 # Install frontend dependencies
-npm install
+pnpm install
 
 # Install Python dependencies
 pip install -r requirements.txt
@@ -40,14 +40,17 @@ python scripts/download_scryfall_data.py
 ### Development
 ```bash
 # Start the development server
-npm run dev
+pnpm run dev
 
 # Build for production
-npm run build
+pnpm run build
+
+# Run tests
+pnpm test
 
 # Run linting and formatting
-npm run lint
-npm run format
+pnpm run lint
+pnpm run format
 ```
 
 ## **🎮 How to Use**
@@ -68,7 +71,9 @@ npm run format
 - ✅ URL-based position navigation and sharing
 - ✅ Complete Scryfall card data integration
 - ✅ Round transitions and draft completion flow
-- 🔄 State management optimization in progress
+- ✅ Comprehensive test suite (54 tests) for draft engine
+- ✅ Fixed pack generation bug (rare/mythic cards)
+- 🔄 Persistence layer implementation in progress
 
 ## **Project Structure**
 
@@ -76,16 +81,18 @@ npm run format
 flashdraft/
 ├── src/
 │   ├── lib/                    # Core library code
-│   │   ├── engine/            # Draft engine (pure logic)
-│   │   │   ├── DraftEngine.ts        # Main state machine
-│   │   │   ├── actions.ts            # Action types & creators
-│   │   │   ├── SeededRandom.ts       # Deterministic randomization
-│   │   │   ├── PackGenerator.ts      # Seeded pack creation
+│   │   ├── engine/            # Draft engine (pure logic) ✅
+│   │   │   ├── DraftEngine.ts        # Main state machine ✅
+│   │   │   ├── DraftEngine.test.ts   # Engine tests (18 tests) ✅
+│   │   │   ├── actions.ts            # Action types & creators ✅
+│   │   │   ├── SeededRandom.ts       # Deterministic randomization ✅
+│   │   │   ├── SeededRandom.test.ts  # Random tests (18 tests) ✅
+│   │   │   ├── PackGenerator.ts      # Seeded pack creation ✅
+│   │   │   ├── PackGenerator.test.ts # Pack tests (18 tests) ✅
 │   │   │   └── storage/              # Engine persistence layer
-│   │   │       ├── DraftStorageAdapter.ts  # Abstract interface
-│   │   │       ├── LocalStorageAdapter.ts  # LocalStorage implementation
-│   │   │       └── types.ts                # Storage types
-│   │   └── utils.ts           # General utilities
+│   │   │       ├── DraftStorageAdapter.ts  # Abstract interface ✅
+│   │   │       ├── LocalStorageAdapter.ts  # LocalStorage implementation 🔄
+│   │   │       └── types.ts                # Storage types ✅
 │   │
 │   ├── components/            # React UI components
 │   │   ├── SimpleDraftRouter.tsx # Route handling
@@ -138,12 +145,14 @@ flashdraft/
 ```
 
 ### **Draft Engine** ✅ (Core Layer - `src/lib/engine/`)
-- **Pure In-Memory Logic**: Event-sourced draft state with zero dependencies
-- **Action Types**: CREATE_DRAFT, START_DRAFT, HUMAN_PICK, BOT_PICK, PASS_PACKS, ADVANCE_POSITION, START_ROUND, COMPLETE_DRAFT
-- **Deterministic Logic**: Seeded pack generation using Linear Congruential Generator  
-- **Self-Persisting**: Uses DraftStorageAdapter for automatic save/load
-- **Multi-Tab Sync**: localStorage events for cross-tab synchronization
-- **Error Handling**: Storage monitoring and graceful degradation
+- **Pure In-Memory Logic**: Event-sourced draft state with zero dependencies ✅
+- **Action Types**: CREATE_DRAFT, START_DRAFT, HUMAN_PICK, BOT_PICK, PASS_PACKS, ADVANCE_POSITION, START_ROUND, COMPLETE_DRAFT ✅
+- **Deterministic Logic**: Seeded pack generation using Linear Congruential Generator ✅
+- **Comprehensive Testing**: 54 tests covering all functionality (DraftEngine: 18, PackGenerator: 18, SeededRandom: 18) ✅
+- **Bug Fixes**: Fixed rare/mythic card truncation in pack generation ✅
+- **Self-Persisting**: Uses DraftStorageAdapter for automatic save/load 🔄
+- **Multi-Tab Sync**: localStorage events for cross-tab synchronization 🔄
+- **Error Handling**: Storage monitoring and graceful degradation 🔄
 
 ### **UI Layer** (Presentation Layer - `src/components/`, `src/stores/`)
 - **Nanostores**: Reactive UI state management with localStorage persistence
@@ -165,11 +174,12 @@ flashdraft/
 
 | Command | Action |
 |---------|--------|
-| `npm run dev` | Start development server at `localhost:4321` |
-| `npm run build` | Build production site to `./dist/` |
-| `npm run preview` | Preview production build locally |
-| `npm run lint` | Run ESLint on source code |
-| `npm run format` | Format code with Prettier |
+| `pnpm run dev` | Start development server at `localhost:4321` |
+| `pnpm run build` | Build production site to `./dist/` |
+| `pnpm run preview` | Preview production build locally |
+| `pnpm test` | Run test suite (54 tests for draft engine) |
+| `pnpm run lint` | Run ESLint on source code |
+| `pnpm run format` | Format code with Prettier |
 | `python scripts/download_scryfall_data.py` | Download MTG card data from Scryfall |
 
 ## **Technology Stack**
@@ -178,7 +188,8 @@ flashdraft/
 - **UI**: Tailwind CSS + shadcn/ui components  
 - **State Management**: Draft engine (`src/lib/engine/`) + Independent storage adapters + UI state (nanostores)
 - **Data**: Scryfall API for card data and images
-- **Testing**: Comprehensive test suite for core draft engine
+- **Testing**: Comprehensive test suite (54 tests) covering all draft engine functionality
+- **Package Manager**: pnpm for fast, efficient dependency management
 - **Architecture**: Two-layer separation with dual persistence: UI ↔ Draft Engine, each with independent storage adapters
 
 ## **License**
