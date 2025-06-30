@@ -58,6 +58,18 @@ export interface DraftState {
   humanPlayerId: string;
   setData: MTGSetData;
   createdAt: number;
+  // Seed for deterministic pack generation
+  seed?: string;
+  // History of all picks made
+  pickHistory?: DraftPick[];
+}
+
+export interface DraftPick {
+  playerId: string;
+  cardId: string;
+  packId: string;
+  position: number; // Which position in draft (1-45)
+  timestamp: number;
 }
 
 // ============================================================================

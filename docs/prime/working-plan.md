@@ -1,81 +1,181 @@
-# Development Plan: Draft State Permalinks
+# Development Plan: Seed-Based Draft Engine with Delta Storage
 
 ## Overview
-Add permalink system for draft states with URLs like `/draft/{draftId}/p{round}p{pick}`. URL updates after each pick (p1p1 → p1p2 → etc.) and supports direct navigation to any position.
+Redesign the draft engine to use a deterministic seed-based approach with delta storage for perfect position restoration and minimal storage footprint. This enables true time-travel through draft history and shareable/replayable drafts.
+
+## Current Issues
+
+- Cannot restore exact pack contents when navigating to past positions
+- Storage-intensive approach that hits localStorage limits
+- No way to perfectly recreate draft states
+- Position navigation shows incomplete historical state
 
 ## Approach
-1. **URL Structure**: `/draft/{draftId}/p{round}p{pick}` format
-2. **Auto-update**: URL changes after each human pick  
-3. **Direct Navigation**: Load draft at specified position
-4. **404 for invalid**: Invalid draft IDs or positions return 404
+1. **Deterministic Pack Generation**: Use seeded random number generator for consistent pack generation
+2. **Delta Storage**: Store only the initial seed and each pick as a small delta
+3. **State Replay**: Reconstruct any position by replaying deltas from seed
+4. **Minimal Storage**: Only store seed + pick history, not full state
 
 ## Implementation Checklist
 
-### Phase 1: Update Routing
-- [x] **Create new Astro route**: `[draftId]/[position].astro` ✓ (Already exists)
-- [x] **Parse URL format**: Extract round/pick from `p{round}p{pick}` ✓ (Already implemented)
-- [x] **Handle 404s**: Invalid draftId or position format ✓
+### Phase 1: Seeded Pack Generation
+- [ ] **Implement SeededRandom class**: Deterministic random number generator
+  - [ ] Create `src/shared/utils/seededRandom.ts`
+  - [ ] Support for generating consistent random sequences
+  - [ ] Methods for shuffle, pick random, etc.
+- [ ] **Update pack generation**: Use SeededRandom for all randomness
+  - [ ] Modify `generatePacks()` to accept seed
+  - [ ] Generate all 24 packs upfront (8 players × 3 rounds)
+  - [ ] Ensure pack contents are deterministic given same seed
+  - [ ] Bot decisions also use same seed for consistency
+- [ ] **Test determinism**: Verify same seed produces same packs
+  - [ ] Unit tests for SeededRandom
+  - [ ] Integration tests for pack generation
+  - [ ] Verify bot behavior is deterministic
 
-### Phase 2: URL Updates  
-- [x] **Update draftStore**: Change URL after each human pick ✓ (Already implemented)
-- [x] **Use replaceState()**: Avoid cluttering browser history ✓ (Already uses replaceState)
-- [x] **Update draft start**: Redirect to `/draft/{id}/p1p1` when starting ✓
+### Phase 2: Delta-Based Storage
+- [ ] **Define delta structure**: Match 17lands granularity
+  ```typescript
+  interface DraftDelta {
+    // Event info
+    event_type: 'pick' | 'pass' | 'timeout';
+    pack_number: number;   // 1-3
+    pick_number: number;   // 1-15
+    
+    // Pick data
+    pick: string;          // card name/id picked
+    player_id: string;     // who made the pick
+    
+    // Context (for analysis)
+    pool: string[];        // cards in pool before pick
+    pack: string[];        // cards available in pack
+    
+    // Metadata
+    timestamp: number;
+    pick_time_ms?: number; // time to make pick
+  }
+  ```
+- [ ] **Update DraftState**: Add seed and deltas array
+  - [ ] Add `seed: string` field
+  - [ ] Add `deltas: DraftDelta[]` field
+  - [ ] Generate seed on draft creation
+- [ ] **Modify pick processing**: Append deltas instead of full state updates
+  - [ ] Update `processPick()` to create deltas
+  - [ ] Store deltas in order of occurrence
 
-### Phase 3: Direct Navigation
-- [x] **Load draft state**: Parse URL params and set current position ✓
-- [x] **Validate position**: 404 if position doesn't exist or is invalid ✓
-- [x] **Update existing URL utilities**: Simplify for new format ✓ (Removed old utilities)
+### Phase 3: State Replay Engine
+- [ ] **Implement replay function**: Reconstruct state from seed + deltas
+  ```typescript
+  function replayDraftToPosition(
+    seed: string,
+    setData: MTGSetData,
+    deltas: DraftDelta[],
+    targetPosition: number
+  ): DraftState
+  ```
+- [ ] **Replay logic**:
+  - [ ] Start with fresh draft from seed
+  - [ ] Apply deltas up to target position
+  - [ ] Return reconstructed state
 
-### Phase 4: Navigation Controls
-- [x] **Add Previous button**: Go to previous pick (if available) ✓
-- [x] **Add Next button**: Go to next pick (if available) ✓ 
-- [x] **Show current position**: Display "Round X, Pick Y" in UI ✓
+### Phase 4: Storage Optimization
+- [ ] **Lightweight persistence**: Store only essentials
+  ```typescript
+  interface StoredDraft {
+    id: string;
+    seed: string;
+    setCode: string;
+    deltas: DraftDelta[];
+    createdAt: number;
+  }
+  ```
+- [ ] **Update save/load functions**:
+  - [ ] Save only seed + deltas to localStorage
+  - [ ] Load and replay on demand
+  - [ ] Migrate existing drafts if possible
 
-## Technical Details
+### Phase 5: Enhanced Navigation
+- [ ] **Perfect position restoration**: Show exact historical state
+  - [ ] Restore exact pack contents at each position
+  - [ ] Show correct picks for all players
+  - [ ] Display accurate pack passing state
+- [ ] **Navigation performance**: Instant position changes
+  - [ ] Precompute adjacent positions
+  - [ ] Progressive replay for distant positions
+- [ ] **UI improvements**:
+  - [ ] Show timeline visualization
+  - [ ] Indicate current vs historical position
+  - [ ] Add position slider for quick navigation
 
-### URL Examples
+### Phase 6: Share & Export Features
+- [ ] **Shareable URLs**: Use seed as draft ID
+  - [ ] Format: `/draft/{seed}/p{round}p{pick}`
+  - [ ] Seed serves as both ID and replay key
+- [ ] **Export/Import**: Save and share draft files
+  - [ ] Export as JSON with seed + deltas
+  - [ ] Import to replay any draft
+  - [ ] Share draft replays with others
+
+## Technical Considerations
+
+### Seeded Random Implementation
+Use simple LCG (Linear Congruential Generator):
+```typescript
+class SeededRandom {
+  private seed: number;
+  
+  constructor(seedString: string) {
+    // Convert string seed to number
+    this.seed = seedString.split('').reduce((acc, char) => {
+      return ((acc << 5) - acc) + char.charCodeAt(0);
+    }, 0);
+  }
+  
+  next(): number {
+    // LCG algorithm: simple, fast, deterministic
+    this.seed = (this.seed * 1664525 + 1013904223) % 2147483647;
+    return this.seed / 2147483647;
+  }
+  
+  shuffle<T>(array: T[]): T[] {
+    const result = [...array];
+    for (let i = result.length - 1; i > 0; i--) {
+      const j = Math.floor(this.next() * (i + 1));
+      [result[i], result[j]] = [result[j], result[i]];
+    }
+    return result;
+  }
+}
 ```
-/draft/abc123/p1p1   (Round 1, Pick 1)
-/draft/abc123/p2p8   (Round 2, Pick 8)
-/draft/abc123/p3p15  (Round 3, Pick 15)
-```
 
-### Changes Needed
-- **Draft Store**: Add URL update method
-- **Astro Routes**: New dynamic route structure
-- **Components**: Previous/Next navigation buttons
+### Storage Comparison
+- **Current**: ~40KB per draft (full state with cards)
+- **New**: ~2-3KB per draft (seed + 45 deltas)
+- **Savings**: 90%+ reduction in storage size
 
-## Success Criteria ✅ ALL COMPLETE
-- [x] URLs update automatically (p1p1 → p1p2 → etc.) ✓
-- [x] Direct navigation works for valid URLs ✓
-- [x] Invalid URLs return 404 ✓
-- [x] Previous/Next buttons work correctly ✓
-- [x] No performance regression ✓
+### Migration Strategy
+Fresh start approach:
+1. Keep old system as-is for existing drafts
+2. New drafts use new engine
+3. No migration - start clean
+4. Old drafts remain accessible on old system
 
-## Implementation Summary
+## Success Criteria
+- [ ] Same seed always generates identical drafts
+- [ ] Can navigate to any position with perfect restoration
+- [ ] Shareable drafts work across different sessions
 
-Successfully implemented draft state permalinks for the nanostore-based draft system:
-
-### ✅ **Completed Features**
-1. **Automatic URL Updates**: URLs change from p1p1 → p1p2 → etc. after each pick
-2. **Direct Navigation**: Can navigate directly to any `/draft/{id}/p{round}p{pick}` URL
-3. **Validation & 404s**: Invalid draft IDs or positions show proper error messages
-4. **Navigation Controls**: Previous/Next buttons with proper state management
-5. **Persistence**: Draft state saved to localStorage for URL navigation
-6. **Clean Integration**: Works seamlessly with existing nanostore draft engine
-
-### 🔧 **Technical Implementation** 
-- **URL Format**: `/draft/{draftId}/p{round}p{pick}` (e.g., `/draft/abc123/p2p8`)
-- **State Management**: Enhanced nanostore system with localStorage persistence
-- **Browser History**: Uses `replaceState()` to avoid cluttering back button
-- **Validation**: Checks valid ranges (p1p1 through p3p15) and draft existence
-- **UI Integration**: Previous/Next buttons with visual disabled states
-
-### 🧹 **Code Cleanup**
-- Removed old Zustand-based draft store and utilities
-- Kept good UI components for future integration
-- Simplified codebase to single draft engine (nanostores)
+## Alternative Approaches Considered
+1. **Full state snapshots**: Too storage-intensive
+2. **Pack history arrays**: Still requires significant storage
+3. **Compressed states**: Complexity without solving core issue
+4. **Server-side storage**: Adds infrastructure requirements
 
 ---
 
-*Simple permalink system that makes draft positions shareable and navigable.*
+*This redesign enables perfect draft replay with minimal storage, opening new possibilities for analysis, sharing, and learning from draft history.*
+
+## Key Decisions
+1. **Single seed for everything**: Bot decisions use same seed for full determinism
+2. **Upfront pack generation**: All 24 packs generated at draft start
+3. **URL format confirmed**: `/draft/{seed}/p{round}p{pick}` where seed is the draft ID
