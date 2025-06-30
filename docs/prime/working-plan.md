@@ -1,164 +1,265 @@
-# Development Plan: Seed-Based Draft Engine with Delta Storage
+# Development Plan: Clean Service Layer Architecture for Draft System
 
 ## Overview
-Redesign the draft engine to use a deterministic seed-based approach with delta storage for perfect position restoration and minimal storage footprint. This enables true time-travel through draft history and shareable/replayable drafts.
+Refactor the draft system to use a clean service layer architecture that separates UI state management from draft business logic. The current system has mixed concerns with UI stores handling both state management AND draft logic, leading to complex flows and broken navigation.
 
-## Current Issues
+## Current Architecture Problems
 
-- Cannot restore exact pack contents when navigating to past positions
-- Storage-intensive approach that hits localStorage limits
-- No way to perfectly recreate draft states
-- Position navigation shows incomplete historical state
+### Mixed Concerns
+- `seededDraftStore` does both UI state AND draft business logic
+- UI components call replay engine directly  
+- Navigation logic scattered across multiple files
+- No single source of truth for draft state
 
-## Approach
-1. **Deterministic Pack Generation**: Use seeded random number generator for consistent pack generation
-2. **Delta Storage**: Store only the initial seed and each pick as a small delta
-3. **State Replay**: Reconstruct any position by replaying deltas from seed
-4. **Minimal Storage**: Only store seed + pick history, not full state
+### Broken Navigation Flow
+```
+Pick → seededDraftStore.pick() → applyDelta() → processBotPicks() → updateURL()
+  ↓
+Complex replay logic mixed with UI updates
+  ↓
+URL doesn't update correctly, navigation fails
+```
 
-## Implementation Checklist
+### Code Complexity
+- 7 different files involved in a single pick
+- State reconstruction happens in multiple places
+- Difficult to test business logic independently
 
-### Phase 1: Seeded Pack Generation ✅ COMPLETE
-- [x] **Implement SeededRandom class**: Deterministic random number generator
-  - [x] Create `src/shared/utils/seededRandom.ts` ✓
-  - [x] Support for generating consistent random sequences ✓
-  - [x] Methods for shuffle, pick random, etc. ✓
-- [x] **Update pack generation**: Use SeededRandom for all randomness
-  - [x] Create `src/shared/utils/seededPackGenerator.ts` ✓
-  - [x] Generate all 24 packs upfront (8 players × 3 rounds) ✓
-  - [x] Ensure pack contents are deterministic given same seed ✓
-  - [x] Bot decisions also use same seed for consistency ✓
-- [x] **Test determinism**: Verify same seed produces same packs
-  - [x] Unit tests for SeededRandom (27 tests) ✓
-  - [x] Integration tests for pack generation (17 tests) ✓
-  - [x] Verify bot behavior is deterministic ✓
+## Target Architecture
 
-### Phase 2: Delta-Based Storage ✅ COMPLETE
-- [x] **Define delta structure**: Match 17lands granularity
-  - [x] Create `src/shared/types/draftDelta.ts` ✓
-  - [x] 17lands-compatible event structure ✓
-  - [x] Storage optimization helpers ✓
-- [x] **Update DraftState**: Add seed and deltas array
-  - [x] Create `src/shared/types/seededDraftState.ts` ✓
-  - [x] Add `seed: string` field ✓
-  - [x] Add `deltas: DraftDelta[]` field ✓
-  - [x] Generate seed on draft creation ✓
-- [x] **Delta processing**: Event creation and validation
-  - [x] Delta creation functions ✓
-  - [x] Storage format conversion ✓
-  - [x] Validation utilities ✓
+### Clean Separation
+```
+UI Components → Nanostore (UI state only) → DraftService → Storage Layer
+                                               ↑
+                                         All draft logic here
+```
 
-### Phase 3: State Replay Engine ✅ COMPLETE
-- [x] **Implement replay function**: Reconstruct state from seed + deltas
-  - [x] Create `src/shared/utils/draftReplayEngine.ts` ✓
-  - [x] `replayDraftToPosition()` function ✓
-  - [x] `createSeededDraft()` and `startSeededDraft()` ✓
-- [x] **Replay logic**:
-  - [x] Start with fresh draft from seed ✓
-  - [x] Apply deltas up to target position ✓
-  - [x] Return reconstructed state ✓
-- [x] **Navigation support**:
-  - [x] `navigateToPosition()` function ✓
-  - [x] Comprehensive test coverage (18 tests) ✓
-
-### Phase 4: Storage Optimization
-- [ ] **Lightweight persistence**: Store only essentials
-  ```typescript
-  interface StoredDraft {
-    id: string;
-    seed: string;
-    setCode: string;
-    deltas: DraftDelta[];
-    createdAt: number;
-  }
-  ```
-- [ ] **Update save/load functions**:
-  - [ ] Save only seed + deltas to localStorage
-  - [ ] Load and replay on demand
-  - [ ] Migrate existing drafts if possible
-
-### Phase 5: Enhanced Navigation
-- [ ] **Perfect position restoration**: Show exact historical state
-  - [ ] Restore exact pack contents at each position
-  - [ ] Show correct picks for all players
-  - [ ] Display accurate pack passing state
-- [ ] **Navigation performance**: Instant position changes
-  - [ ] Precompute adjacent positions
-  - [ ] Progressive replay for distant positions
-- [ ] **UI improvements**:
-  - [ ] Show timeline visualization
-  - [ ] Indicate current vs historical position
-  - [ ] Add position slider for quick navigation
-
-### Phase 6: Share & Export Features
-- [ ] **Shareable URLs**: Use seed as draft ID
-  - [ ] Format: `/draft/{seed}/p{round}p{pick}`
-  - [ ] Seed serves as both ID and replay key
-- [ ] **Export/Import**: Save and share draft files
-  - [ ] Export as JSON with seed + deltas
-  - [ ] Import to replay any draft
-  - [ ] Share draft replays with others
-
-## Technical Considerations
-
-### Seeded Random Implementation
-Use simple LCG (Linear Congruential Generator):
+### Simple Flow
 ```typescript
-class SeededRandom {
-  private seed: number;
-  
-  constructor(seedString: string) {
-    // Convert string seed to number
-    this.seed = seedString.split('').reduce((acc, char) => {
-      return ((acc << 5) - acc) + char.charCodeAt(0);
-    }, 0);
-  }
-  
-  next(): number {
-    // LCG algorithm: simple, fast, deterministic
-    this.seed = (this.seed * 1664525 + 1013904223) % 2147483647;
-    return this.seed / 2147483647;
-  }
-  
-  shuffle<T>(array: T[]): T[] {
-    const result = [...array];
-    for (let i = result.length - 1; i > 0; i--) {
-      const j = Math.floor(this.next() * (i + 1));
-      [result[i], result[j]] = [result[j], result[i]];
-    }
-    return result;
+// UI just calls service
+const newState = draftService.makeHumanPick(cardId);
+draftStore.set(newState);
+
+// Service handles everything
+class DraftService {
+  makeHumanPick(cardId: string): DraftState {
+    // 1. Apply human pick
+    // 2. Process bot picks  
+    // 3. Pass packs
+    // 4. Check completion
+    // 5. Save to storage
+    // 6. Update position
+    // 7. Return complete new state
   }
 }
 ```
 
-### Storage Comparison
-- **Current**: ~40KB per draft (full state with cards)
-- **New**: ~2-3KB per draft (seed + 45 deltas)
-- **Savings**: 90%+ reduction in storage size
+## Implementation Checklist
 
-### Migration Strategy
-Fresh start approach:
-1. Keep old system as-is for existing drafts
-2. New drafts use new engine
-3. No migration - start clean
-4. Old drafts remain accessible on old system
+- [ ] **Remove old code**
+  - [ ] Delete complex store logic
+  - [ ] Remove replay engine from UI
+  - [ ] Clean up imports and dependencies
+
+### Phase 1: Create Service Layer
+- [ ] **Create DraftService class**
+  - [ ] `src/services/DraftService.ts`
+  - [ ] Pure business logic, no UI dependencies
+  - [ ] All draft operations return complete state
+- [ ] **Core service methods**:
+  - [ ] `createDraft(setData: MTGSetData): DraftState`
+  - [ ] `startDraft(draftId: string): DraftState`
+  - [ ] `makeHumanPick(draftId: string, cardId: string): DraftState`
+  - [ ] `navigateToPosition(draftId: string, round: number, pick: number): DraftState`
+  - [ ] `getDraft(draftId: string): DraftState | null`
+- [ ] **Service handles all complexity**:
+  - [ ] Bot decision making
+  - [ ] Pack passing logic
+  - [ ] Position advancement
+  - [ ] URL generation
+  - [ ] Storage operations
+
+
+### Phase 2: Simplify UI Store
+- [ ] **Refactor seededDraftStore**
+  - [ ] Remove all business logic
+  - [ ] Keep only current draft state: `atom<DraftState | null>`
+  - [ ] Simple actions that call service
+- [ ] **Clean store actions**:
+  ```typescript
+  export const draftActions = {
+    createDraft: (setData: MTGSetData) => {
+      const state = draftService.createDraft(setData);
+      draftStore.set(state);
+      updateURL(state);
+    },
+    
+    makeHumanPick: (cardId: string) => {
+      const currentDraft = draftStore.get();
+      if (!currentDraft) return;
+      
+      const newState = draftService.makeHumanPick(currentDraft.id, cardId);
+      draftStore.set(newState);
+      updateURL(newState);
+    },
+    
+    navigateToPosition: (round: number, pick: number) => {
+      const currentDraft = draftStore.get();
+      if (!currentDraft) return;
+      
+      const newState = draftService.navigateToPosition(currentDraft.id, round, pick);
+      draftStore.set(newState);
+      updateURL(newState);
+    }
+  };
+  ```
+
+### Phase 3: Fix Navigation
+
+hard nvagation, updateurl should be link an <a> tag  navigation.
+
+- [ ] **Single URL update function**
+  - [ ] `updateURL(state: DraftState)` called after every state change
+  - [ ] Always uses `state.seed` and current position
+  - [ ] Consistent URL format: `/draft/{seed}/p{round}p{pick}`
+- [ ] **Router simplification**
+  - [ ] Router just calls `draftService.navigateToPosition()`
+  - [ ] No complex replay logic in router
+  - [ ] Service handles loading and position restoration
+
+### Phase 4: Move Business Logic to Service
+- [ ] **Extract replay engine logic**
+  - [ ] Move `replayDraftToPosition()` into service
+  - [ ] Move `applyDelta()` into service
+  - [ ] Move `processBotPicks()` into service
+- [ ] **Service owns state transitions**
+  - [ ] Service decides when to advance positions
+  - [ ] Service handles bot processing timing
+  - [ ] Service manages pack passing
+- [ ] **Storage abstraction**
+  - [ ] Service calls storage layer
+  - [ ] Storage layer is separate from service
+  - [ ] Clean interface: `save(state)`, `load(id)`, `list()`
+
+### Phase 5: Component Simplification
+- [ ] **Update UI components**
+  - [ ] Components only call `draftActions.X()`
+  - [ ] Remove direct replay engine calls
+  - [ ] Remove complex state logic from components
+- [ ] **Clean component methods**:
+  ```typescript
+  function handlePick(cardId: string) {
+    draftActions.makeHumanPick(cardId);
+    // That's it! Service handles everything
+  }
+  
+  function handleNavigateNext() {
+    const { round, pick } = calculateNextPosition(draft);
+    draftActions.navigateToPosition(round, pick);
+    // Service handles position validation and state restoration
+  }
+  ```
+
+### Phase 6: Testing & Validation
+- [ ] **Service layer tests**
+  - [ ] Test draft logic independently of UI
+  - [ ] Mock storage layer for unit tests
+  - [ ] Test all state transitions
+- [ ] **Integration tests**
+  - [ ] Test UI → Service → Storage flow
+  - [ ] Verify navigation works correctly
+  - [ ] Test bot picking and pack passing
+
+## Technical Considerations
+
+### Service Layer Design
+```typescript
+type Action = (previous: DraftState) => DraftState
+
+type Actions = {
+  'PlayerPick', 'BotPick', 'Player Pass'
+}
+type ActionName = keyof Actions
+
+const currentState: DraftState = createDraftState('seed', replayQueue: Action[])
+
+export class DraftService {
+  constructor(private storage: DraftStorage) {}
+  
+
+  // All methods return complete state
+  // Service is stateless - state lives in storage
+  makeHumanPick(draftId: string, cardId: string): DraftState {
+    const draft = this.storage.load(draftId);
+    if (!draft) throw new Error('Draft not found');
+    
+    // Apply pick
+    const withHumanPick = this.applyHumanPick(draft, cardId);
+    
+    // Process bots
+    const withBotPicks = this.processBotPicks(withHumanPick);
+    
+    // Pass packs  
+    const withPackPassing = this.passPacks(withBotPicks);
+    
+    // Advance position
+    const finalState = this.advancePosition(withPackPassing);
+    
+    // Save and return
+    this.storage.save(finalState);
+    return finalState;
+  }
+}
+```
+
+### Storage Interface
+```typescript
+interface DraftStorage {
+  save(draft: DraftState): void;
+  load(id: string): DraftState | null;
+  list(): DraftMetadata[];
+  delete(id: string): boolean;
+}
+```
+
+### URL Management
+
+do a hard navigation. we want each pick to be in history. if click back on the browser, it takes them back to the immutable pick they had before. if they were deciding what to pick on p1p3, they can press back twice on their browser to go to the previous pick states, and see their immutable pick.
+
+## Benefits of This Architecture
+
+### Testability
+- Can test draft logic without UI
+- Mock storage for isolated tests
+- Clear input/output for each method
+
+### Maintainability  
+- Single place for all draft logic
+- UI components are simple and predictable
+- Easy to understand data flow
+
+### Debuggability
+- All state changes go through service
+- Can log every transition
+- Clear separation of concerns
+
+### Performance
+- No complex replay logic in UI
+- Service can optimize state transitions
+- Storage layer can implement caching
 
 ## Success Criteria
-- [ ] Same seed always generates identical drafts
-- [ ] Can navigate to any position with perfect restoration
-- [ ] Shareable drafts work across different sessions
+- [ ] Navigation works reliably (p1p1 → p1p2 after pick)
+- [ ] Bots pick from their pack and pack sizes decrease
+- [ ] URL always reflects current position
+- [ ] Components have simple, predictable methods
+- [ ] Draft logic is easily testable
+- [ ] Single source of truth for draft state
 
-## Alternative Approaches Considered
-1. **Full state snapshots**: Too storage-intensive
-2. **Pack history arrays**: Still requires significant storage
-3. **Compressed states**: Complexity without solving core issue
-4. **Server-side storage**: Adds infrastructure requirements
+## Migration Strategy
+4. **Remove old code** once all components converted
+5. **No data migration needed** - fresh start approach
 
 ---
 
-*This redesign enables perfect draft replay with minimal storage, opening new possibilities for analysis, sharing, and learning from draft history.*
-
-## Key Decisions
-1. **Single seed for everything**: Bot decisions use same seed for full determinism
-2. **Upfront pack generation**: All 24 packs generated at draft start
-3. **URL format confirmed**: `/draft/{seed}/p{round}p{pick}` where seed is the draft ID
+*This refactor will make the draft system reliable, testable, and maintainable by properly separating UI concerns from business logic.*
