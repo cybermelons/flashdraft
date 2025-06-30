@@ -2,24 +2,24 @@
 
 ## **Project Overview**
 
-FlashDraft is a complete Magic: The Gathering draft simulation application that enables unlimited practice with AI opponents. Learn Limited formats through rapid iteration without the cost and time constraints of Arena or MTGO.
+FlashDraft is a Magic: The Gathering draft simulator and playtesting platform built with Astro, React, and Python. The core workflow is: Draft → Deck Building → Goldfishing → Iteration. The platform combines AI-powered draft opponents with a streamlined digital playmat for rapid deck testing and learning.
 
 **🎯 Core Features**
-- **Complete Draft Simulation**: 8-player drafts with intelligent AI bots (4 skill levels)
+- **Complete Draft Simulation**: 8-player drafts with deterministic AI bots
 - **Real MTG Sets**: Final Fantasy and Dragons of Tarkir with full Scryfall integration
-- **Professional Deck Analysis**: Mana curve, color distribution, card categorization
-- **Instant Performance**: <150ms transitions, responsive mobile design
-- **Persistent Sessions**: Draft IDs, localStorage auto-save, shareable permalinks
-- **Modern Interface**: React + Astro + Tailwind CSS with shadcn/ui components
+- **URL-based Navigation**: Shareable permalinks with position tracking (/draft/{seed}/p{round}p{pick})
+- **Event-sourced State**: Deterministic draft replay from action history
+- **Modern Interface**: React + Astro + TypeScript with shadcn/ui components
+- **Performance-First**: <150ms transitions between draft/deckbuild/playtest modes
 
-**Status**: 🚀 **Production Ready** - Fully functional application ready for MTG players!
+**Status**: 🔄 **Active Development** - Core draft simulation complete, working on state management and navigation
 
 ## **Getting Started**
 
 ### Prerequisites
 - Node.js 18+
 - Python 3.9+
-- pnpm (recommended package manager)
+- npm (package manager)
 
 ### Installation
 ```bash
@@ -28,116 +28,124 @@ git clone https://github.com/cybermelons/flashdraft.git
 cd flashdraft
 
 # Install frontend dependencies
-pnpm install
+npm install
 
 # Install Python dependencies
 pip install -r requirements.txt
+
+# Download MTG card data
+python scripts/download_scryfall_data.py
 ```
 
 ### Development
 ```bash
 # Start the development server
-pnpm dev
+npm run dev
 
-# Run the draft bot training
-python src/train_bots.py
+# Build for production
+npm run build
 
-# Run linting
-pnpm lint
-
-# Format code
-pnpm format
+# Run linting and formatting
+npm run lint
+npm run format
 ```
 
 ## **🎮 How to Use**
 
-1. **Start a Draft**: Visit `/draft` to see your draft overview or start a new draft
+1. **Start a Draft**: Visit `http://localhost:4321/draft` to begin
 2. **Select a Set**: Choose from Final Fantasy (FIN) or Dragons of Tarkir (DTK)
-3. **Draft Cards**: Pick cards from packs, AI bots will pick alongside you
-4. **View Your Deck**: Click "📋 Deck" to see detailed deck analysis with mana curve
-5. **Share Drafts**: Use the "🔗 Share" button to share permalink URLs
-6. **Resume Anytime**: All drafts auto-save to localStorage with unique IDs
+3. **Draft Cards**: Pick cards from packs in a deterministic 8-player draft
+4. **Navigate**: Use URL permalinks to jump to any position in the draft
+5. **Complete Draft**: View deck composition after p3p15
 
-**🔗 Routing Examples**:
-- `/draft` - Draft overview page
-- `/draft/abc123` - Resume specific draft
-- `/draft/abc123/p1p3` - Go to pack 1, pick 3 of a draft
+**🔗 URL Navigation**:
+- `/draft` - Draft selection and overview
+- `/draft/{seed}` - Specific draft by seed
+- `/draft/{seed}/p{pack}p{pick}` - Navigate to exact position (e.g., `/draft/abc123/p2p5`)
+
+**Current Features**:
+- ✅ Deterministic draft simulation with action replay
+- ✅ URL-based position navigation and sharing
+- ✅ Complete Scryfall card data integration
+- ✅ Round transitions and draft completion flow
+- 🔄 State management optimization in progress
 
 ## **Project Structure**
 
 ```
 flashdraft/
-├── src/                    # Source code
-│   ├── frontend/          # React frontend application
-│   │   ├── components/    # UI components
-│   │   ├── pages/        # Page components
-│   │   ├── hooks/        # Custom React hooks
-│   │   ├── stores/       # Zustand state management
-│   │   └── utils/        # Utility functions
+├── src/
+│   ├── frontend/           # React components and UI
+│   │   ├── components/     # Draft interface, card display, navigation
+│   │   ├── pages/         # Astro page components
+│   │   └── stores/        # UI state (nanostores with localStorage persistence)
 │   │
-│   ├── backend/           # Python backend
-│   │   ├── api/          # FastAPI routes
-│   │   ├── models/       # ML models and training
-│   │   ├── services/     # Business logic
-│   │   └── utils/        # Backend utilities
+│   ├── services/          # Draft engine (pure in-memory logic)
+│   │   ├── applyAction.ts # Event sourcing and action application
+│   │   ├── DraftEngine.ts # Core draft logic (no dependencies)
+│   │   └── StorageModule.ts # Persistence interface layer
 │   │
-│   └── shared/           # Shared types and constants
+│   ├── shared/           # Types, utilities, and constants
+│   │   ├── types/        # TypeScript definitions
+│   │   └── utils/        # Seeded pack generation, random utils
+│   │
+│   └── pages/api/        # Astro API endpoints
 │
-├── data/                 # Data directory
-│   ├── raw/             # Raw 17lands data
-│   ├── processed/       # Processed datasets
-│   └── models/          # Trained model files
-│
-├── docs/                # Documentation
-│   └── prime/           # Development plans and progress
-│
-├── tests/              # Test suites
-│   ├── frontend/       # Frontend tests
-│   └── backend/        # Backend tests
-│
-└── scripts/            # Utility scripts
+├── data/sets/           # Downloaded MTG set data (DTK, FIN)
+├── docs/prime/          # Development context and working plans
+├── scripts/             # Data download and processing scripts
+└── tests/               # Test suites for core logic
 ```
 
-## **Core Features**
+## **Architecture**
 
-### **Draft Simulation Engine**
-- Realistic 8-player draft experience with human-like opponent behavior
-- AI opponents trained on 17lands data with multiple skill levels
-- Format-specific training (supports multiple MTG sets)
-- Context-aware picking (deck state, color signals, pick position)
+### **Three-Layer Architecture**
+```
+UI Layer (nanostores + localStorage) ↔ Storage Module ↔ Draft Engine (in-memory)
+```
 
-### **Digital Playmat Interface**
-- Drag-and-drop card manipulation for rapid playtesting
-- Quick opponent deck loading from 17lands successful builds
-- Keyboard shortcuts for speed (optimized for goldfishing)
-- Real-time mana curve and deck composition analysis
+### **Draft Engine** ✅ (Core Layer)
+- **Pure In-Memory State**: Event-sourced draft state with action replay
+- **Action Types**: CREATE_DRAFT, START_DRAFT, HUMAN_PICK, BOT_PICK, PASS_PACKS, ADVANCE_POSITION, START_ROUND, COMPLETE_DRAFT
+- **Deterministic Logic**: Seeded pack generation using Linear Congruential Generator
+- **Source of Truth**: All draft logic isolated from UI and persistence concerns
 
-### **Integrated Learning Loop**
-- Seamless transition: Draft → Deck Building → Playtesting → Iteration
-- <150ms transitions between modes for rapid skill development
-- Visual feedback connecting draft picks to deck performance
-- Pattern recognition tools for accelerated learning
+### **Storage Module** (Data Layer) 
+- **Persistence Interface**: Handles draft state save/load operations
+- **Multiple Backends**: LocalStorage, URL state, future database support
+- **State Synchronization**: Bridges draft engine with UI persistence needs
+
+### **UI Layer** (Presentation Layer)
+- **Nanostores**: Reactive UI state management with localStorage persistence
+- **State Sync**: Reads from draft engine via storage module for truth
+- **Components**: shadcn/ui + Tailwind CSS for consistent design
+- **Framework**: Astro + React islands with TypeScript
+
+### **Key Design Principles**
+- **Separation of Concerns**: Draft logic, persistence, and UI are completely independent
+- **Single Source of Truth**: Draft engine state is authoritative
+- **Event Sourcing**: All state changes go through actions for perfect reproducibility
+- **Pure Functions**: Draft engine has no side effects for reliable testing
 
 ## **Development Commands**
 
 | Command | Action |
 |---------|--------|
-| `pnpm dev` | Start development server at `localhost:4321` |
-| `pnpm build` | Build production site to `./dist/` |
-| `pnpm preview` | Preview production build locally |
-| `pnpm lint` | Run ESLint on source code |
-| `pnpm format` | Format code with Prettier |
-| `python scripts/download_data.py` | Download 17lands data |
-| `python scripts/train_models.py` | Train AI draft bots |
+| `npm run dev` | Start development server at `localhost:4321` |
+| `npm run build` | Build production site to `./dist/` |
+| `npm run preview` | Preview production build locally |
+| `npm run lint` | Run ESLint on source code |
+| `npm run format` | Format code with Prettier |
+| `python scripts/download_scryfall_data.py` | Download MTG card data from Scryfall |
 
 ## **Technology Stack**
 
 - **Frontend**: Astro + React islands + TypeScript
-- **UI**: Tailwind CSS + shadcn/ui components
-- **State Management**: Zustand for performance-optimized state
-- **Backend**: Astro endpoints + Python FastAPI
-- **ML**: scikit-learn for pairwise ranking models
-- **Data**: 17lands datasets + Scryfall API for card data
+- **UI**: Tailwind CSS + shadcn/ui components  
+- **State Management**: Draft engine (in-memory) + Storage module + UI state (nanostores + localStorage)
+- **Data**: Scryfall API for card data and images
+- **Testing**: Comprehensive test suite for core draft engine
+- **Architecture**: Three-layer separation: UI (nanostores + localStorage) ↔ Storage Module ↔ Draft Engine (in-memory)
 
 ## **License**
 
