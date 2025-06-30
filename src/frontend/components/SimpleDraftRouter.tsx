@@ -35,9 +35,19 @@ export function SimpleDraftRouter({ routeType, draftId, round, pick }: SimpleDra
         const urlParams = parseDraftUrl(currentPath);
         
         if (urlParams) {
-          // URL-based navigation: load specific position
-          console.log(`[SimpleDraftRouter] Loading position from URL: ${urlParams.seed} p${urlParams.round}p${urlParams.pick}`);
-          await draftActions.loadPosition(urlParams.seed, urlParams.round, urlParams.pick);
+          // URL-based navigation: check if current state matches
+          const currentDraft = draftStore.get();
+          const isSameDraft = currentDraft?.seed === urlParams.seed;
+          const isCurrentPosition = currentDraft?.round === urlParams.round && currentDraft?.pick === urlParams.pick;
+          
+          if (isSameDraft && isCurrentPosition) {
+            // We're already at this position with live state - no need to reload
+            console.log(`[SimpleDraftRouter] Already at position ${urlParams.seed} p${urlParams.round}p${urlParams.pick} - using current state`);
+          } else {
+            // Different position - load via replay
+            console.log(`[SimpleDraftRouter] Loading position from URL: ${urlParams.seed} p${urlParams.round}p${urlParams.pick}`);
+            await draftActions.loadPosition(urlParams.seed, urlParams.round, urlParams.pick);
+          }
         } else if (routeType === 'draft' && draftId === 'new') {
           // New draft creation - show setup screen
           console.log(`[SimpleDraftRouter] New draft route - showing setup`);

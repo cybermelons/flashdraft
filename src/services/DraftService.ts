@@ -213,19 +213,6 @@ export class DraftService {
   private generateMockCards(setCode: string): any[] {
     const cards: any[] = [];
     
-    // Use set code as seed for deterministic generation
-    // This ensures the same cards are generated every time for the same set
-    let seedNum = 0;
-    for (let i = 0; i < setCode.length; i++) {
-      seedNum += setCode.charCodeAt(i);
-    }
-    
-    // Simple seeded random function
-    const seededRandom = (seed: number) => {
-      const x = Math.sin(seed) * 10000;
-      return x - Math.floor(x);
-    };
-    
     // Generate commons (60% of set)
     for (let i = 1; i <= 120; i++) {
       cards.push({
