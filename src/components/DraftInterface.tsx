@@ -6,6 +6,8 @@
  */
 
 import { useStore } from '@nanostores/react';
+import { useEffect } from 'react';
+import { clearCorruptedDraftData } from '@/utils/storageCleanup';
 import { 
   $currentDraft, 
   $currentPack, 
@@ -33,8 +35,16 @@ interface DraftInterfaceProps {
 export function DraftInterface({ className = '' }: DraftInterfaceProps) {
   const isDarkMode = useStore($isDarkMode);
   
+  // Clear corrupted data on mount
+  useEffect(() => {
+    clearCorruptedDraftData();
+  }, []);
+  
   return (
-    <div className={`draft-interface ${isDarkMode ? 'dark' : 'light'} ${className}`}>
+    <div 
+      className={`draft-interface ${isDarkMode ? 'dark' : 'light'} ${className}`}
+      suppressHydrationWarning={true}
+    >
       <SimpleDraftRouter>
         {(routeData) => <DraftInterfaceContent routeData={routeData} />}
       </SimpleDraftRouter>

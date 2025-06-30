@@ -221,6 +221,9 @@ export class LocalStorageAdapter extends BaseDraftStorageAdapter {
       return this.deserialize<DraftAction[]>(serialized);
       
     } catch (error) {
+      console.warn(`Corrupted actions data for draft ${draftId}, clearing...`);
+      // Clear corrupted data
+      localStorage.removeItem(actionsKey);
       this.notifyError(new Error(`Failed to load actions for draft ${draftId}: ${error}`));
       return [];
     }
@@ -330,6 +333,12 @@ export class LocalStorageAdapter extends BaseDraftStorageAdapter {
     try {
       return JSON.parse(serialized);
     } catch (error) {
+      // Log the corrupted data for debugging
+      console.warn('Corrupted data found in localStorage:', {
+        serializedLength: serialized.length,
+        firstChars: serialized.slice(0, 20),
+        error: error
+      });
       throw new Error(`Failed to deserialize data: ${error}`);
     }
   }

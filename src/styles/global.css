@@ -65,6 +65,61 @@ html, body {
   padding: 0;
 }
 
+/* Draft interface layout */
+.draft-interface {
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+}
+
+.draft-interface.dark {
+  background-color: hsl(var(--background));
+  color: hsl(var(--foreground));
+}
+
+.draft-interface.light {
+  background-color: #ffffff;
+  color: #1f2937;
+}
+
+/* Basic component styles */
+.draft-header {
+  @apply bg-white border-b border-gray-200 px-4 py-2;
+}
+
+.draft-interface.dark .draft-header {
+  @apply bg-gray-900 border-gray-700;
+}
+
+.draft-sidebar {
+  @apply bg-gray-50 border-r border-gray-200 w-80 p-4;
+}
+
+.draft-interface.dark .draft-sidebar {
+  @apply bg-gray-800 border-gray-700;
+}
+
+.pack-display {
+  @apply flex-1 p-4;
+}
+
+.mtg-card {
+  @apply relative rounded-lg border border-gray-200 overflow-hidden transition-all duration-200;
+  aspect-ratio: 63/88; /* Standard MTG card ratio */
+}
+
+.mtg-card:hover {
+  @apply shadow-lg transform -translate-y-1;
+}
+
+.card-interactive {
+  @apply cursor-pointer;
+}
+
+.card-selected {
+  @apply ring-2 ring-blue-500 ring-offset-2;
+}
+
 /* Custom scrollbar for draft interface */
 .draft-scroll::-webkit-scrollbar {
   width: 8px;
