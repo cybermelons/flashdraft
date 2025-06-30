@@ -104,41 +104,42 @@ export class DraftService {
    * 4. Position advances
    * 5. Check for round/draft completion
    */
-  async makeHumanPick(seed: string, cardId: string): Promise<SeededDraftState> {
-    const { state, actions } = await this.loadState(seed);
+  async makeHumanPick(currentState: SeededDraftState, cardId: string): Promise<SeededDraftState> {
+    // Load current action history for persistence
+    const { actions } = await this.loadState(currentState.seed);
     
     // Create sequence of actions for complete pick cycle
     const pickActions: DraftAction[] = [
       { type: 'HUMAN_PICK', cardId },
-      ...this.generateBotPickActions(state),
+      ...this.generateBotPickActions(currentState),
       { type: 'PASS_PACKS' }
     ];
     
     // Apply all actions in sequence
-    let currentState = state;
+    let newState = currentState;
     for (const action of pickActions) {
-      currentState = applyAction(currentState, action);
+      newState = applyAction(newState, action);
     }
     
     // Check if we need to advance round or complete draft
-    const completionActions = this.generateCompletionActions(currentState);
+    const completionActions = this.generateCompletionActions(newState);
     for (const action of completionActions) {
-      currentState = applyAction(currentState, action);
+      newState = applyAction(newState, action);
     }
     
     // Update position (pick number)
-    currentState = {
-      ...currentState,
-      pick: currentState.pick + 1,
+    newState = {
+      ...newState,
+      pick: newState.pick + 1,
       lastModified: Date.now()
     };
     
     // Save all actions
     const allNewActions = [...pickActions, ...completionActions];
     const updatedActions = [...actions, ...allNewActions];
-    await this.saveState(currentState, updatedActions);
+    await this.saveState(newState, updatedActions);
     
-    return currentState;
+    return newState;
   }
 
   /**
@@ -207,9 +208,23 @@ export class DraftService {
 
   /**
    * Generate mock cards for testing
+   * Uses set code as seed for deterministic generation
    */
   private generateMockCards(setCode: string): any[] {
     const cards: any[] = [];
+    
+    // Use set code as seed for deterministic generation
+    // This ensures the same cards are generated every time for the same set
+    let seedNum = 0;
+    for (let i = 0; i < setCode.length; i++) {
+      seedNum += setCode.charCodeAt(i);
+    }
+    
+    // Simple seeded random function
+    const seededRandom = (seed: number) => {
+      const x = Math.sin(seed) * 10000;
+      return x - Math.floor(x);
+    };
     
     // Generate commons (60% of set)
     for (let i = 1; i <= 120; i++) {

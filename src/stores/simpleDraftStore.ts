@@ -110,10 +110,11 @@ export const draftActions = {
         throw new Error('No active draft');
       }
       
-      const newState = await draftService.makeHumanPick(currentDraft.seed, cardId);
+      console.log(`[makeHumanPick] Processing pick for card ${cardId} in current state`);
+      const newState = await draftService.makeHumanPick(currentDraft, cardId);
       draftStore.set(newState);
       
-      // Navigate to next position
+      // Navigate to next position after state is updated
       hardNavigateTo(newState);
       
       return newState;
