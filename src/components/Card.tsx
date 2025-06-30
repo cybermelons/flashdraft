@@ -66,6 +66,14 @@ export function Card({
   };
 
   const imageUrl = getImageUrl(displayCard.image_uris);
+  
+  // DEBUG: Log image URL info
+  React.useEffect(() => {
+    console.log(`Card: ${displayCard.name}`);
+    console.log(`Image URIs:`, displayCard.image_uris);
+    console.log(`Final image URL:`, imageUrl);
+    console.log(`Image error state:`, imageError);
+  }, [displayCard.name, displayCard.image_uris, imageUrl, imageError]);
 
   // Color-based styling
   const getColorClasses = () => {
