@@ -53,15 +53,14 @@ export function SimpleDraftRouter({ children }: SimpleDraftRouterProps) {
     const updateRoute = () => {
       const parsed = parseDraftURL(window.location.pathname);
       
-      setRouteData({
+      setRouteData(prevData => ({
+        ...prevData,
         draftId: parsed.draftId,
         round: parsed.round,
         pick: parsed.pick,
-        isLoading,
-        error,
         isValidRoute: parsed.isValid,
         routeError: parsed.error,
-      });
+      }));
       
       // If we have a valid draft ID that's different from current, load it
       if (parsed.isValid && parsed.draftId && parsed.draftId !== currentDraftId) {
@@ -88,7 +87,16 @@ export function SimpleDraftRouter({ children }: SimpleDraftRouterProps) {
     return () => {
       window.removeEventListener('popstate', handlePopstate);
     };
-  }, [currentDraftId, currentDraft, isLoading, error]);
+  }, [currentDraftId, currentDraft]);
+
+  // Update loading and error state separately to avoid infinite loops
+  useEffect(() => {
+    setRouteData(prevData => ({
+      ...prevData,
+      isLoading,
+      error,
+    }));
+  }, [isLoading, error]);
 
   /**
    * Load a draft and optionally navigate to position

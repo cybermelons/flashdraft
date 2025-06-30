@@ -177,13 +177,6 @@ function convertScryfallCard(scryfallCard: ScryfallCard): Card {
     layout: scryfallCard.layout,
   };
 
-  // DEBUG: Log image data
-  if (scryfallCard.image_uris) {
-    console.log(`✅ Image URLs found for ${card.name}:`, scryfallCard.image_uris.normal);
-  } else {
-    console.log(`❌ No image URLs for ${card.name}`);
-  }
-
   // Handle dual-sided cards
   if (scryfallCard.card_faces && scryfallCard.card_faces.length > 0) {
     card.card_faces = scryfallCard.card_faces.map(convertScryfallCardFace);
@@ -193,7 +186,6 @@ function convertScryfallCard(scryfallCard: ScryfallCard): Card {
     const frontFace = scryfallCard.card_faces[0];
     if (!card.image_uris && frontFace.image_uris) {
       card.image_uris = frontFace.image_uris;
-      console.log(`✅ Using front face image for dual-sided card ${card.name}:`, frontFace.image_uris.normal);
     }
     
     // Use front face mana cost if main card doesn't have one
