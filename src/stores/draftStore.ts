@@ -10,10 +10,22 @@ import { DraftEngine, type DraftState } from '@/lib/engine/DraftEngine';
 import { LocalStorageAdapter } from '@/lib/engine/storage/LocalStorageAdapter';
 import type { DraftAction } from '@/lib/engine/actions';
 import type { Card, SetData } from '@/lib/engine/PackGenerator';
+import { loadAllSets, getAvailableSetCodes } from '@/lib/setData';
 
 // Initialize draft engine with storage
 const storage = new LocalStorageAdapter();
 const draftEngine = new DraftEngine(storage);
+
+// Auto-load all available set data into the engine
+try {
+  const allSets = loadAllSets();
+  for (const [setCode, setData] of Object.entries(allSets)) {
+    draftEngine.loadSetData(setData);
+    console.log(`Loaded set data: ${setCode} (${setData.cards.length} cards)`);
+  }
+} catch (error) {
+  console.error('Failed to load set data:', error);
+}
 
 // Core draft state
 export const $currentDraftId = atom<string | null>(null);

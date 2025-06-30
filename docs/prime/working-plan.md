@@ -1,31 +1,27 @@
-# Working Plan: Clean Two-Layer Architecture with Independent Persistence
+# Working Plan: Static Set Data Integration with Scryfall
 
-## Progress: 16/16 tasks complete ✅ ALL PHASES COMPLETE
+## Progress: 10/13 tasks complete
 
-### Phase 1: Core Draft Engine (Pure In-Memory Logic) ✅ COMPLETE
-- [x] **Create DraftEngine core** - Pure event-sourced state machine ✅
-- [x] **Implement Action types** - CREATE_DRAFT, HUMAN_PICK, BOT_PICK, PASS_PACKS, ADVANCE_POSITION, etc. ✅
-- [x] **Add deterministic pack generation** - Seeded random with LCG for reproducible drafts ✅
-- [x] **Build action application system** - Pure functions for state transitions ✅
-- [x] **Create comprehensive test suite** - 54 tests covering DraftEngine, PackGenerator, SeededRandom ✅
-- [x] **Fix pack generation bug** - Rare/mythic cards no longer truncated from packs ✅
-- [x] **Verify engine isolation** - All core functionality tested and working independently ✅
+**Current Issue**: Draft creation fails with "Set data not found: FIN" because the draft engine expects set data to be loaded before creating drafts. Need to download MTG set data from Scryfall API and store it statically.
 
-### Phase 2: Draft Engine Persistence Layer ✅ COMPLETE
-- [x] **Create DraftStorageAdapter interface** - Abstract persistence for draft engine ✅
-- [x] **Implement DraftLocalStorageAdapter** - With storage monitoring and error handling ✅
-- [x] **Add draft serialization** - Efficient draft state encoding/decoding ✅
-- [x] **Integrate persistence with engine** - Auto-save on human actions only ✅
-- [x] **Add multi-tab sync** - localStorage events for cross-tab synchronization ✅
-- [x] **Implement storage audit** - Monitor usage and handle quota errors ✅
+### Phase 1: Scryfall Data Download System ✅ COMPLETE
+- [x] **Create data download script** - `scripts/download_scryfall_data.py` already exists ✅
+- [x] **Set data structure** - Scryfall format with set_info and cards array ✅
+- [x] **Download target sets** - FIN and DTK data exists in `data/raw/cards/` ✅
+- [x] **Data storage format** - JSON files already downloaded ✅
+- [x] **Error handling** - Rate limiting and retry logic implemented ✅
 
-### Phase 3: UI Layer (Nanostores + React) ✅ COMPLETE
-- [x] **Create UI stores with nanostores** - Reactive UI state management ✅
-- [x] **Implement UIStorageAdapter** - UI state persistence (selected cards, preferences) ✅
-- [x] **Build core React components** - SimpleDraftRouter, DraftInterface, PackDisplay ✅
-- [x] **Add URL navigation utilities** - Route handling and position jumping ✅
-- [x] **Implement card components** - Card display, selection, hover details ✅
-- [x] **Connect UI to Draft Engine** - Direct engine access for draft operations ✅
+### Phase 2: Set Data Integration ✅ COMPLETE
+- [x] **Create set data loader** - `src/lib/setData.ts` to load static JSON files ✅
+- [x] **Engine initialization** - Auto-load sets into DraftEngine on startup ✅
+- [x] **Set data validation** - Comprehensive validation for pack generation requirements ✅
+- [x] **Type definitions** - Complete TypeScript interfaces for Scryfall data format ✅
+- [x] **Build integration** - Set data properly bundled (4MB chunk includes JSON data) ✅
+
+### Phase 3: UI Integration & Styling
+- [ ] **Fix Tailwind CSS** - Ensure Tailwind is properly configured and loading
+- [ ] **Set selection UI** - Update new.astro to show available sets dynamically
+- [ ] **Pack generation testing** - Verify cards load and display correctly
 
 ## Technical Architecture
 

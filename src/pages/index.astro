@@ -4,103 +4,122 @@ import { DraftDashboard } from '../components/DraftDashboard';
 ---
 
 <Layout title="FlashDraft - MTG Draft Simulator & Learning Platform">
-  <main class="container mx-auto px-4 py-8">
+  <main class="min-h-screen">
     <!-- Hero Section -->
-    <section class="text-center mb-12">
-      <h1 class="text-4xl font-bold text-gray-900 mb-4">
-        FlashDraft
-      </h1>
-      <p class="text-xl text-gray-600 mb-8 max-w-2xl mx-auto">
-        Practice Magic: The Gathering drafts with realistic AI opponents trained on 17lands data. 
-        Draft → Deck Building → Goldfishing → Iteration.
-      </p>
-      
-      <!-- Quick Actions -->
-      <div class="flex flex-col sm:flex-row gap-4 justify-center">
-        <a 
-          href="/draft/new" 
-          class="bg-blue-600 hover:bg-blue-700 text-white px-6 py-3 rounded-lg font-medium transition-colors"
-        >
-          Start New Draft
-        </a>
-        <a 
-          href="/draft" 
-          class="bg-gray-200 hover:bg-gray-300 text-gray-800 px-6 py-3 rounded-lg font-medium transition-colors"
-        >
-          View All Drafts
-        </a>
+    <section class="relative overflow-hidden">
+      <div class="absolute inset-0 bg-gradient-to-br from-blue-600/20 to-purple-600/20"></div>
+      <div class="relative max-w-7xl mx-auto px-6 py-20 text-center">
+        <h1 class="text-6xl font-bold text-white mb-6 tracking-tight">
+          Master MTG Drafting
+        </h1>
+        <p class="text-xl text-slate-300 mb-10 max-w-3xl mx-auto leading-relaxed">
+          Practice against AI opponents trained on real data. Experience realistic draft dynamics, 
+          immediate playtesting, and accelerated learning for competitive improvement.
+        </p>
+        <div class="flex flex-col sm:flex-row gap-4 justify-center">
+          <a 
+            href="/draft/new" 
+            class="bg-gradient-to-r from-blue-600 to-blue-500 hover:from-blue-500 hover:to-blue-400 text-white px-8 py-4 rounded-xl font-semibold text-lg transition-all duration-200 shadow-lg hover:shadow-xl hover:scale-105"
+          >
+            Start New Draft
+          </a>
+          <a 
+            href="/draft" 
+            class="bg-white/10 hover:bg-white/20 text-white px-8 py-4 rounded-xl font-semibold text-lg transition-all duration-200 backdrop-blur-sm border border-white/20"
+          >
+            View Saved Drafts
+          </a>
+        </div>
       </div>
     </section>
 
-    <!-- Draft Dashboard -->
-    <section class="mb-12">
-      <h2 class="text-2xl font-semibold text-gray-900 mb-6">Your Drafts</h2>
-      
-      <!-- Draft List Container (populated by React component) -->
-      <DraftDashboard client:load />
-    </section>
-
-    <!-- Features Section -->
-    <section class="grid md:grid-cols-3 gap-8 mb-12">
-      <div class="text-center">
-        <div class="bg-blue-100 w-16 h-16 rounded-full flex items-center justify-center mx-auto mb-4">
-          <svg class="w-8 h-8 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"></path>
-          </svg>
+    <!-- Features -->
+    <section class="py-20 px-6">
+      <div class="max-w-7xl mx-auto">
+        <h2 class="text-3xl font-bold text-center text-white mb-16">Why FlashDraft?</h2>
+        <div class="grid md:grid-cols-3 gap-8">
+          <div class="bg-slate-800/50 backdrop-blur-sm rounded-2xl p-8 border border-slate-700/50 hover:border-slate-600/50 transition-all duration-200 group">
+            <div class="bg-gradient-to-br from-blue-500 to-blue-600 w-16 h-16 rounded-xl flex items-center justify-center mb-6 group-hover:scale-110 transition-transform duration-200">
+              <svg class="w-8 h-8 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"></path>
+              </svg>
+            </div>
+            <h3 class="text-xl font-bold text-white mb-4">Realistic AI Opponents</h3>
+            <p class="text-slate-300 leading-relaxed">
+              Draft against AI trained on real 17lands data with human-like pick patterns, signal reading, and varying skill levels from Bronze to Mythic.
+            </p>
+          </div>
+          <div class="bg-slate-800/50 backdrop-blur-sm rounded-2xl p-8 border border-slate-700/50 hover:border-slate-600/50 transition-all duration-200 group">
+            <div class="bg-gradient-to-br from-green-500 to-green-600 w-16 h-16 rounded-xl flex items-center justify-center mb-6 group-hover:scale-110 transition-transform duration-200">
+              <svg class="w-8 h-8 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"></path>
+              </svg>
+            </div>
+            <h3 class="text-xl font-bold text-white mb-4">Immediate Playtesting</h3>
+            <p class="text-slate-300 leading-relaxed">
+              Test your deck instantly with streamlined goldfishing. No setup time, no rules engine complexity - just pure strategic validation and rapid iteration.
+            </p>
+          </div>
+          <div class="bg-slate-800/50 backdrop-blur-sm rounded-2xl p-8 border border-slate-700/50 hover:border-slate-600/50 transition-all duration-200 group">
+            <div class="bg-gradient-to-br from-purple-500 to-purple-600 w-16 h-16 rounded-xl flex items-center justify-center mb-6 group-hover:scale-110 transition-transform duration-200">
+              <svg class="w-8 h-8 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+              </svg>
+            </div>
+            <h3 class="text-xl font-bold text-white mb-4">Accelerated Learning</h3>
+            <p class="text-slate-300 leading-relaxed">
+              Get visual feedback on picks, mana curves, and synergies. Identify patterns, test hypotheses, and improve faster than traditional drafting methods.
+            </p>
+          </div>
         </div>
-        <h3 class="text-lg font-semibold text-gray-900 mb-2">Ultra-Fast Transitions</h3>
-        <p class="text-gray-600">
-          &lt;150ms between draft picks, deck building, and playtesting modes for seamless learning flow.
-        </p>
-      </div>
-      
-      <div class="text-center">
-        <div class="bg-green-100 w-16 h-16 rounded-full flex items-center justify-center mx-auto mb-4">
-          <svg class="w-8 h-8 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9.75 17L9 20l-1 1h8l-1-1-.75-3M3 13h18M5 17h14a2 2 0 002-2V5a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"></path>
-          </svg>
-        </div>
-        <h3 class="text-lg font-semibold text-gray-900 mb-2">Realistic AI Opponents</h3>
-        <p class="text-gray-600">
-          Bots trained on 17lands data with &gt;70% human pick agreement across Bronze, Gold, and Mythic skill levels.
-        </p>
-      </div>
-      
-      <div class="text-center">
-        <div class="bg-purple-100 w-16 h-16 rounded-full flex items-center justify-center mx-auto mb-4">
-          <svg class="w-8 h-8 text-purple-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z"></path>
-          </svg>
-        </div>
-        <h3 class="text-lg font-semibold text-gray-900 mb-2">Learning-Focused</h3>
-        <p class="text-gray-600">
-          Goldfishing-oriented playtesting with visual feedback and rapid iteration cycles for skill building.
-        </p>
       </div>
     </section>
 
     <!-- Getting Started -->
-    <section class="bg-gray-50 rounded-lg p-6">
-      <h2 class="text-xl font-semibold text-gray-900 mb-4">Getting Started</h2>
-      <div class="space-y-3 text-gray-700">
-        <div class="flex items-start space-x-3">
-          <span class="bg-blue-600 text-white text-sm rounded-full w-6 h-6 flex items-center justify-center font-medium mt-0.5">1</span>
-          <p><strong>Start a Draft:</strong> Choose from available MTG sets and begin drafting with AI opponents</p>
-        </div>
-        <div class="flex items-start space-x-3">
-          <span class="bg-blue-600 text-white text-sm rounded-full w-6 h-6 flex items-center justify-center font-medium mt-0.5">2</span>
-          <p><strong>Build Your Deck:</strong> Real-time mana curve analysis and deck composition feedback</p>
-        </div>
-        <div class="flex items-start space-x-3">
-          <span class="bg-blue-600 text-white text-sm rounded-full w-6 h-6 flex items-center justify-center font-medium mt-0.5">3</span>
-          <p><strong>Goldfish & Learn:</strong> Manual playtesting to understand your deck's patterns and improve</p>
-        </div>
-        <div class="flex items-start space-x-3">
-          <span class="bg-blue-600 text-white text-sm rounded-full w-6 h-6 flex items-center justify-center font-medium mt-0.5">4</span>
-          <p><strong>Iterate:</strong> Quick reset cycles to try different strategies and build expertise</p>
+    <section class="py-20 px-6">
+      <div class="max-w-7xl mx-auto">
+        <div class="bg-gradient-to-br from-slate-800/80 to-slate-900/80 backdrop-blur-sm rounded-3xl p-12 border border-slate-700/50">
+          <h2 class="text-3xl font-bold text-white mb-12 text-center">How It Works</h2>
+          <div class="grid md:grid-cols-4 gap-8">
+            <div class="text-center group">
+              <div class="bg-gradient-to-br from-blue-500 to-blue-600 rounded-2xl w-20 h-20 flex items-center justify-center mx-auto mb-6 group-hover:scale-110 transition-transform duration-200">
+                <span class="text-white font-bold text-2xl">1</span>
+              </div>
+              <h4 class="font-bold text-white mb-3 text-lg">Choose Set</h4>
+              <p class="text-slate-300 leading-relaxed">Select from current MTG sets with full card data and proper rarity distributions</p>
+            </div>
+            <div class="text-center group">
+              <div class="bg-gradient-to-br from-green-500 to-green-600 rounded-2xl w-20 h-20 flex items-center justify-center mx-auto mb-6 group-hover:scale-110 transition-transform duration-200">
+                <span class="text-white font-bold text-2xl">2</span>
+              </div>
+              <h4 class="font-bold text-white mb-3 text-lg">Draft Packs</h4>
+              <p class="text-slate-300 leading-relaxed">Pick cards against 7 AI opponents through 3 rounds with realistic passing patterns</p>
+            </div>
+            <div class="text-center group">
+              <div class="bg-gradient-to-br from-purple-500 to-purple-600 rounded-2xl w-20 h-20 flex items-center justify-center mx-auto mb-6 group-hover:scale-110 transition-transform duration-200">
+                <span class="text-white font-bold text-2xl">3</span>
+              </div>
+              <h4 class="font-bold text-white mb-3 text-lg">Build Deck</h4>
+              <p class="text-slate-300 leading-relaxed">Construct your 40-card deck with real-time mana curve and synergy feedback</p>
+            </div>
+            <div class="text-center group">
+              <div class="bg-gradient-to-br from-orange-500 to-orange-600 rounded-2xl w-20 h-20 flex items-center justify-center mx-auto mb-6 group-hover:scale-110 transition-transform duration-200">
+                <span class="text-white font-bold text-2xl">4</span>
+              </div>
+              <h4 class="font-bold text-white mb-3 text-lg">Playtest</h4>
+              <p class="text-slate-300 leading-relaxed">Goldfish immediately to validate picks, test curves, and iterate rapidly</p>
+            </div>
+          </div>
         </div>
       </div>
     </section>
-  </main>
 
+    <!-- Draft Dashboard -->
+    <section class="py-20 px-6">
+      <div class="max-w-7xl mx-auto">
+        <h2 class="text-3xl font-bold text-white mb-12 text-center">Your Recent Drafts</h2>
+        <DraftDashboard client:load />
+      </div>
+    </section>
+  </main>
 </Layout>
