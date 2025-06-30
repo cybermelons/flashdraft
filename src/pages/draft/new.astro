@@ -41,12 +41,15 @@ import Layout from '../../layouts/Layout.astro';
   </main>
 
   <script>
+    import { draftActions } from '@/stores/draftStore';
+    
     async function startDraft(setCode) {
       try {
-        // Generate a unique draft ID
-        const draftId = 'draft_' + Date.now() + '_' + Math.random().toString(36).substr(2, 9);
+        // Create the draft using the draft engine (follows our architecture)
+        const seed = Date.now().toString();
+        const draftId = await draftActions.createDraft(seed, setCode);
         
-        // Navigate to the draft with the ID
+        // Navigate to the created draft
         window.location.href = `/draft/${draftId}`;
       } catch (error) {
         console.error('Failed to start draft:', error);
