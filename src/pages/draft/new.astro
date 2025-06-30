@@ -53,6 +53,9 @@ import Layout from '../../layouts/Layout.astro';
         alert('Failed to start draft. Please try again.');
       }
     }
+    
+    // Make function globally accessible for inline onclick handlers
+    window.startDraft = startDraft;
   </script>
 </Layout>
 
