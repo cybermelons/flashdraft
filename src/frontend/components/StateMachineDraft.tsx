@@ -39,12 +39,27 @@ export function StateMachineDraft() {
   // Active draft
   const human = draft.players.find(p => p.id === draft.humanPlayerId);
   const myPack = human?.currentPack;
+  
+  // Check if we're viewing a past position
+  const currentPosition = (draft.round - 1) * 15 + draft.pick;
+  const totalPicksMade = human?.pickedCards.length || 0;
+  const isViewingPastPosition = currentPosition <= totalPicksMade;
 
   return (
     <div className="p-4">
       <DraftHeader />
       
-      {myPack ? (
+      {isViewingPastPosition ? (
+        <div className="bg-gray-100 p-4 rounded mb-6">
+          <h2 className="text-lg font-semibold mb-2">Viewing Past Position</h2>
+          <p className="text-gray-600">
+            This shows your draft state as it was at Pick {draft.pick} of Round {draft.round}.
+          </p>
+          <p className="text-gray-600 mt-2">
+            You had {human?.pickedCards.length || 0} cards in your pool at this point.
+          </p>
+        </div>
+      ) : myPack ? (
         <PackDisplay pack={myPack} />
       ) : (
         <div>Waiting for next pack...</div>
@@ -140,9 +155,9 @@ function DraftHeader() {
         </div>
       </div>
       
-      {!hasCards && (
+      {!hasCards && draft.status === 'active' && (
         <p className="text-orange-600 mt-2">
-          ⏳ Waiting for bots to finish Pick {draft.pick - 1}...
+          ⏳ Waiting for bots to finish Pick {Math.max(1, draft.pick - 1)}...
         </p>
       )}
     </div>
