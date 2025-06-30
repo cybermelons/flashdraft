@@ -8,7 +8,7 @@
 
 import * as React from 'react';
 import { useEffect, useState, useCallback } from 'react';
-import { useDraftStore } from '../stores/draftStore';
+import { useDraftStore } from '../../stores/draftStore';
 import DraftInterface from './DraftInterface';
 import { clientPackGenerator, generateDraftSession } from '../utils/clientPackGenerator';
 import type { MTGSetData } from '../../shared/types/card';

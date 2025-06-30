@@ -251,9 +251,16 @@ export function toLegacyDraftState(seededDraft: SeededDraftState): any {
  * Migration helper to check if we should use seeded or legacy storage
  */
 export function shouldUseSeededEngine(): boolean {
-  // For now, always use legacy engine until UI migration is complete
-  // TODO: Add feature flag or migration logic
-  return false;
+  // Check for environment variable or localStorage feature flag
+  if (typeof window !== 'undefined') {
+    const flag = localStorage.getItem('flashdraft_use_seeded_engine');
+    if (flag === 'true') return true;
+    if (flag === 'false') return false;
+  }
+  
+  // Default to seeded engine for new development
+  // TODO: Make this configurable per environment
+  return true;
 }
 
 // ============================================================================
