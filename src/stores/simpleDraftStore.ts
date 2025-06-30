@@ -42,19 +42,22 @@ export const draftErrorStore = atom<string | null>(null);
 export const draftActions = {
   /**
    * Create a new draft from set code
+   * Automatically starts the draft after creation
    */
   createDraft: async (setCode: string) => {
     try {
       draftLoadingStore.set(true);
       draftErrorStore.set(null);
       
-      const newState = await draftService.createDraft(setCode);
-      draftStore.set(newState);
+      // Create and immediately start the draft
+      const createdState = await draftService.createDraft(setCode);
+      const startedState = await draftService.startDraft(createdState.seed);
+      draftStore.set(startedState);
       
-      // Navigate to initial position
-      hardNavigateTo(newState);
+      // Navigate to p1p1
+      hardNavigateTo(startedState);
       
-      return newState;
+      return startedState;
     } catch (error) {
       const errorMessage = error instanceof Error ? error.message : 'Failed to create draft';
       draftErrorStore.set(errorMessage);

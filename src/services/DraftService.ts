@@ -197,12 +197,78 @@ export class DraftService {
     }
     
     // TODO: Implement API call to load set data
-    // For now, return mock data structure
+    // For now, return mock data with cards for testing
     return {
       set_code: setCode,
       name: `Mock Set ${setCode}`,
-      cards: []
+      cards: this.generateMockCards(setCode)
     };
+  }
+
+  /**
+   * Generate mock cards for testing
+   */
+  private generateMockCards(setCode: string): any[] {
+    const cards: any[] = [];
+    
+    // Generate commons (60% of set)
+    for (let i = 1; i <= 120; i++) {
+      cards.push({
+        id: `${setCode.toLowerCase()}-common-${i}`,
+        name: `${['Lightning', 'Stone', 'Giant', 'Dark', 'Healing'][i % 5]} ${['Bolt', 'Rain', 'Growth', 'Ritual', 'Salve'][Math.floor(i / 5) % 5]}`,
+        mana_cost: `{${Math.floor(i % 4) + 1}}`,
+        rarity: 'common',
+        booster: true,
+        colors: [['W'], ['U'], ['B'], ['R'], ['G']][i % 5],
+        cmc: Math.floor(i % 4) + 1,
+        type_line: 'Instant'
+      });
+    }
+    
+    // Generate uncommons (30% of set)  
+    for (let i = 1; i <= 60; i++) {
+      cards.push({
+        id: `${setCode.toLowerCase()}-uncommon-${i}`,
+        name: `${['Elite', 'Royal', 'Master', 'Ancient', 'Fierce'][i % 5]} ${['Dragon', 'Angel', 'Demon', 'Phoenix', 'Hydra'][Math.floor(i / 5) % 5]}`,
+        mana_cost: `{${Math.floor(i % 3) + 2}}{${['W', 'U', 'B', 'R', 'G'][i % 5]}}`,
+        rarity: 'uncommon',
+        booster: true,
+        colors: [['W'], ['U'], ['B'], ['R'], ['G']][i % 5],
+        cmc: Math.floor(i % 3) + 3,
+        type_line: 'Creature'
+      });
+    }
+    
+    // Generate rares (8% of set)
+    for (let i = 1; i <= 15; i++) {
+      cards.push({
+        id: `${setCode.toLowerCase()}-rare-${i}`,
+        name: `Legendary ${['Planeswalker', 'Creature', 'Artifact', 'Enchantment', 'Sorcery'][i % 5]}`,
+        mana_cost: `{${Math.floor(i % 2) + 4}}{${['W', 'U', 'B', 'R', 'G'][i % 5]}}`,
+        rarity: 'rare',
+        booster: true,
+        colors: [['W'], ['U'], ['B'], ['R'], ['G']][i % 5],
+        cmc: Math.floor(i % 2) + 5,
+        type_line: 'Legendary Creature'
+      });
+    }
+    
+    // Generate mythics (2% of set)
+    for (let i = 1; i <= 5; i++) {
+      cards.push({
+        id: `${setCode.toLowerCase()}-mythic-${i}`,
+        name: `Planeswalker ${['Chandra', 'Jace', 'Liliana', 'Garruk', 'Ajani'][i - 1]}`,
+        mana_cost: `{${i + 3}}{${['R', 'U', 'B', 'G', 'W'][i - 1]}}`,
+        rarity: 'mythic',
+        booster: true,
+        colors: [['R'], ['U'], ['B'], ['G'], ['W']][i - 1],
+        cmc: i + 4,
+        type_line: 'Legendary Planeswalker'
+      });
+    }
+
+    console.log(`[DraftService] Generated ${cards.length} mock cards for set ${setCode}`);
+    return cards;
   }
 
   /**
