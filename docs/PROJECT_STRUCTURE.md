@@ -14,25 +14,15 @@
 ```
 flashdraft/
 ├── src/                    # Source code
-│   ├── frontend/          # React frontend application
-│   │   ├── components/    # UI components
-│   │   ├── pages/        # Page components
-│   │   ├── hooks/        # Custom React hooks
-│   │   ├── stores/       # Zustand state management
-│   │   └── utils/        # Utility functions
-│   │
-│   ├── backend/           # Python backend
-│   │   ├── api/          # FastAPI routes
-│   │   ├── models/       # ML models and training
-│   │   ├── services/     # Business logic
-│   │   └── utils/        # Backend utilities
-│   │
+│   ├── components/    # UI components
+│   ├── pages/        # Page components
+│   ├── hooks/        # Custom React hooks
+│   ├── stores/       # Zustand state management
+│   └── utils/        # Utility functions
 │   └── shared/           # Shared types and constants
 │
-├── data/                 # Data directory
-│   ├── raw/             # Raw 17lands data
-│   ├── processed/       # Processed datasets
-│   └── models/          # Trained model files
+├── draft-ai/                 # ai draft-model training
+│   └── TBD
 │
 ├── docs/                # Documentation
 │   ├── api/            # API documentation
@@ -40,12 +30,6 @@ flashdraft/
 │   └── guides/         # User guides
 │
 ├── tests/              # Test suites
-│   ├── frontend/       # Frontend tests
-│   └── backend/        # Backend tests
-│
-├── scripts/            # Utility scripts
-│   ├── download_data.py
-│   └── train_models.py
 │
 └── public/             # Static assets
     └── images/         # Card images, icons
