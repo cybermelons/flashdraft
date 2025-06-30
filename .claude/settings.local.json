@@ -38,7 +38,8 @@
       "Bash(pnpm run:*)",
       "Bash(git merge:*)",
       "Bash(git pull:*)",
-      "Bash(git restore:*)"
+      "Bash(git restore:*)",
+      "Bash(pnpm exec vitest:*)"
     ],
     "deny": []
   }

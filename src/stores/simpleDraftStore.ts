@@ -8,7 +8,7 @@
 
 import { atom } from 'nanostores';
 import { draftService } from '../services/DraftService';
-import { hardNavigateTo } from '../utils/navigation';
+import { hardNavigateTo, browserHistory } from '../utils/navigation';
 import type { SeededDraftState } from '../shared/types/seededDraftState';
 
 // ============================================================================
@@ -115,7 +115,14 @@ export const draftActions = {
       draftStore.set(newState);
       
       // Navigate to next position after state is updated
-      hardNavigateTo(newState);
+      // But only if draft is still active (not complete)
+      if (newState.status === 'active') {
+        hardNavigateTo(newState);
+      } else if (newState.status === 'complete') {
+        // For completed drafts, stay at the last valid position (p3p15)
+        const completedUrl = `/draft/${newState.seed}/p3p15`;
+        browserHistory.replaceUrl(completedUrl);
+      }
       
       return newState;
     } catch (error) {

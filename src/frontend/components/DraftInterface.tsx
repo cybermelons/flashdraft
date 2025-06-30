@@ -15,6 +15,11 @@ export interface DraftInterfaceProps {
 }
 
 export function DraftInterface({ draft }: DraftInterfaceProps) {
+  // Show deck view when draft is complete
+  if (draft.status === 'complete') {
+    return <DraftCompleteView draft={draft} />;
+  }
+
   return (
     <div className="max-w-6xl mx-auto p-4">
       <div className="bg-white rounded-lg shadow-lg p-6">
@@ -157,6 +162,92 @@ function PickedCards({ draft }: { draft: SeededDraftState }) {
           ))}
         </div>
       )}
+    </div>
+  );
+}
+
+/**
+ * Draft Complete View - Shows final deck
+ */
+function DraftCompleteView({ draft }: { draft: SeededDraftState }) {
+  const humanPlayer = draft.players.find(p => p.isHuman);
+  const deck = humanPlayer?.pickedCards || [];
+  
+  // Group cards by color
+  const colorGroups: Record<string, any[]> = {
+    'W': [],
+    'U': [],
+    'B': [],
+    'R': [],
+    'G': [],
+    'Colorless': [],
+    'Multicolor': []
+  };
+  
+  deck.forEach(card => {
+    if (!card.colors || card.colors.length === 0) {
+      colorGroups['Colorless'].push(card);
+    } else if (card.colors.length > 1) {
+      colorGroups['Multicolor'].push(card);
+    } else {
+      colorGroups[card.colors[0]].push(card);
+    }
+  });
+  
+  return (
+    <div className="max-w-6xl mx-auto p-4">
+      <div className="bg-white rounded-lg shadow-lg p-6">
+        <h2 className="text-xl font-bold mb-4">
+          Draft Complete - {draft.seed}
+        </h2>
+        
+        <div className="mb-6">
+          <p className="text-gray-600">Total cards: {deck.length}</p>
+          <p className="text-green-600 font-semibold">Your draft is complete!</p>
+        </div>
+        
+        {/* Deck Overview */}
+        <div className="mb-8">
+          <h3 className="text-lg font-semibold mb-4">Your Deck</h3>
+          
+          <div className="grid grid-cols-2 gap-6">
+            {Object.entries(colorGroups).map(([color, cards]) => {
+              if (cards.length === 0) return null;
+              
+              return (
+                <div key={color} className="border rounded p-4">
+                  <h4 className="font-semibold mb-2">
+                    {color} ({cards.length})
+                  </h4>
+                  <div className="space-y-1">
+                    {cards.map((card, idx) => (
+                      <div key={`${card.id}-${idx}`} className="text-sm">
+                        {card.name}
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        </div>
+        
+        {/* Actions */}
+        <div className="flex gap-4">
+          <a
+            href={`/draft/${draft.seed}/p3p15`}
+            className="px-4 py-2 bg-gray-200 text-gray-700 rounded hover:bg-gray-300"
+          >
+            ← View Last Pick
+          </a>
+          <a
+            href="/draft/new"
+            className="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700"
+          >
+            Start New Draft
+          </a>
+        </div>
+      </div>
     </div>
   );
 }

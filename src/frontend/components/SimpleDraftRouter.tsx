@@ -52,6 +52,11 @@ export function SimpleDraftRouter({ routeType, draftId, round, pick }: SimpleDra
             console.log(`[SimpleDraftRouter] Loading position from URL: ${urlParams.seed} p${urlParams.round}p${urlParams.pick}`);
             await draftActions.loadPosition(urlParams.seed, urlParams.round, urlParams.pick);
           }
+        } else if (isDraftPositionUrl(currentPath)) {
+          // URL looks like a draft position but failed parsing (e.g., p3p16)
+          const invalidPositionError = 'Invalid draft position. Picks must be between 1-15 for each round.';
+          console.error(`[SimpleDraftRouter] ${invalidPositionError}: ${currentPath}`);
+          draftErrorStore.set(invalidPositionError);
         } else if (routeType === 'draft' && draftId === 'new') {
           // New draft creation - show setup screen
           console.log(`[SimpleDraftRouter] New draft route - showing setup`);
