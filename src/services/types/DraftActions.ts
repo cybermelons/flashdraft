@@ -14,6 +14,7 @@ export type DraftAction =
   | { type: 'HUMAN_PICK'; cardId: string }
   | { type: 'BOT_PICK'; playerId: string; cardId: string }
   | { type: 'PASS_PACKS' }
+  | { type: 'ADVANCE_POSITION' }
   | { type: 'START_ROUND'; round: number }
   | { type: 'COMPLETE_DRAFT' };
 
@@ -48,6 +49,10 @@ export const createAction = {
   
   passPacks: (): DraftAction => ({
     type: 'PASS_PACKS'
+  }),
+  
+  advancePosition: (): DraftAction => ({
+    type: 'ADVANCE_POSITION'
   }),
   
   startRound: (round: number): DraftAction => ({

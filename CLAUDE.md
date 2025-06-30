@@ -188,3 +188,81 @@ pytest --cov=src/backend tests/backend
 2. Maintain <150ms transition targets
 3. Test with keyboard shortcuts for power users
 4. Validate learning feedback loops with MTG players
+
+## Architectural Integrity Constraints
+
+**CRITICAL: Before implementing ANY state change, follow this systematic approach:**
+
+1. **Context Check** (What to understand first):
+   - Identify which architectural layer you're modifying (UI → Store → Service → Storage)
+   - Review the layer's single responsibility
+   - Check existing patterns in nearby code
+
+2. **Specific Anti-Patterns to Avoid** (Concrete examples):
+   ```typescript
+   // ❌ NEVER: Direct state mutation in service layer
+   newState = {
+     ...newState,
+     pick: newState.pick + 1  // This bypasses the action system!
+   };
+   
+   // ✅ ALWAYS: State changes through actions
+   const action = { type: 'ADVANCE_POSITION' };
+   newState = applyAction(newState, action);
+   ```
+
+3. **Approach** (Step-by-step verification):
+   - [ ] Is this state change going through an action?
+   - [ ] Will this change be captured in the event/action log?
+   - [ ] Can this state be reconstructed from action history alone?
+   - [ ] Does each layer maintain its single responsibility?
+   
+   **If ANY answer is "no", STOP and redesign.**
+
+4. **Constraints** (What to prefer/avoid):
+   - **Prefer**: Explicit actions for ALL state transitions
+   - **Prefer**: Pure functions in action applicators
+   - **Avoid**: Direct state mutations outside action system
+   - **Avoid**: Mixing concerns across architectural layers
+
+### Implementation Checklist
+
+Before committing any state management code:
+
+1. **Trace the complete data flow**:
+   ```
+   User Action → UI Component → Store Action → Service Method → Action Application → State Change
+   ```
+
+2. **Verify replayability**:
+   - Start from initial state
+   - Apply all actions in sequence
+   - Result MUST match current state
+
+3. **Test edge cases**:
+   - Empty state
+   - Mid-action interruption
+   - Replay from different positions
+
+### Example Application
+
+**Task**: "Increment draft position after picks"
+
+**Wrong approach** (procedural thinking):
+"After processing picks, update the pick number"
+
+**Correct approach** (event-driven thinking):
+"What event occurred? → ADVANCE_POSITION
+How does state transform? → Via applyAdvancePosition action
+Where in the flow? → After PASS_PACKS, before completion check"
+
+### Mental Model Shift
+
+**From**: "Do X, then update Y"
+**To**: "Event X occurred, state transforms according to action"
+
+This ensures every state change is:
+- Explicit (as an action)
+- Replayable (from action history)
+- Testable (pure function)
+- Maintainable (single responsibility)

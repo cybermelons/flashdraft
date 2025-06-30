@@ -8,7 +8,7 @@
 
 import type { DraftAction } from './types/DraftActions';
 import type { SeededDraftState, DraftPlayer, Pack } from '../shared/types/seededDraftState';
-import { generateAllDraftPacks, createBotDecisionMakers } from '../shared/utils/seededPackGenerator';
+import { generateAllDraftPacks, createBotDecisionMakers, validatePackGeneration } from '../shared/utils/seededPackGenerator';
 import { getPackDirection } from '../shared/types/seededDraftState';
 
 /**
@@ -39,6 +39,9 @@ export function applyAction(
     case 'PASS_PACKS':
       return applyPassPacks(state);
     
+    case 'ADVANCE_POSITION':
+      return applyAdvancePosition(state);
+    
     case 'START_ROUND':
       return applyStartRound(state, action);
     
@@ -65,6 +68,16 @@ function applyCreateDraft(
   
   // Generate all packs upfront (deterministic from seed)
   const allPacks = generateAllDraftPacks(state.seed, setData);
+  
+  // Validate deterministic generation in development
+  if (process.env.NODE_ENV === 'development') {
+    const isValid = validatePackGeneration(state.seed, setData);
+    if (!isValid) {
+      console.error('[applyCreateDraft] Pack generation is not deterministic!');
+    } else {
+      console.log('[applyCreateDraft] Pack generation validation passed');
+    }
+  }
   
   // Create 8 players (1 human + 7 bots)
   const players: DraftPlayer[] = [
@@ -250,6 +263,17 @@ function applyStartRound(state: SeededDraftState, action: { type: 'START_ROUND';
     pick: 1,
     direction: newDirection,
     players: playersWithNewPacks,
+    lastModified: Date.now()
+  };
+}
+
+/**
+ * Advance to next position (pick number)
+ */
+function applyAdvancePosition(state: SeededDraftState): SeededDraftState {
+  return {
+    ...state,
+    pick: state.pick + 1,
     lastModified: Date.now()
   };
 }

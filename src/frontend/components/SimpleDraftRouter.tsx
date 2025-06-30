@@ -39,12 +39,16 @@ export function SimpleDraftRouter({ routeType, draftId, round, pick }: SimpleDra
           const currentDraft = draftStore.get();
           const isSameDraft = currentDraft?.seed === urlParams.seed;
           const isCurrentPosition = currentDraft?.round === urlParams.round && currentDraft?.pick === urlParams.pick;
+          const hasLiveState = currentDraft?.status === 'active';
           
-          if (isSameDraft && isCurrentPosition) {
-            // We're already at this position with live state - no need to reload
-            console.log(`[SimpleDraftRouter] Already at position ${urlParams.seed} p${urlParams.round}p${urlParams.pick} - using current state`);
+          console.log(`[SimpleDraftRouter] URL check - Current: ${currentDraft?.seed} p${currentDraft?.round}p${currentDraft?.pick}, URL: ${urlParams.seed} p${urlParams.round}p${urlParams.pick}`);
+          console.log(`[SimpleDraftRouter] Same draft: ${isSameDraft}, Same position: ${isCurrentPosition}, Has live state: ${hasLiveState}`);
+          
+          if (isSameDraft && isCurrentPosition && hasLiveState) {
+            // We're already at this position with live state - NEVER replay
+            console.log(`[SimpleDraftRouter] Already at position ${urlParams.seed} p${urlParams.round}p${urlParams.pick} with live state - using current state`);
           } else {
-            // Different position - load via replay
+            // Different position or no live state - load via replay
             console.log(`[SimpleDraftRouter] Loading position from URL: ${urlParams.seed} p${urlParams.round}p${urlParams.pick}`);
             await draftActions.loadPosition(urlParams.seed, urlParams.round, urlParams.pick);
           }

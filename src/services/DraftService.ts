@@ -112,7 +112,8 @@ export class DraftService {
     const pickActions: DraftAction[] = [
       { type: 'HUMAN_PICK', cardId },
       ...this.generateBotPickActions(currentState),
-      { type: 'PASS_PACKS' }
+      { type: 'PASS_PACKS' },
+      { type: 'ADVANCE_POSITION' }
     ];
     
     // Apply all actions in sequence
@@ -127,13 +128,6 @@ export class DraftService {
       newState = applyAction(newState, action);
     }
     
-    // Update position (pick number)
-    newState = {
-      ...newState,
-      pick: newState.pick + 1,
-      lastModified: Date.now()
-    };
-    
     // Save all actions
     const allNewActions = [...pickActions, ...completionActions];
     const updatedActions = [...actions, ...allNewActions];
@@ -147,15 +141,19 @@ export class DraftService {
    * Replays from seed up to the target position
    */
   async navigateToPosition(seed: string, round: number, pick: number): Promise<SeededDraftState> {
-    const { actions } = await this.loadState(seed);
+    // Load actions from storage without replaying
+    const stored = await this.storage.load(seed);
+    if (!stored) {
+      throw new Error(`Draft with seed ${seed} not found`);
+    }
     
     // Calculate target position (1-based)
     const targetPosition = (round - 1) * 15 + pick;
     
     // Find actions that should be applied to reach this position
-    const actionsToApply = this.getActionsUpToPosition(actions, targetPosition);
+    const actionsToApply = this.getActionsUpToPosition(stored.actions, targetPosition);
     
-    // Replay from seed
+    // Replay from seed only once
     return this.replayFromSeed(seed, actionsToApply);
   }
 
@@ -208,12 +206,12 @@ export class DraftService {
 
   /**
    * Generate mock cards for testing
-   * Uses set code as seed for deterministic generation
+   * MUST be deterministic - same setCode always produces same cards
    */
   private generateMockCards(setCode: string): any[] {
     const cards: any[] = [];
     
-    // Generate commons (60% of set)
+    // Generate commons (60% of set) - DETERMINISTIC IDs
     for (let i = 1; i <= 120; i++) {
       cards.push({
         id: `${setCode.toLowerCase()}-common-${i}`,
@@ -285,11 +283,14 @@ export class DraftService {
         // Simple bot logic - pick first card
         // TODO: Implement actual AI decision making
         const cardId = player.currentPack.cards[0].id;
+        console.log(`[generateBotPickActions] Bot ${player.id} picking ${cardId} from pack with ${player.currentPack.cards.length} cards`);
         botActions.push({
           type: 'BOT_PICK',
           playerId: player.id,
           cardId
         });
+      } else if (!player.isHuman) {
+        console.log(`[generateBotPickActions] Bot ${player.id} has no pack or empty pack`);
       }
     }
     
@@ -320,30 +321,32 @@ export class DraftService {
    * Get actions needed to reach a specific position
    */
   private getActionsUpToPosition(actions: DraftAction[], targetPosition: number): DraftAction[] {
-    // This is a simplified implementation
-    // In full implementation, we'd track pick positions more precisely
-    const humanPicks = actions.filter(a => a.type === 'HUMAN_PICK').length;
+    // Count picks to determine where we are
+    let currentPickNumber = 1;
+    const actionsToApply: DraftAction[] = [];
     
-    if (targetPosition <= humanPicks + 1) {
-      // Find the actions that led to this position
-      const actionsToApply: DraftAction[] = [];
-      let pickCount = 0;
-      
-      for (const action of actions) {
+    for (const action of actions) {
+      // Always include setup actions
+      if (action.type === 'CREATE_DRAFT' || action.type === 'START_DRAFT') {
         actionsToApply.push(action);
-        
-        if (action.type === 'HUMAN_PICK') {
-          pickCount++;
-          if (pickCount >= targetPosition - 1) {
-            break;
-          }
-        }
+        continue;
       }
       
-      return actionsToApply;
+      // If we've reached the target position, stop
+      if (currentPickNumber >= targetPosition) {
+        break;
+      }
+      
+      // Include the action
+      actionsToApply.push(action);
+      
+      // Track position advancement
+      if (action.type === 'ADVANCE_POSITION') {
+        currentPickNumber++;
+      }
     }
     
-    return actions;
+    return actionsToApply;
   }
 
   /**
