@@ -1,356 +1,163 @@
-# Development Plan: Clean Service Layer Architecture for Draft System
+# Working Plan: Clean Three-Layer Architecture
 
-## Overview
-Refactor the draft system to use a clean service layer architecture that separates UI state management from draft business logic. The current system has mixed concerns with UI stores handling both state management AND draft logic, leading to complex flows and broken navigation.
+## Progress: 4/12 tasks complete
 
-## Current Architecture Problems
+### Phase 1: Core Draft Engine (Pure In-Memory Logic) ✅ COMPLETE
+- [x] **Create DraftEngine core** - Pure event-sourced state machine ✅
+- [x] **Implement Action types** - CREATE_DRAFT, HUMAN_PICK, BOT_PICK, PASS_PACKS, ADVANCE_POSITION, etc. ✅
+- [x] **Add deterministic pack generation** - Seeded random with LCG for reproducible drafts ✅
+- [x] **Build action application system** - Pure functions for state transitions ✅
 
-### Mixed Concerns
-- `seededDraftStore` does both UI state AND draft business logic
-- UI components call replay engine directly  
-- Navigation logic scattered across multiple files
-- No single source of truth for draft state
+### Phase 2: Storage Module (Persistence Interface)
+- [ ] **Create StorageModule interface** - Abstract persistence layer
+- [ ] **Implement LocalStorage backend** - Browser localStorage implementation
+- [ ] **Add URL state sync** - Bidirectional URL ↔ draft state sync
+- [ ] **Build state serialization** - Efficient draft state encoding/decoding
 
-### Broken Navigation Flow
+### Phase 3: UI Layer (Nanostores + React)
+- [ ] **Create UI stores with nanostores** - Reactive UI state management
+- [ ] **Build core React components** - SimpleDraftRouter, DraftInterface, PackDisplay
+- [ ] **Implement card components** - Card display, selection, hover details
+- [ ] **Add navigation components** - Route handling and position jumping
+
+## Technical Architecture
+
+### Three-Layer Separation
 ```
-Pick → seededDraftStore.pick() → applyDelta() → processBotPicks() → updateURL()
-  ↓
-Complex replay logic mixed with UI updates
-  ↓
-URL doesn't update correctly, navigation fails
-```
-
-### Code Complexity
-- 7 different files involved in a single pick
-- State reconstruction happens in multiple places
-- Difficult to test business logic independently
-
-## Target Architecture
-
-### Clean Separation
-```
-UI Components → Nanostore (UI state only) → DraftService → Storage Layer
-                                               ↑
-                                         All draft logic here
+UI Layer (nanostores + localStorage) ↔ Storage Module ↔ Draft Engine (in-memory)
 ```
 
-### Simple Flow
-```typescript
-// UI just calls service
-const newState = draftService.makeHumanPick(cardId);
-draftStore.set(newState);
-
-// Service handles everything
-class DraftService {
-  makeHumanPick(cardId: string): DraftState {
-    // 1. Apply human pick
-    // 2. Process bot picks  
-    // 3. Pass packs
-    // 4. Check completion
-    // 5. Save to storage
-    // 6. Update position
-    // 7. Return complete new state
-  }
-}
-```
-
-## Implementation Checklist
-
-### Phase 0: Clean Slate
-- [x] **Delete existing complex code** ✅ COMPLETE
-  - [x] Remove `seededDraftStore.ts` entirely ✅
-  - [x] Remove `draftReplayEngine.ts` ✅
-  - [x] Remove `StateMachineDraftRouter.tsx` ✅
-  - [x] Remove `StateMachineDraft.tsx` ✅
-  - [x] Clean slate - no migration, fresh start ✅
-
-### Phase 1: Create Service Layer with Actions ✅ COMPLETE
-- [x] **Define action types** ✅ COMPLETE
-  - [x] `src/services/types/DraftActions.ts` ✅
-  - [x] Named action types with parameters ✅
-  - [x] TypeScript discriminated union for type safety ✅
-  - [x] Actions use simple parameters (setCode instead of MTGSetData) ✅
-- [x] **Create action applicator** ✅ COMPLETE
-  - [x] `src/services/applyAction.ts` ✅
-  - [x] Pure function: `(state, action, context?) => newState` ✅
-  - [x] Handles all action types ✅
-  - [x] Context parameter for external data loading ✅
-- [x] **Create DraftService class** ✅ COMPLETE
-  - [x] `src/services/DraftService.ts` ✅
-  - [x] Single source of truth for draft logic ✅
-  - [x] `makeHumanPick()` creates and applies actions ✅
-  - [x] `navigateToPosition()` replays to target ✅
-  - [x] Handles bot logic, pack passing, round transitions ✅
-  - [x] Clean separation of concerns ✅
-  - [x] Temporary placeholder components for build compatibility ✅
-
-
-### Phase 2: Create Simple UI Store
-- [x] **Create new simple store** ✅ COMPLETE
-  - [x] `src/stores/simpleDraftStore.ts` (fresh start) ✅
-  - [x] Only holds current draft state: `atom<SeededDraftState | null>` ✅
-  - [x] No business logic - just UI state ✅
-  - [x] Loading and error state atoms ✅
-  - [x] React integration helpers ✅
-- [x] **Simple store actions** ✅ COMPLETE:
-  ```typescript
-  export const draftActions = {
-    createDraft: (setData: MTGSetData) => {
-      const state = draftService.createDraft(setData);
-      draftStore.set(state);
-      hardNavigateTo(state);  // Creates browser history
-    },
-    
-    makeHumanPick: (cardId: string) => {
-      const currentDraft = draftStore.get();
-      if (!currentDraft) return;
-      
-      const newState = draftService.makeHumanPick(currentDraft.seed, cardId);
-      draftStore.set(newState);
-      hardNavigateTo(newState);  // New history entry
-    },
-    
-    // Navigation just loads state at position
-    loadPosition: (seed: string, round: number, pick: number) => {
-      const state = draftService.navigateToPosition(seed, round, pick);
-      draftStore.set(state);
-      // No URL update - URL already reflects position
-    }
-  };
+### Draft Engine (Core Layer)
+- **File**: `src/engine/DraftEngine.ts`
+- **Pure Functions**: No side effects, fully testable
+- **Event Sourcing**: All state changes through actions
+- **Deterministic**: Seeded random for reproducible drafts
+- **Action Types**:
+  ```
+  CREATE_DRAFT, START_DRAFT, HUMAN_PICK, BOT_PICK, 
+  PASS_PACKS, ADVANCE_POSITION, START_ROUND, COMPLETE_DRAFT
   ```
 
-### Phase 3: Implement Hard Navigation ✅ COMPLETE
-- [x] **Hard navigation function** ✅ COMPLETE
-  - [x] `src/utils/navigation.ts` with hardNavigateTo function ✅
-  - [x] Creates browser history entries ✅
-  - [x] Proper URL format: `/draft/{seed}/p{round}p{pick}` ✅
-- [x] **Simple router** ✅ COMPLETE
-  - [x] `SimpleDraftRouter.tsx` parses URLs ✅
-  - [x] Calls `draftActions.loadPosition(seed, round, pick)` ✅
-  - [x] No complex logic - just load state and display ✅
-  - [x] Integrated with existing Astro routes ✅
-- [x] **Navigation links as `<a>` tags** ✅ COMPLETE
-  - [x] Previous/Next buttons are actual links ✅
-  - [x] `getPreviousLinkProps` and `getNextLinkProps` utilities ✅
-  - [x] Browser handles navigation naturally ✅
-  - [x] Proper URL validation and bounds checking ✅
+### Storage Module (Data Layer)
+- **File**: `src/storage/StorageModule.ts`
+- **Interface**: Abstract persistence operations
+- **Backends**: LocalStorage, URL state, future database
+- **Responsibilities**: Save/load draft state, sync with UI
 
-### Phase 4: Create New Simple Components ✅ COMPLETE
-- [x] **Create new draft components** ✅ COMPLETE
-  - [x] `DraftInterface.tsx` (simple, clean) ✅
-  - [x] `DraftSetup.tsx` (new draft creation) ✅
-  - [x] `SimpleDraftRouter.tsx` (minimal routing) ✅
-  - [x] No complex logic - just display current state ✅
-- [x] **Component responsibilities** ✅ COMPLETE:
-  - [x] Read state from store ✅
-  - [x] Render cards and UI ✅
-  - [x] Call `draftActions.makeHumanPick(cardId)` on clicks ✅
-  - [x] That's it - no business logic ✅
-- [x] **Navigation components** ✅ COMPLETE:
-  - [x] `<a>` tags for Previous/Next ✅
-  - [x] Browser handles back/forward automatically ✅
-  - [x] Immutable history just works ✅
+### UI Layer (Presentation Layer)
+- **Files**: `src/components/`, `src/stores/`
+- **Nanostores**: Reactive atoms with localStorage persistence
+- **React Components**: Connected to nanostores for updates
+- **Route Integration**: Works with existing Astro page structure
 
-### Phase 5: Storage Layer ✅ COMPLETE
-- [x] **Create storage interface** ✅ COMPLETE
-  - [x] `src/services/DraftStorage.ts` ✅
-  - [x] Stores only seed + action history ✅
-  - [x] 90%+ smaller than current storage ✅
-  - [x] LocalDraftStorage implementation with localStorage ✅
-- [x] **Storage operations** ✅ COMPLETE:
-  - [x] `save(seed, actions)` - persist action history ✅
-  - [x] `load(seed)` - load action history ✅
-  - [x] `list()` - draft metadata ✅
-  - [x] `delete(seed)` - remove draft ✅
-  - [x] Automatic cleanup of old drafts ✅
-- [x] **Action serialization** ✅ COMPLETE:
-  - [x] Serialize actions with type and payload ✅
-  - [x] Deserialize back to action functions ✅
-  - [x] Compact format for localStorage ✅
-  - [x] Metadata extraction from action history ✅
-- [x] **Integration with DraftService** ✅ COMPLETE:
-  - [x] Storage injected into service constructor ✅
-  - [x] Save/load methods updated ✅
-  - [x] Draft list and delete operations ✅
-
-### Phase 6: Testing & Validation
-- [ ] **Service layer tests**
-  - [ ] Test draft logic independently of UI
-  - [ ] Mock storage layer for unit tests
-  - [ ] Test all state transitions
-- [ ] **Integration tests**
-  - [ ] Test UI → Service → Storage flow
-  - [ ] Verify navigation works correctly
-  - [ ] Test bot picking and pack passing
-
-## Technical Considerations
-
-### Action-Based Architecture
-```typescript
-// Named actions with parameters (like Redux)
-type DraftAction = 
-  | { type: 'CREATE_DRAFT', setData: MTGSetData }
-  | { type: 'START_DRAFT' }
-  | { type: 'HUMAN_PICK', cardId: string }
-  | { type: 'BOT_PICK', playerId: string, cardId: string }
-  | { type: 'PASS_PACKS' }
-  | { type: 'START_ROUND', round: number }
-  | { type: 'COMPLETE_DRAFT' };
-
-// State = seed + action history
-interface DraftState {
-  seed: string;
-  actionHistory: DraftAction[];
-  // Current state fields (derived from replaying actions)
-  round: number;
-  pick: number;
-  players: Player[];
-  status: 'setup' | 'active' | 'complete';
-}
-
-// Apply action to state (pure function)
-function applyAction(state: DraftState, action: DraftAction): DraftState {
-  switch (action.type) {
-    case 'HUMAN_PICK':
-      // Remove card from pack, add to picks, etc.
-      return { ...state, /* updated fields */ };
-    case 'BOT_PICK':
-      // Bot picks from their pack
-      return { ...state, /* updated fields */ };
-    case 'PASS_PACKS':
-      // Pass packs in current direction
-      return { ...state, /* updated fields */ };
-    // ... other actions
-  }
-}
-
-// Service applies actions and manages history
-export class DraftService {
-  constructor(private storage: DraftStorage) {}
-  
-  makeHumanPick(draftId: string, cardId: string): DraftState {
-    const draft = this.storage.load(draftId);
-    if (!draft) throw new Error('Draft not found');
-    
-    // Create actions for the complete pick sequence
-    const actions: DraftAction[] = [
-      { type: 'HUMAN_PICK', cardId },
-      ...this.createBotPickActions(draft),  // All bots pick
-      { type: 'PASS_PACKS' },
-      // Check if round complete, etc.
-    ];
-    
-    // Add to history and replay from beginning
-    const newHistory = [...draft.actionHistory, ...actions];
-    const newState = this.replayFromSeed(draft.seed, newHistory);
-    
-    this.storage.save(newState);
-    return newState;
-  }
-  
-  navigateToPosition(seed: string, round: number, pick: number): DraftState {
-    const draft = this.storage.load(seed);
-    if (!draft) throw new Error('Draft not found');
-    
-    // Calculate how many actions to apply
-    const targetPosition = (round - 1) * 15 + pick;
-    const actionsToApply = this.getActionsUpToPosition(draft.actionHistory, targetPosition);
-    
-    return this.replayFromSeed(seed, actionsToApply);
-  }
-    
-    // Process bots
-    const withBotPicks = this.processBotPicks(withHumanPick);
-    
-    // Pass packs  
-    const withPackPassing = this.passPacks(withBotPicks);
-    
-    // Advance position
-    const finalState = this.advancePosition(withPackPassing);
-    
-    // Save and return
-    this.storage.save(finalState);
-    return finalState;
-  }
-}
+## Existing Route Structure (Preserved)
+```
+/                           -> index.astro
+/draft                      -> draft.astro (DraftListPage)
+/draft/new                  -> draft/new.astro
+/draft/{draftId}            -> draft/[...path].astro (SimpleDraftRouter)
+/draft/{draftId}/p{r}p{p}   -> draft/[...path].astro (SimpleDraftRouter)
 ```
 
-### Storage Interface
-```typescript
-interface DraftStorage {
-  save(draft: DraftState): void;  // Saves seed + action history
-  load(id: string): DraftState | null;
-  list(): DraftMetadata[];
-  delete(id: string): boolean;
-}
+## Key Design Principles
 
-// Storage format (minimal):
-interface StoredDraft {
-  seed: string;
-  actions: SerializedAction[];  // Much smaller than full state
-  metadata: { created: number; set: string; };
-}
+### 1. **Pure Engine Isolation**
+- Draft engine has ZERO dependencies
+- No UI concerns, no persistence logic
+- Perfect testability and determinism
+
+### 2. **Storage as Bridge**
+- Storage module is the ONLY bridge between engine and UI
+- Handles all persistence (localStorage, URL, future DB)
+- UI never directly touches engine
+
+### 3. **UI State Independence**
+- Nanostores manage UI-specific state (loading, errors, selections)
+- localStorage persistence for UI preferences
+- Syncs with engine via storage module for truth
+
+### 4. **Event Sourcing**
+- All draft changes go through actions
+- Perfect replay capability from action history
+- URL navigation works by replaying actions to position
+
+## Implementation Order
+
+### Step 1: Draft Engine
+1. Create `src/engine/DraftEngine.ts` with core state machine
+2. Add `src/engine/actions.ts` with all action types
+3. Build `src/engine/seededRandom.ts` for deterministic pack generation
+4. Test engine in isolation - prove determinism
+
+### Step 2: Storage Module  
+1. Create `src/storage/StorageModule.ts` interface
+2. Implement `src/storage/LocalStorageBackend.ts`
+3. Add `src/storage/URLStateSync.ts` for route integration
+4. Test persistence and URL sync
+
+### Step 3: UI Layer
+1. Create `src/stores/draftStore.ts` with nanostores
+2. Build `src/components/SimpleDraftRouter.tsx` (route handler)
+3. Add `src/components/DraftInterface.tsx` (main draft UI)
+4. Implement card display and interaction components
+
+## File Structure (Target)
 ```
-
-### URL Management & Browser History
-```typescript
-// Hard navigation - each pick creates new browser history entry
-function navigateToPosition(state: DraftState) {
-  const url = `/draft/${state.seed}/p${state.round}p${state.pick}`;
-  
-  // Use window.location.href for hard navigation
-  // This creates browser history entries for back/forward
-  window.location.href = url;
-}
-
-// Example flow:
-// User at p1p1 → makes pick → hard navigate to p1p2
-// Browser back button → returns to p1p1 (immutable state)
-// Browser forward → returns to p1p2
+src/
+├── engine/                 # Pure draft logic (no dependencies)
+│   ├── DraftEngine.ts      # Core state machine
+│   ├── actions.ts          # Action types and creators
+│   ├── seededRandom.ts     # Deterministic randomization
+│   └── packGenerator.ts    # Seeded pack creation
+│
+├── storage/                # Persistence interface layer
+│   ├── StorageModule.ts    # Abstract interface
+│   ├── LocalStorageBackend.ts # Browser storage
+│   └── URLStateSync.ts     # Route synchronization
+│
+├── stores/                 # UI state (nanostores)
+│   ├── draftStore.ts       # Main draft UI state
+│   └── uiStore.ts          # UI-specific state (loading, etc.)
+│
+├── components/             # React UI components
+│   ├── SimpleDraftRouter.tsx # Route handling
+│   ├── DraftInterface.tsx  # Main draft interface
+│   ├── PackDisplay.tsx     # Pack and card grid
+│   └── Card.tsx            # Individual card component
+│
+└── pages/                  # Astro pages (preserved)
+    ├── index.astro         # Home page
+    ├── draft.astro         # Draft list
+    └── draft/[...path].astro # Dynamic routes
 ```
-
-**Browser History Behavior:**
-- Each pick creates new URL in browser history
-- Back/Forward buttons navigate through pick states
-- Each position shows immutable historical state
-- Perfect for reviewing draft decisions
-
-## Benefits of This Architecture
-
-### Testability
-- Can test draft logic without UI
-- Mock storage for isolated tests
-- Clear input/output for each method
-
-### Maintainability  
-- Single place for all draft logic
-- UI components are simple and predictable
-- Easy to understand data flow
-
-### Debuggability
-- All state changes go through service
-- Can log every transition
-- Clear separation of concerns
-
-### Performance
-- No complex replay logic in UI
-- Service can optimize state transitions
-- Storage layer can implement caching
 
 ## Success Criteria
-- [ ] Navigation works reliably (p1p1 → p1p2 after pick)
-- [ ] Bots pick from their pack and pack sizes decrease  
-- [ ] Browser back/forward shows immutable history
-- [ ] URL always reflects current position
-- [ ] Components have simple, predictable methods
-- [ ] Draft logic is easily testable
-- [ ] Action history is readable and debuggable
-- [ ] Single source of truth for draft state
 
-## Migration Strategy
-4. **Remove old code** once all components converted
-5. **No data migration needed** - fresh start approach
+### Engine Layer ✅
+- [ ] Engine tests pass: deterministic state transitions
+- [ ] Action replay works: same inputs → same outputs  
+- [ ] Pack generation is seeded: reproducible drafts
+- [ ] Zero dependencies: pure functions only
 
----
+### Storage Layer ✅
+- [ ] LocalStorage persistence works
+- [ ] URL state bidirectional sync
+- [ ] Engine ↔ Storage ↔ UI data flow
+- [ ] State serialization efficient
 
-*This refactor will make the draft system reliable, testable, and maintainable by properly separating UI concerns from business logic.*
+### UI Layer ✅
+- [ ] Nanostores reactive updates
+- [ ] All existing routes work
+- [ ] Card interaction smooth
+- [ ] Draft navigation functional
+
+## Current State
+**Starting fresh with clean architecture.**
+All previous mixed-architecture code removed.
+Ready to implement pure three-layer separation.
+
+## Next Steps
+1. Create draft engine with event sourcing
+2. Implement storage module interface
+3. Build nanostores UI layer
+4. Connect to existing Astro routes
