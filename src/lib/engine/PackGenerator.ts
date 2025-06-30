@@ -7,6 +7,32 @@
 
 import { SeededRandom } from './seededRandom';
 
+export interface CardImageUris {
+  small?: string;
+  normal?: string;
+  large?: string;
+  png?: string;
+  art_crop?: string;
+  border_crop?: string;
+}
+
+export interface CardFace {
+  object: 'card_face';
+  name: string;
+  mana_cost?: string;
+  type_line?: string;
+  oracle_text?: string;
+  colors?: string[];
+  color_indicator?: string[];
+  power?: string;
+  toughness?: string;
+  loyalty?: string;
+  artist?: string;
+  artist_id?: string;
+  illustration_id?: string;
+  image_uris?: CardImageUris;
+}
+
 export interface Card {
   id: string;
   name: string;
@@ -15,6 +41,16 @@ export interface Card {
   manaCost?: string;
   type?: string;
   colors?: string[];
+  // Image support
+  image_uris?: CardImageUris;
+  // Dual-sided card support
+  layout?: string;
+  card_faces?: CardFace[];
+  // Additional fields
+  oracle_text?: string;
+  power?: string;
+  toughness?: string;
+  cmc?: number;
 }
 
 export interface SetData {

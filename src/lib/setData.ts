@@ -12,6 +12,30 @@ import dtkData from '../../data/raw/cards/dtk_cards.json';
 /**
  * TypeScript interfaces for Scryfall API data format
  */
+export interface ScryfallCardFace {
+  object: 'card_face';
+  name: string;
+  mana_cost?: string;
+  type_line?: string;
+  oracle_text?: string;
+  colors?: string[];
+  color_indicator?: string[];
+  power?: string;
+  toughness?: string;
+  loyalty?: string;
+  artist?: string;
+  artist_id?: string;
+  illustration_id?: string;
+  image_uris?: {
+    small?: string;
+    normal?: string;
+    large?: string;
+    png?: string;
+    art_crop?: string;
+    border_crop?: string;
+  };
+}
+
 export interface ScryfallCard {
   id: string;
   name: string;
@@ -28,7 +52,12 @@ export interface ScryfallCard {
     normal?: string;
     large?: string;
     png?: string;
+    art_crop?: string;
+    border_crop?: string;
   };
+  // Dual-sided card support
+  layout?: string;
+  card_faces?: ScryfallCardFace[];
   // Additional optional fields that might be present
   oracle_text?: string;
   flavor_text?: string;
@@ -108,10 +137,32 @@ export interface SetDataValidation {
 import type { SetData, Card } from './engine/PackGenerator';
 
 /**
+ * Convert Scryfall card face to engine CardFace format
+ */
+function convertScryfallCardFace(scryfallFace: ScryfallCardFace): import('./engine/PackGenerator').CardFace {
+  return {
+    object: 'card_face',
+    name: scryfallFace.name,
+    mana_cost: scryfallFace.mana_cost,
+    type_line: scryfallFace.type_line,
+    oracle_text: scryfallFace.oracle_text,
+    colors: scryfallFace.colors,
+    color_indicator: scryfallFace.color_indicator,
+    power: scryfallFace.power,
+    toughness: scryfallFace.toughness,
+    loyalty: scryfallFace.loyalty,
+    artist: scryfallFace.artist,
+    artist_id: scryfallFace.artist_id,
+    illustration_id: scryfallFace.illustration_id,
+    image_uris: scryfallFace.image_uris,
+  };
+}
+
+/**
  * Convert Scryfall card to engine Card format
  */
 function convertScryfallCard(scryfallCard: ScryfallCard): Card {
-  return {
+  const card: Card = {
     id: scryfallCard.id,
     name: scryfallCard.name,
     setCode: scryfallCard.set.toUpperCase(),
@@ -119,7 +170,36 @@ function convertScryfallCard(scryfallCard: ScryfallCard): Card {
     manaCost: scryfallCard.mana_cost,
     type: scryfallCard.type_line,
     colors: scryfallCard.colors || [],
+    cmc: scryfallCard.cmc,
+    // Preserve image URLs
+    image_uris: scryfallCard.image_uris,
+    // Preserve layout information
+    layout: scryfallCard.layout,
   };
+
+  // Handle dual-sided cards
+  if (scryfallCard.card_faces && scryfallCard.card_faces.length > 0) {
+    card.card_faces = scryfallCard.card_faces.map(convertScryfallCardFace);
+    
+    // For dual-sided cards, use the front face name as the primary name
+    // and get image from the front face if main card doesn't have image_uris
+    const frontFace = scryfallCard.card_faces[0];
+    if (!card.image_uris && frontFace.image_uris) {
+      card.image_uris = frontFace.image_uris;
+    }
+    
+    // Use front face mana cost if main card doesn't have one
+    if (!card.manaCost && frontFace.mana_cost) {
+      card.manaCost = frontFace.mana_cost;
+    }
+    
+    // Use front face colors if main card doesn't have them
+    if ((!card.colors || card.colors.length === 0) && frontFace.colors) {
+      card.colors = frontFace.colors;
+    }
+  }
+
+  return card;
 }
 
 /**
