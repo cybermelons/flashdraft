@@ -8,9 +8,14 @@
 import { atom } from 'nanostores';
 // Types defined locally for now
 interface MTGSetData {
-  set_code: string;
-  name: string;
+  set_code?: string;
+  name?: string;
   cards: any[];
+  // Allow for Scryfall format
+  set_info?: {
+    code: string;
+    name: string;
+  };
 }
 
 // ============================================================================
@@ -71,6 +76,13 @@ export const draftStore = atom<DraftState | null>(null);
 export function createDraft(setData: MTGSetData, humanPlayerId: string = 'human-1'): DraftState {
   const draftId = generateId();
   
+  // Normalize set data to ensure set_code is available
+  const normalizedSetData: MTGSetData = {
+    ...setData,
+    set_code: setData.set_code || setData.set_info?.code || 'UNKNOWN',
+    name: setData.name || setData.set_info?.name || 'Unknown Set',
+  };
+  
   // Create 8 players (1 human + 7 bots)
   const players: DraftPlayer[] = [
     {
@@ -100,7 +112,7 @@ export function createDraft(setData: MTGSetData, humanPlayerId: string = 'human-
     direction: 'clockwise',
     players,
     humanPlayerId,
-    setData,
+    setData: normalizedSetData,
     createdAt: Date.now(),
   };
 }
@@ -333,7 +345,8 @@ function generatePacks(setData: MTGSetData, count: number): Pack[] {
  */
 function generateSinglePack(setData: MTGSetData): DraftCard[] {
   const cards = setData.cards || [];
-  console.log(`[PackGen] Generating pack from ${cards.length} total cards in set ${setData.set_code}`);
+  const setCode = setData.set_code || setData.set_info?.code || 'UNKNOWN';
+  console.log(`[PackGen] Generating pack from ${cards.length} total cards in set ${setCode}`);
   
   // Categorize cards by rarity
   const commons = cards.filter(c => c.rarity === 'common' && c.booster);
@@ -484,7 +497,8 @@ function restoreDraftToPosition(draft: DraftState, targetRound: number, targetPi
 
 export const draftActions = {
   create: (setData: MTGSetData) => {
-    console.log('[DraftStore] Creating draft with set:', setData.set_code, 'Cards:', setData.cards?.length || 0);
+    const setCode = setData.set_code || setData.set_info?.code || 'UNKNOWN';
+    console.log('[DraftStore] Creating draft with set:', setCode, 'Cards:', setData.cards?.length || 0);
     const newDraft = createDraft(setData);
     draftStore.set(newDraft);
     saveDraft(newDraft);
@@ -495,7 +509,8 @@ export const draftActions = {
     const current = draftStore.get();
     if (!current) throw new Error('No draft to start');
     
-    console.log('[DraftStore] Starting draft with set:', current.setData.set_code);
+    const setCode = current.setData.set_code || current.setData.set_info?.code || 'UNKNOWN';
+    console.log('[DraftStore] Starting draft with set:', setCode);
     const started = startDraft(current);
     draftStore.set(started);
     saveDraft(started);
