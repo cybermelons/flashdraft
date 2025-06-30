@@ -57,19 +57,19 @@ class DraftService {
 ## Implementation Checklist
 
 ### Phase 0: Clean Slate
-- [ ] **Delete existing complex code** ⚡ IN PROGRESS
-  - [ ] Remove `seededDraftStore.ts` entirely
-  - [ ] Remove `draftReplayEngine.ts` 
-  - [ ] Remove `StateMachineDraftRouter.tsx`
-  - [ ] Remove `StateMachineDraft.tsx`
-  - [ ] Clean slate - no migration, fresh start
+- [x] **Delete existing complex code** ✅ COMPLETE
+  - [x] Remove `seededDraftStore.ts` entirely ✅
+  - [x] Remove `draftReplayEngine.ts` ✅
+  - [x] Remove `StateMachineDraftRouter.tsx` ✅
+  - [x] Remove `StateMachineDraft.tsx` ✅
+  - [x] Clean slate - no migration, fresh start ✅
 
 ### Phase 1: Create Service Layer with Actions
-- [ ] **Define action types**
-  - [ ] `src/services/types/DraftActions.ts`
-  - [ ] Named action types with parameters
-  - [ ] TypeScript discriminated union for type safety
-- [ ] **Create action applicator**:
+- [x] **Define action types** ✅ COMPLETE
+  - [x] `src/services/types/DraftActions.ts` ✅
+  - [x] Named action types with parameters ✅
+  - [x] TypeScript discriminated union for type safety ✅
+- [ ] **Create action applicator**: ⚡ IN PROGRESS
   - [ ] `src/services/applyAction.ts`
   - [ ] Pure function: `(state, action) => newState`
   - [ ] Handles all action types
