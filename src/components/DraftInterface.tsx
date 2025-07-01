@@ -273,13 +273,10 @@ function DraftInterfaceContent({ routeData }: { routeData: DraftRouteData }) {
     if (!canPick) return;
     
     try {
-      // Engine processes pick and auto-advances
+      // Pick card and process all picks atomically
       await draftActions.pickCard(cardId);
       
-      // Process bot picks after human pick
-      await draftActions.processBotPicks();
-      
-      // No manual advancement needed - engine auto-advances and UI viewing follows
+      // Bot picks are now processed inside pickCard
     } catch (pickError) {
       console.error('Failed to pick card:', pickError);
     }

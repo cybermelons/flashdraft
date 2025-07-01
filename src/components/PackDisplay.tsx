@@ -314,8 +314,16 @@ function sortAndFilterCards(
     return true;
   });
   
-  // Apply sorting
+  // Apply sorting - always sort by rarity first, then by the selected option
   filtered.sort((a, b) => {
+    // First sort by rarity
+    const rarityOrder = { mythic: 4, rare: 3, uncommon: 2, common: 1 };
+    const rarityDiff = (rarityOrder[b.rarity] || 0) - (rarityOrder[a.rarity] || 0);
+    
+    // If rarities are different, return rarity comparison
+    if (rarityDiff !== 0) return rarityDiff;
+    
+    // If rarities are the same, sort by the selected option
     switch (sortBy) {
       case 'name':
         return a.name.localeCompare(b.name);
@@ -331,16 +339,16 @@ function sortAndFilterCards(
         return colorA.localeCompare(colorB);
       
       case 'rarity':
-        const rarityOrder = { common: 0, uncommon: 1, rare: 2, mythic: 3 };
-        return rarityOrder[a.rarity] - rarityOrder[b.rarity];
+        // Already sorted by rarity, so sort by name as secondary
+        return a.name.localeCompare(b.name);
       
       case 'type':
-        const typeA = a.type || '';
-        const typeB = b.type || '';
+        const typeA = a.type_line || '';
+        const typeB = b.type_line || '';
         return typeA.localeCompare(typeB);
       
       default:
-        return 0;
+        return a.name.localeCompare(b.name);
     }
   });
   
