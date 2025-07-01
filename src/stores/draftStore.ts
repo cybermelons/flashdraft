@@ -60,14 +60,16 @@ export const $viewingPosition = computed(
   (round, pick) => ({ round, pick })
 );
 
-// Draft progress state (based on viewing position, not engine progression)
+// Current pack based on whether viewing current or history
 export const $currentPack = computed(
-  [$currentDraft, $viewingRound], 
-  (draft, viewingRound) => {
+  [$currentDraft, $viewingRound, $isViewingCurrent], 
+  (draft, viewingRound, isViewingCurrent) => {
     if (!draft) return null;
     
     const { humanPlayerIndex } = draft;
-    const roundPacks = draft.packs[viewingRound];
+    // Use engine's current round when viewing current, otherwise use viewing round
+    const round = isViewingCurrent ? draft.currentRound : viewingRound;
+    const roundPacks = draft.packs[round];
     return roundPacks?.[humanPlayerIndex] || null;
   }
 );
@@ -316,6 +318,12 @@ export const draftActions = {
       $currentDraft.set(updatedDraft);
       
       // UI viewing follows engine progression to new current position
+      console.log('After human pick:', {
+        engineRound: updatedDraft.currentRound,
+        enginePick: updatedDraft.currentPick,
+        settingViewingRound: updatedDraft.currentRound,
+        settingViewingPick: updatedDraft.currentPick
+      });
       $viewingRound.set(updatedDraft.currentRound);
       $viewingPick.set(updatedDraft.currentPick);
       

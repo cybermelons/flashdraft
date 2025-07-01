@@ -464,6 +464,7 @@ export class DraftEngine {
 
     if (allPlayersHavePicked) {
       // All players have picked - advance to next position
+      console.log('All players have picked, advancing position');
       return this.advanceToNextPosition(draft);
     }
 
