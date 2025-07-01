@@ -14,8 +14,13 @@ Fix critical draft bugs, enhance the draft interface with better loading states 
 ### UI/UX Improvements
 - [ ] Add loading skeletons while fetching draft data (fix "invalid draft url" flash)
 - [ ] Redesign decklist to show cascaded cards with name/mana pips visible
-- [ ] Reduce spacing between cards in pack display layout
+- [ ] Reduce spacing between cards in pack display layout. the cards should be consistently in the same spot no matter the number of cards in the pack. there shouldn't be a morphing of layout as cards decrease. minimal spacing between cards.
 - [ ] Add hover effects showing full card image (like 17lands/MTGA)
+- [ ] remove extra color and hilight effects. 
+- [ ] do not allow selecting other cards in history view. only hover card info. no hover effects on card choice. it should look frozen
+- [ ] disable number display
+- [ ] historyview: cover selected card with overlay with 'selected' and checkmark in the center. it should be very obvious that's the selected card. player can still hover card for info.
+- [ ] expand decklist when first card is added
 
 ### Sideboard Functionality
 - [ ] Add sideboard support to draft engine
