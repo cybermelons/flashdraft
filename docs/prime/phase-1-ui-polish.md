@@ -1,5 +1,17 @@
 # Phase 1: Draft UI Polish & Loading States ✅ COMPLETE
 
+<issue>
+  /draft/ route
+  overview of finished draft should show decklist, otherwise redirect to 
+  current pick.
+</issue>
+
+
+<issue>
+  card image should take up the side the cursor is not on. and card image should take up most of the vertical space. right now there's padding at top and bottom.
+  
+</issue>
+
 <card-hover-issues>
   <issue>
     make card hover stay still while mousing over the same card.
