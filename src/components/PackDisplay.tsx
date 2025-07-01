@@ -209,7 +209,7 @@ export function PackDisplay({ pack, onCardPick, canPick, className = '' }: PackD
         >
         {displayCards.map((card, index) => {
           const isPicked = pickedCardId === card.id;
-          const showPickNumber = !isViewingHistory && index < 9;
+          const showPickNumber = false; // Numbers disabled per requirement
           
           return (
             <div 

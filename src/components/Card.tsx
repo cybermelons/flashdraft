@@ -116,12 +116,6 @@ export function Card({
       role={canInteract ? 'button' : 'img'}
       aria-label={`${displayCard.name} - ${displayCard.type_line || card.type} - ${card.rarity}`}
     >
-      {/* Quick pick number indicator - simplified */}
-      {quickPickNumber && (
-        <div className="absolute -top-1 -left-1 w-5 h-5 bg-slate-700 text-white rounded-full flex items-center justify-center text-xs font-bold z-30">
-          {quickPickNumber}
-        </div>
-      )}
 
       {/* Dual-sided card flip button */}
       {isDualSided && (
