@@ -150,16 +150,17 @@ export function DraftSidebar({ className = '' }: DraftSidebarProps) {
               />
               <div className="space-y-2">
                 <div className="font-bold text-white text-lg">{selectedCard.name}</div>
-                {selectedCard.manaCost && (
+                {selectedCard.mana_cost && (
                   <div className="bg-slate-600/50 text-slate-200 px-3 py-1 rounded-lg text-sm font-mono">
-                    {selectedCard.manaCost}
+                    {selectedCard.mana_cost}
                   </div>
                 )}
-                <div className="text-slate-300">{selectedCard.type}</div>
+                <div className="text-slate-300">{selectedCard.type_line || 'Unknown Type'}</div>
                 <div className={`inline-block px-2 py-1 rounded-full text-xs font-semibold ${
                   selectedCard.rarity === 'common' ? 'bg-gray-500/20 text-gray-300' :
                   selectedCard.rarity === 'uncommon' ? 'bg-green-500/20 text-green-300' :
                   selectedCard.rarity === 'rare' ? 'bg-yellow-500/20 text-yellow-300' :
+                  selectedCard.rarity === 'mythic' ? 'bg-orange-500/20 text-orange-300' :
                   'bg-red-500/20 text-red-300'
                 }`}>
                   {selectedCard.rarity}

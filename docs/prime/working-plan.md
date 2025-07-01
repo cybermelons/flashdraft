@@ -1,6 +1,6 @@
 # Development Plan: Fix URL Format and UI Improvements
 
-## Progress: 12/17 tasks complete (71%)
+## Progress: 16/17 tasks complete (94%)
 
 ## Overview
 Fix navigation issues and enhance the draft UI to show proper card information instead of IDs. This involves creating a proper card lookup system and standardizing navigation patterns across the application.
@@ -32,7 +32,7 @@ Fix navigation issues and enhance the draft UI to show proper card information i
 - [x] Fix overview and all drafts navigation
   - Ensure navigateToOverview works properly
   - Ensure navigateToDraftList changes the actual page
-- [ ] Add URL update when draft position changes
+- [x] Add URL update when draft position changes
 - [ ] Test browser back/forward navigation
 
 ### Phase 3: Deck Display Enhancements
@@ -54,8 +54,8 @@ Fix navigation issues and enhance the draft UI to show proper card information i
 
 ### Phase 4: Pack Display Improvements
 - [x] Sort pack cards by rarity when displaying
-- [ ] Add visual rarity indicators (color coding)
-- [ ] Ensure consistent card display between pack and deck
+- [x] Add visual rarity indicators (color coding)
+- [x] Ensure consistent card display between pack and deck
 
 ## Technical Considerations
 
@@ -88,12 +88,12 @@ cards.sort((a, b) => {
 ```
 
 ## Success Criteria
-- [ ] URLs are clean without '/viewing/' segment
-- [ ] Navigation works consistently across all actions
-- [ ] Deck shows card names, not IDs
-- [ ] Cards are sorted by rarity
-- [ ] Deck statistics show accurate counts
-- [ ] Mana curve visualization displays correctly
+- [x] URLs are clean without '/viewing/' segment
+- [x] Navigation works consistently across all actions
+- [x] Deck shows card names, not IDs
+- [x] Cards are sorted by rarity
+- [x] Deck statistics show accurate counts
+- [x] Mana curve visualization displays correctly
 - [ ] No performance degradation with card lookups
 - [ ] Browser navigation (back/forward) works properly
 
