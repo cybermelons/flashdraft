@@ -60,6 +60,21 @@ export const $viewingPosition = computed(
   (round, pick) => ({ round, pick })
 );
 
+// Get historical state at viewing position
+export const $viewingDraftState = computed(
+  [$currentDraft, $viewingRound, $viewingPick], 
+  (draft, viewingRound, viewingPick) => {
+    if (!draft) return null;
+    
+    // Use engine's replay functionality to get historical state
+    try {
+      return draftEngine.replayToPosition(draft.draftId, viewingRound, viewingPick);
+    } catch (error) {
+      return draft; // Fallback to current state
+    }
+  }
+);
+
 // Current pack based on viewing position
 export const $currentPack = computed(
   [$viewingDraftState, $viewingRound, $viewingPick], 
@@ -73,21 +88,6 @@ export const $currentPack = computed(
     // This means showing the state as it was at the START of that pick
     const roundPacks = viewingState.packs[viewingRound];
     return roundPacks?.[humanPlayerIndex] || null;
-  }
-);
-
-// Get historical state at viewing position
-export const $viewingDraftState = computed(
-  [$currentDraft, $viewingRound, $viewingPick], 
-  (draft, viewingRound, viewingPick) => {
-    if (!draft) return null;
-    
-    // Use engine's replay functionality to get historical state
-    try {
-      return draftEngine.replayToPosition(draft.draftId, viewingRound, viewingPick);
-    } catch (error) {
-      return draft; // Fallback to current state
-    }
   }
 );
 
