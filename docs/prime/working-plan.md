@@ -1,38 +1,126 @@
-# issues
+# Development Plan: Draft UI Improvements & MTG Goldfishing Mat
 
-- invalid draft url while loading draft data. put correspondingly sized skeletons while loading.
+## Overview
+Fix critical draft bugs, enhance the draft interface with better loading states and improved card display, add sideboard functionality, then build a goldfishing testmat for rapid deck testing without rules enforcement.
 
-- for decklist show cards, just the top part with the name and pips. cascade them. 
-- don't put that much space between cards for pick layout.
-- at bottom of decklist, put sideboard beneath. clicking on decklist puts it in sideboard and vice versa
-- put sideboard in engine
-- add hover effects like in 17lands or mtga, just the card image 
+## Critical Bugs to Fix First
 
+### Dual-Faced Card Issue
+- [ ] Fix pack generation to only include front faces of dual-faced cards
+- [ ] See detailed plan: [Phase 0 - DFC Fix](./phase-0-dfc-fix.md)
 
-# next
+## Current Issues to Fix
 
-mtg goldfishing mat.
+### UI/UX Improvements
+- [ ] Add loading skeletons while fetching draft data (fix "invalid draft url" flash)
+- [ ] Redesign decklist to show cascaded cards with name/mana pips visible
+- [ ] Reduce spacing between cards in pack display layout
+- [ ] Add hover effects showing full card image (like 17lands/MTGA)
 
-quick swithc between quickplay and decklist.
+### Sideboard Functionality
+- [ ] Add sideboard support to draft engine
+- [ ] Create sideboard UI at bottom of decklist
+- [ ] Enable click to move cards between deck and sideboard
+- [ ] Persist sideboard state with draft
 
-available cards in in main container,
-decklist columns. click to add to sideboard. hold to drag into column.
-side container - sideboard cards.
-click sideboard to add to deck.
+## New Feature: MTG Goldfishing Mat
 
-on decklist, a play button link that goes to the testmat.
+### Core Concept
+A rules-free testing environment for rapid deck iteration. No mechanics enforcement - just visual board state manipulation for learning and testing.
 
-## testmat
+### Key Features
+- Quick switch between draft/deckbuilding and testmat
+- Load deck against random 17lands average deck
+- Hide/show opponent's hand
+- Board manipulation tools (counters, markers, tapping)
+- Instant restart with same or new opponent deck
 
-puts deck into a simple test playmat against a random 17lands average deck.
-you can click to hide opponents hand.
+## Implementation Phases
 
-quick restart against either new deck or same deck.
+### Phase 0: Critical Bug Fixes (PRIORITY)
+- [ ] Fix dual-faced card pack generation
+- [ ] Detailed plan: [phase-0-dfc-fix.md](./phase-0-dfc-fix.md)
 
-just modify board to your choosing. as testmat
-board doesn't do game mechanics. just has cnounters and markers, tapping, deck.
+### Phase 1: Draft UI Polish & Loading States
+- [ ] Implement loading skeletons for draft data fetch
+- [ ] Fix "invalid draft url" flash by showing skeleton during route validation
+- [ ] Add proper error boundaries with user-friendly messages
 
+### Phase 2: Enhanced Card Display
+- [ ] Redesign decklist card display (cascade view)
+- [ ] Tighten pack display spacing
+- [ ] Implement hover card preview
 
+### Phase 3: Sideboard Implementation
+- [ ] Engine support for sideboard
+- [ ] UI Components for deck/sideboard management
+- [ ] Validation and persistence
 
-## quickswitch
-quick switch between testmat and game. 
+### Phase 4: Testmat Foundation
+- [ ] Create new route `/testmat/[draftId]`
+- [ ] Design board layout with zones
+- [ ] Card rendering and basic controls
+
+### Phase 5: Testmat Game Flow
+- [ ] Deck loading from draft
+- [ ] Hand management and mulligan
+- [ ] Quick restart system
+
+### Phase 6: Quick Switch Integration
+- [ ] Add "Play" button to decklist
+- [ ] Navigation between modes
+- [ ] State persistence
+
+### Phase 7: Board Manipulation Tools
+- [ ] Counter system
+- [ ] Token support
+- [ ] Life tracking
+
+### Phase 8: Testing & Polish
+- [ ] Comprehensive testing
+- [ ] Mobile optimization
+- [ ] Keyboard shortcuts
+
+## Technical Architecture
+
+### Data Flow
+```
+Set Data → Pack Generation (front faces only) → Draft Engine → Deck + Sideboard → Testmat → Game State
+    ↓                                              ↓                                         ↓
+ Filtering                                     Storage                                   Storage
+```
+
+### Component Structure
+```
+DraftInterface
+├── PackDisplay (with tighter spacing)
+├── DraftSidebar
+│   ├── Decklist (cascaded view)
+│   └── Sideboard (new)
+└── HoverCardPreview (new, handles dual-faced)
+
+TestmatInterface (new)
+├── Board
+│   ├── PlayerZones
+│   ├── OpponentZones
+│   └── SharedZones
+├── Controls
+└── QuickSwitch
+```
+
+## Success Criteria
+- [ ] Dual-faced cards draft correctly (only front faces in packs)
+- [ ] Loading states prevent "invalid url" flashes
+- [ ] Decklist shows cards clearly in compact cascade
+- [ ] Sideboard functionality works seamlessly
+- [ ] Hover previews enhance card selection
+- [ ] Testmat loads quickly from draft
+- [ ] Board manipulation feels responsive
+- [ ] Quick switch maintains context
+- [ ] Mobile experience is smooth
+
+## Notes
+- Phase 0 is CRITICAL - dual-faced card bug breaks draft integrity
+- Each phase will get detailed planning document when we start it
+- Testmat is explicitly not a rules engine - it's a digital playmat
+- Focus on speed and ease of use over feature completeness
