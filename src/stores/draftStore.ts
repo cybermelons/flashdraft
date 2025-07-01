@@ -85,7 +85,17 @@ export const $currentPack = computed(
     
     const { humanPlayerIndex } = draft;
     const roundPacks = draft.packs[viewingRound];
-    return roundPacks?.[humanPlayerIndex] || null;
+    const pack = roundPacks?.[humanPlayerIndex] || null;
+    
+    console.log('$currentPack computed:', {
+      isViewingCurrent,
+      viewingRound,
+      currentRound: draft.currentRound,
+      currentPick: draft.currentPick,
+      packCards: pack?.cards.length || 0
+    });
+    
+    return pack;
   }
 );
 
@@ -379,6 +389,11 @@ export const draftActions = {
       $currentDraft.set(currentState);
       
       // Update viewing position to match engine
+      console.log('Setting viewing position:', {
+        round: currentState.currentRound,
+        pick: currentState.currentPick,
+        humanPackCards: currentState.packs[currentState.currentRound]?.[0]?.cards.length
+      });
       $viewingRound.set(currentState.currentRound);
       $viewingPick.set(currentState.currentPick);
       
