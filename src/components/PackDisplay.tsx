@@ -18,7 +18,9 @@ import {
   $packViewMode, 
   $sortBy, 
   $cardDisplaySize,
-  $filterBy 
+  $filterBy,
+  $quickPickMode,
+  uiActions as uiStoreActions
 } from '@/stores/uiStore';
 import type { BoosterPack, Card } from '@/lib/engine/PackGenerator';
 import { Card as CardComponent } from './Card';
@@ -44,7 +46,7 @@ export function PackDisplay({ pack, onCardPick, canPick, className = '' }: PackD
   const cardDisplaySize = useStore($cardDisplaySize);
   const filterBy = useStore($filterBy);
   
-  const [quickPickMode, setQuickPickMode] = useState(false);
+  const quickPickMode = useStore($quickPickMode);
 
   // Sort and filter cards
   const displayCards = sortAndFilterCards(pack.cards, sortBy, filterBy);
@@ -162,7 +164,7 @@ export function PackDisplay({ pack, onCardPick, canPick, className = '' }: PackD
           {!isViewingHistory && (
             <div className="flex items-center gap-3">
               <button
-                onClick={() => setQuickPickMode(!quickPickMode)}
+                onClick={() => uiStoreActions.toggleQuickPickMode()}
                 className={`px-4 py-2 rounded-xl font-medium transition-colors ${
                   quickPickMode 
                     ? 'bg-blue-600 hover:bg-blue-500 text-white' 
@@ -241,11 +243,9 @@ export function PackDisplay({ pack, onCardPick, canPick, className = '' }: PackD
                 onClick={() => handleCardClick(card)}
                 onMouseEnter={() => !isViewingHistory && handleCardHover(card)}
                 onMouseLeave={() => !isViewingHistory && handleCardHover(null)}
-                className={`transition-all duration-200 ${
+                className={`${
                   !isViewingHistory && selectedCard?.id === card.id 
-                    ? 'ring-2 ring-blue-500 ring-offset-2 ring-offset-slate-900 scale-105' 
-                    : !isViewingHistory 
-                    ? 'hover:scale-105 hover:shadow-xl'
+                    ? 'ring-2 ring-blue-500 ring-offset-2 ring-offset-slate-900' 
                     : ''
                 } ${
                   isViewingHistory ? 'cursor-default' : ''

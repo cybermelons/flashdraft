@@ -49,7 +49,7 @@ export const $connectionStatus = atom<'online' | 'offline'>('online');
 
 // Modal and overlay states
 export const $activeModal = atom<string | null>(null);
-export const $sidebarOpen = atom<boolean>(false);
+export const $sidebarOpen = atom<boolean>(true); // Default to open
 export const $cardDetailsOpen = atom<boolean>(false);
 
 // Navigation and routing
@@ -59,6 +59,7 @@ export const $navigationHistory = atom<string[]>([]);
 // Draft-specific UI state
 export const $packViewMode = atom<'spread' | 'compact' | 'list'>('spread');
 export const $sortBy = atom<'cmc' | 'color' | 'rarity' | 'name' | 'type'>('cmc');
+export const $quickPickMode = atom<boolean>(false);
 export const $filterBy = atom<{
   colors: string[];
   types: string[];
@@ -261,6 +262,20 @@ export const uiActions = {
   },
 
   /**
+   * Toggle quick pick mode
+   */
+  toggleQuickPickMode(): void {
+    $quickPickMode.set(!$quickPickMode.get());
+  },
+
+  /**
+   * Set quick pick mode
+   */
+  setQuickPickMode(enabled: boolean): void {
+    $quickPickMode.set(enabled);
+  },
+
+  /**
    * Reset all UI state to defaults
    */
   resetToDefaults(): void {
@@ -290,7 +305,7 @@ export const uiActions = {
     });
     
     $activeModal.set(null);
-    $sidebarOpen.set(false);
+    $sidebarOpen.set(true); // Default to open
     $cardDetailsOpen.set(false);
     $keyboardShortcutsEnabled.set(true);
   }
