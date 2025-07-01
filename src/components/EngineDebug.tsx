@@ -6,6 +6,7 @@
  */
 
 import { useStore } from '@nanostores/react';
+import { useState } from 'react';
 import { 
   $currentDraft,
   $viewingPosition,
@@ -15,6 +16,7 @@ import {
 } from '@/stores/draftStore';
 
 export function EngineDebug() {
+  const [isMinimized, setIsMinimized] = useState(false);
   const currentDraft = useStore($currentDraft);
   const viewingPosition = useStore($viewingPosition);
   const isViewingCurrent = useStore($isViewingCurrent);
@@ -30,10 +32,23 @@ export function EngineDebug() {
   const humanDeckSize = engineState.playerDecks[engineState.humanPlayerIndex]?.length || 0;
 
   return (
-    <div className="fixed bottom-4 right-4 bg-black/90 text-white p-4 rounded-lg shadow-xl font-mono text-xs max-w-sm">
-      <div className="text-green-400 font-bold mb-2">🔧 Engine Debug</div>
+    <div className={`fixed bottom-4 left-4 bg-black/90 text-white rounded-lg shadow-xl font-mono text-xs transition-all duration-200 ${
+      isMinimized ? 'w-auto' : 'w-80'
+    }`}>
+      <div className="flex items-center justify-between p-3 border-b border-gray-700">
+        <div className="text-green-400 font-bold">🔧 Engine Debug</div>
+        <button
+          onClick={() => setIsMinimized(!isMinimized)}
+          className="text-gray-400 hover:text-white ml-4"
+        >
+          <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d={isMinimized ? "M12 6v6m0 0v6m0-6h6m-6 0H6" : "M20 12H4"}></path>
+          </svg>
+        </button>
+      </div>
       
-      <div className="space-y-1">
+      {!isMinimized && (
+        <div className="p-3 space-y-1">
         <div className="flex justify-between">
           <span className="text-gray-400">Engine Position:</span>
           <span className="text-yellow-400">P{engineState.currentRound}P{engineState.currentPick}</span>
@@ -95,6 +110,8 @@ export function EngineDebug() {
       <div className="mt-2 pt-2 border-t border-gray-700 text-[10px] text-gray-500">
         URL controls viewing only. Engine state is immutable.
       </div>
+        </div>
+      )}
     </div>
   );
 }

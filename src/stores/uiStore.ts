@@ -49,7 +49,7 @@ export const $connectionStatus = atom<'online' | 'offline'>('online');
 
 // Modal and overlay states
 export const $activeModal = atom<string | null>(null);
-export const $sidebarOpen = atom<boolean>(true); // Default to open
+export const $sidebarOpen = atom<boolean>(false); // Default to closed
 export const $cardDetailsOpen = atom<boolean>(false);
 
 // Navigation and routing
