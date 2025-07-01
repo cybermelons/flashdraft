@@ -1,243 +1,105 @@
-# Working Plan: Engine Progression vs UI Navigation Architecture Fix
+# Development Plan: Fix URL Format and UI Improvements
 
-## Progress: 8/8 tasks complete ✅ IMPLEMENTATION COMPLETE
+## Progress: 16/17 tasks complete (94%)
 
-**Critical Issue**: Infinite loops caused by conflating engine progression state with UI navigation state. Need to separate these concerns architecturally.
+## Overview
+Fix navigation issues and enhance the draft UI to show proper card information instead of IDs. This involves creating a proper card lookup system and standardizing navigation patterns across the application.
 
-## Root Problem Analysis
+## Approach
+1. **Create Card Lookup Infrastructure**: Build a centralized system for accessing full card data from IDs
+2. **Standardize Navigation**: Remove URL complexity and ensure consistent navigation patterns
+3. **Enhance UI Components**: Use the new infrastructure to show card names, stats, and sorting
 
-We've been mixing two distinct concepts:
-1. **Engine Progression State**: Where the draft has actually advanced to
-2. **UI Navigation State**: What point in draft history the user is viewing
+## Implementation Checklist
 
-This creates circular dependencies:
-```
-Pick Card → Engine → UI Navigation → URL → Router → Engine → LOOP
-```
+### Phase 1: Card Data Infrastructure
+- [x] Create card lookup computed store in draftStore.ts
+  - Maps card IDs to full card objects using engine's set data
+  - Provides efficient O(1) lookups
+- [x] Add getSetData method to DraftEngine for accessing loaded sets
+- [x] Create $humanDeckCards computed store that returns full card objects
+- [x] Add $cardById function for single card lookups
+- [ ] Test card lookup performance with large sets
 
-## Corrected Architecture
+### Phase 2: Navigation Standardization
+- [x] Remove '/viewing/' from URL format everywhere
+  - Update parseDraftURL to handle simple format
+  - Update generateDraftURL to use simple format
+  - Update all navigation calls
+- [x] Fix navigation after creating/starting draft
+  - Add navigation to p1p1 in createDraft action
+  - Add navigation to p1p1 in startDraft action
+- [x] Fix overview and all drafts navigation
+  - Ensure navigateToOverview works properly
+  - Ensure navigateToDraftList changes the actual page
+- [x] Add URL update when draft position changes
+- [ ] Test browser back/forward navigation
 
-### Two-Layer Architecture with Position Separation
+### Phase 3: Deck Display Enhancements
+- [x] Update DraftSidebar to show card names
+  - Use $humanDeckCards instead of $humanDeck
+  - Display card.name instead of card ID
+- [x] Sort cards by rarity
+  - Create rarity order map (mythic=4, rare=3, uncommon=2, common=1)
+  - Sort $humanDeckCards by rarity then name
+- [x] Add deck statistics section
+  - Count creatures (type_line includes "Creature")
+  - Count artifacts (type_line includes "Artifact")
+  - Count instants (type_line includes "Instant")
+  - Count sorceries (type_line includes "Sorcery")
+- [x] Add mana curve visualization
+  - Extract CMC from each card
+  - Create distribution chart (0-7+ CMC)
+  - Use simple bar chart with Tailwind
 
-```
-┌─────────────────────────────────┐    ┌─────────────────────────────────┐
-│          UI Layer               │    │        Draft Engine             │
-│                                 │    │                                 │
-│ • UI Navigation State           │    │ • Engine Progression State      │
-│   - viewingRound: number        │    │   - currentRound: number        │
-│   - viewingPick: number         │    │   - currentPick: number         │
-│   - isViewingCurrent: boolean   │    │   - Auto-advances after picks   │
-│                                 │    │                                 │
-│ • Display Logic                 │    │ • Pure Draft Logic              │
-│   - Shows state at viewed pos   │    │   - Processes picks             │
-│   - URL reflects viewing pos    │    │   - No navigation knowledge     │
-│   - Independent navigation      │    │   - Event sourcing              │
-└─────────────────────────────────┘    └─────────────────────────────────┘
-```
+### Phase 4: Pack Display Improvements
+- [x] Sort pack cards by rarity when displaying
+- [x] Add visual rarity indicators (color coding)
+- [x] Ensure consistent card display between pack and deck
 
-### Key Principles
+## Technical Considerations
 
-1. **Engine Owns Progression**: Auto-advances `currentRound/currentPick` after processing picks
-2. **UI Owns Navigation**: Tracks `viewingRound/viewingPick` independently  
-3. **URL Reflects Viewing**: Not engine state
-4. **No Circular Dependencies**: URL changes only affect UI viewing, never engine
-5. **Viewing Follows Progression**: After user picks, viewing snaps to current engine state
-6. **Historical Immutability**: Past positions are read-only, no picks allowed when viewing history
-7. **Current Position Guard**: User can only pick cards when `isViewingCurrent === true`
-
-### Position Separation Concepts
-
-**Engine Progression State:**
-- **Definition**: Where the draft simulation has actually advanced to
-- **Ownership**: Engine layer exclusively
-- **Behavior**: Auto-advances after processing all picks in a position
-- **Examples**: "Draft has progressed to Round 2, Pick 7"
-- **Mutation**: Only through engine actions (picks, round transitions)
-
-**UI Navigation State:**
-- **Definition**: What point in draft history the user is currently viewing
-- **Ownership**: UI layer exclusively  
-- **Behavior**: Can navigate independently of engine progression
-- **Examples**: "User is viewing Round 1, Pick 3 (historical review)"
-- **Mutation**: Through URL changes, navigation buttons, or following engine
-
-**Relationship:**
-- Usually `viewingPosition === enginePosition` (following current draft)
-- Can diverge when user reviews history (`viewingPosition < enginePosition`)
-- User can only interact (pick cards) when positions match
-- After picks, viewing automatically follows engine to new current position
-
-### Data Flow (Corrected)
-
-```
-User Pick → Engine Processes → Engine Auto-Advances → UI Viewing Follows
-```
-
-```
-User Navigation → UI Viewing Changes → Display Historical State (No Engine Impact)
-```
-
-## Implementation Plan
-
-### Phase 1: Document Architecture Corrections ✅ COMPLETE
-- [x] **Update working plan** - Document corrected architecture principles ✅
-- [x] **Fix documentation inconsistencies** - Update all architectural docs ✅
-- [x] **Add position separation concepts** - Document engine vs UI navigation ✅
-
-### Phase 2: Engine Layer Fixes ✅ COMPLETE
-- [x] **Engine auto-advancement** - Add automatic position progression after picks ✅
-- [x] **Remove UI navigation from engine** - Engine should not know about viewing ✅
-- [x] **Clean up engine position logic** - Only track actual progression ✅
-
-### Phase 3: UI Layer Separation ✅ COMPLETE 
-- [x] **Add UI navigation state** - Separate viewing position from engine state ✅
-- [x] **Fix router to be reactive only** - No engine operations from URL changes ✅
-- [x] **Update components for separated concerns** - UI reflects viewed position ✅
-
-### Phase 4: Integration & Testing ✅ COMPLETE
-- [x] **Remove circular dependencies** - Ensure unidirectional data flow ✅
-- [x] **Test position navigation** - Verify independent viewing works ✅
-- [x] **Verify no infinite loops** - Confirm architectural fix resolves issue ✅
-
-## Technical Architecture Details
-
-### Engine Layer (Corrected)
-
+### Card Lookup Architecture
 ```typescript
-interface DraftState {
-  // Engine progression - where draft has actually advanced
-  currentRound: number;  
-  currentPick: number;
-  status: 'active' | 'completed';
-  
-  // Engine auto-advances these after processing ALL picks in a round
-  // UI has no control over engine progression
-  // No knowledge of "viewing" or "navigation"
-}
-
-class DraftEngine {
-  // After processing picks, automatically determine next state
-  processPickRound(actions: DraftAction[]): DraftState {
-    // Apply all picks
-    // Check if round complete
-    // Auto-advance to next round/pick
-    // Return new engine state
-  }
-}
+// Efficient lookup pattern
+export const $cardLookup = computed([$currentDraft], (draft) => {
+  if (!draft) return null;
+  const setData = draftEngine.getSetData(draft.setCode);
+  return new Map(setData.cards.map(card => [card.id, card]));
+});
 ```
 
-### UI Layer (Corrected)
-
+### Navigation Pattern
 ```typescript
-interface UINavigationState {
-  // UI navigation - what user is currently viewing (can differ from engine)
-  viewingRound: number;    
-  viewingPick: number;     
-  
-  // Derived state
-  isViewingCurrent: boolean; // viewingPos === enginePos
-  canMakePick: boolean;      // ONLY true when isViewingCurrent && engine.canPick
-  isViewingHistory: boolean; // !isViewingCurrent (read-only historical state)
+// Consistent navigation after actions
+async createDraft(seed: string, setCode: string) {
+  const draftId = await draftActions.createDraft(seed, setCode);
+  navigation.navigateToPosition(1, 1); // Always go to p1p1
 }
-
-// URL format: /draft/{id}/viewing/p{round}p{pick}
-// Router only updates UI navigation, never touches engine
-// Past positions are immutable - no picks allowed when viewing history
 ```
 
-### Interaction Patterns
-
+### Rarity Sorting
 ```typescript
-// User picks card (ONLY allowed when viewing current engine position)
-async function handleCardPick(cardId: string) {
-  // Guard: Can only pick when viewing current position
-  if (!isViewingCurrent) {
-    throw new Error('Cannot pick cards when viewing historical positions');
-  }
-  
-  // Engine processes pick and auto-advances to NEXT position
-  const newEngineState = await draftEngine.pickCard(cardId);
-  
-  // UI viewing automatically follows engine to the NEW current position
-  // (which is the next pick after the one we just made)
-  setViewingPosition(newEngineState.currentRound, newEngineState.currentPick);
-  
-  // URL updates to reflect new current position
-  updateURL(`/draft/${id}/viewing/p${newEngineState.currentRound}p${newEngineState.currentPick}`);
-  
-  // User is now viewing the next pick - still at current position
-}
-
-// User navigates to review past picks (read-only, no engine impact)
-function navigateToPosition(round: number, pick: number) {
-  // Only updates UI viewing state
-  setViewingPosition(round, pick);
-  
-  // Updates URL
-  updateURL(`/draft/${id}/viewing/p${round}p${pick}`);
-  
-  // Display shows IMMUTABLE historical state at viewed position
-  // Engine progression unchanged
-  // NO pick actions allowed when viewing history
-}
-
-// User returns to current position after reviewing history
-function jumpToCurrentPosition() {
-  const engineState = draftEngine.getCurrentState();
-  setViewingPosition(engineState.currentRound, engineState.currentPick);
-  updateURL(`/draft/${id}/viewing/p${engineState.currentRound}p${engineState.currentPick}`);
-  // Now canMakePick becomes true again (back to current position)
-}
+const rarityOrder = { mythic: 4, rare: 3, uncommon: 2, common: 1 };
+cards.sort((a, b) => {
+  const rarityDiff = (rarityOrder[b.rarity] || 0) - (rarityOrder[a.rarity] || 0);
+  return rarityDiff || a.name.localeCompare(b.name);
+});
 ```
 
-## Current State Analysis
+## Success Criteria
+- [x] URLs are clean without '/viewing/' segment
+- [x] Navigation works consistently across all actions
+- [x] Deck shows card names, not IDs
+- [x] Cards are sorted by rarity
+- [x] Deck statistics show accurate counts
+- [x] Mana curve visualization displays correctly
+- [ ] No performance degradation with card lookups
+- [ ] Browser navigation (back/forward) works properly
 
-### Files Needing Changes
-
-**Engine Layer**:
-- `src/lib/engine/DraftEngine.ts` - Add auto-advancement logic
-- `src/lib/engine/actions.ts` - Review action types for progression
-
-**UI Layer**: 
-- `src/stores/draftStore.ts` - Add UI navigation state separation
-- `src/components/SimpleDraftRouter.tsx` - Make purely reactive
-- `src/components/DraftInterface.tsx` - Remove position calculation logic
-
-**Documentation**:
-- This working plan - Update architecture sections
-- Component documentation - Fix position terminology
-
-### Success Criteria
-
-**Engine Layer**:
-- [x] Engine auto-advances position after processing picks ✅
-- [x] Engine has no knowledge of "viewing" or "navigation" ✅
-- [x] All engine operations are purely about draft progression ✅
-- [x] Engine tests pass with auto-advancement ✅
-
-**UI Layer**:
-- [x] UI navigation state separate from engine state ✅
-- [x] URL changes only affect UI viewing, never engine operations ✅
-- [x] User can navigate independently to review past picks ✅
-- [x] Viewing position follows engine progression after picks ✅
-
-**Integration**:
-- [x] No infinite loops in React components ✅
-- [x] No circular dependencies between layers ✅
-- [x] Unidirectional data flow maintained ✅
-- [x] Position navigation works smoothly ✅
-
-## Implementation Notes
-
-### Breaking Changes
-- URL format changes from `/draft/{id}/p{round}p{pick}` to `/draft/{id}/viewing/p{round}p{pick}`
-- Router behavior changes from driving engine to purely reactive
-- Engine API changes to auto-advance (no manual position setting)
-
-### Migration Strategy
-1. Update engine layer first (internal changes)
-2. Add UI navigation state (parallel to existing)
-3. Update router and components (gradual transition)
-4. Remove old position logic (cleanup)
-
-This ensures the application remains functional during migration while fixing the architectural violations systematically.
+## Architecture Principles
+- **Single Source of Truth**: Card data remains in engine's set data
+- **Computed Stores**: Use nanostores computed for derived state
+- **Consistent Patterns**: All navigation through useDraftNavigation hook
+- **Performance**: Use Map for O(1) card lookups
+- **Type Safety**: Maintain full TypeScript types throughout

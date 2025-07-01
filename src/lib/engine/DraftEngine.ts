@@ -87,6 +87,13 @@ export class DraftEngine {
   }
 
   /**
+   * Get loaded set data by set code
+   */
+  getSetData(setCode: string): SetData | null {
+    return this.state.setData[setCode] || null;
+  }
+
+  /**
    * Apply an action to update state
    */
   applyAction(action: DraftAction): DraftState {
@@ -457,6 +464,7 @@ export class DraftEngine {
 
     if (allPlayersHavePicked) {
       // All players have picked - advance to next position
+      console.log('All players have picked, advancing position');
       return this.advanceToNextPosition(draft);
     }
 
@@ -565,14 +573,6 @@ export class DraftEngine {
 
       updatedDraft.packs[updatedDraft.currentRound] = newPacks;
       
-      // Debug: Log pack passing
-      console.log('Packs passed:', {
-        round: updatedDraft.currentRound,
-        direction,
-        humanPackBefore: currentPacks[0]?.cards.length,
-        humanPackAfter: newPacks[0]?.cards.length,
-        allPackSizes: Object.keys(newPacks).map(i => newPacks[Number(i)]?.cards.length)
-      });
     }
 
     return updatedDraft;

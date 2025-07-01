@@ -90,11 +90,11 @@ export function Card({
   // Rarity-based styling
   const getRarityClasses = () => {
     switch (card.rarity) {
-      case 'common': return 'shadow-md';
-      case 'uncommon': return 'shadow-lg shadow-green-500/20';
-      case 'rare': return 'shadow-xl shadow-yellow-500/30';
-      case 'mythic': return 'shadow-2xl shadow-red-500/40';
-      default: return 'shadow-md';
+      case 'common': return 'shadow-md border-2 border-gray-600/50';
+      case 'uncommon': return 'shadow-lg shadow-green-500/30 border-2 border-green-600/50';
+      case 'rare': return 'shadow-xl shadow-yellow-500/40 border-2 border-yellow-600/50';
+      case 'mythic': return 'shadow-2xl shadow-orange-500/50 border-2 border-orange-600/50 ring-1 ring-orange-400/30';
+      default: return 'shadow-md border-2 border-gray-600/50';
     }
   };
 
@@ -221,12 +221,13 @@ export function Card({
             </div>
             
             {/* Rarity indicator */}
-            <div className={`absolute bottom-1 right-1 w-2 h-2 rounded-full ${
+            <div className={`absolute bottom-1 right-1 w-3 h-3 rounded-full ring-2 ring-black/50 ${
               card.rarity === 'common' ? 'bg-gray-400' :
               card.rarity === 'uncommon' ? 'bg-green-400' :
               card.rarity === 'rare' ? 'bg-yellow-400' :
+              card.rarity === 'mythic' ? 'bg-orange-500' :
               'bg-red-400'
-            }`} />
+            }`} title={card.rarity} />
           </div>
         )}
         
