@@ -40,13 +40,19 @@ export function SimpleDraftRouter({ children }: SimpleDraftRouterProps) {
   const isLoading = useStore($isLoading);
   const error = useStore($error);
   
-  const [routeData, setRouteData] = useState<DraftRouteData>({
-    draftId: null,
-    round: null,
-    pick: null,
-    isLoading: false,
-    error: null,
-    isValidRoute: false,
+  const [routeData, setRouteData] = useState<DraftRouteData>(() => {
+    // Initialize with parsed URL data
+    const parsed = parseDraftURL(window.location.pathname);
+    return {
+      draftId: parsed.draftId,
+      round: parsed.round,
+      pick: parsed.pick,
+      // If we have a draft ID in the URL, assume it's loading until proven otherwise
+      isLoading: parsed.isValid && !!parsed.draftId,
+      error: null,
+      isValidRoute: parsed.isValid,
+      routeError: parsed.error,
+    };
   });
 
   // Parse URL and update route data  

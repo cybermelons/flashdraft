@@ -28,6 +28,7 @@ import { PackDisplay } from './PackDisplay';
 import { DraftHeader } from './DraftHeader';
 import { DraftSidebar } from './DraftSidebar';
 import { EngineDebug } from './EngineDebug';
+import { DraftSkeleton } from './DraftSkeleton';
 
 interface DraftInterfaceProps {
   className?: string;
@@ -100,7 +101,13 @@ function DraftInterfaceContent({ routeData }: { routeData: DraftRouteData }) {
   
   const navigation = useDraftNavigation();
 
-  // Handle route errors
+  // Show skeleton immediately if we have a draft ID but no draft loaded yet
+  // This prevents the "invalid draft url" flash
+  if (routeData.draftId && !currentDraft && !error) {
+    return <DraftSkeleton />;
+  }
+
+  // Handle route errors (only show after we've tried to load)
   if (!routeData.isValidRoute) {
     return (
       <div className="min-h-screen bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900 flex items-center justify-center p-6">
@@ -123,16 +130,9 @@ function DraftInterfaceContent({ routeData }: { routeData: DraftRouteData }) {
     );
   }
 
-  // Loading state
+  // Loading state - show skeleton during async operations
   if (isLoading) {
-    return (
-      <div className="min-h-screen bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900 flex items-center justify-center p-6">
-        <div className="text-center">
-          <div className="animate-spin rounded-full h-16 w-16 border-b-2 border-blue-500 mx-auto mb-6"></div>
-          <p className="text-slate-300 text-xl">Loading draft...</p>
-        </div>
-      </div>
-    );
+    return <DraftSkeleton />;
   }
 
   // Error state
