@@ -273,6 +273,11 @@ export const draftActions = {
       $currentDraft.set(draft);
       
       // Initialize viewing position to current engine progression
+      console.log('Setting viewing position from loadDraft:', {
+        round: draft.currentRound,
+        pick: draft.currentPick,
+        caller: new Error().stack
+      });
       $viewingRound.set(draft.currentRound);
       $viewingPick.set(draft.currentPick);
     } catch (error) {
@@ -389,7 +394,7 @@ export const draftActions = {
       $currentDraft.set(currentState);
       
       // Update viewing position to match engine
-      console.log('Setting viewing position:', {
+      console.log('Setting viewing position from processAllPicksAndAdvance:', {
         round: currentState.currentRound,
         pick: currentState.currentPick,
         humanPackCards: currentState.packs[currentState.currentRound]?.[0]?.cards.length
