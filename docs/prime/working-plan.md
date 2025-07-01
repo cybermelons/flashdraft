@@ -1,3 +1,19 @@
+# issues
+
+<issue>
+  error opening decklist:
+  <log>
+    All players have picked, advancing position
+draftStore.ts:372 Position after all picks: {round: 1, pick: 2}
+SimpleDraftRouter.tsx:94 URL update check: {currentPath: '/draft/draft_1751334173851_1751334173851/p1p1', expectedPath: '/draft/draft_1751334173851_1751334173851/p1p2', viewingRound: 1, viewingPick: 2, shouldUpdate: true}
+DraftEngine.ts:467 All players have picked, advancing position
+draftStore.ts:372 Position after all picks: {round: 1, pick: 3}
+SimpleDraftRouter.tsx:94 URL update check: {currentPath: '/draft/draft_1751334173851_1751334173851/p1p2', expectedPath: '/draft/draft_1751334173851_1751334173851/p1p3', viewingRound: 1, viewingPick: 3, shouldUpdate: true}
+DraftSidebar.tsx:400 Uncaught ReferenceError: humanDeck is not defined
+    at DraftSidebar (DraftSidebar.tsx:400:64)
+  </log>
+</issue>
+
 # Development Plan: Fix URL Format and UI Improvements
 
 ## Progress: 16/17 tasks complete (94%)
