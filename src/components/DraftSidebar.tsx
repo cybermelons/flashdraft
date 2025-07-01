@@ -58,7 +58,8 @@ export function DraftSidebar({ className = '' }: DraftSidebarProps) {
   const sortBy = useStore($sortBy);
   const filterBy = useStore($filterBy);
 
-  if (!currentDraft) return null;
+  // Don't render anything if no draft is loaded
+  // But we still need the structure for the toggle to work
 
   const toggleSidebar = () => {
     uiActions.toggleSidebar();
@@ -137,9 +138,9 @@ export function DraftSidebar({ className = '' }: DraftSidebarProps) {
     return curve;
   };
 
-  const colorStats = getColorStats();
-  const cardStats = getCardStats();
-  const manaCurve = getManaCurve();
+  const colorStats = currentDraft ? getColorStats() : {};
+  const cardStats = currentDraft ? getCardStats() : { creatures: 0, instants: 0, sorceries: 0, artifacts: 0, enchantments: 0, planeswalkers: 0, lands: 0 };
+  const manaCurve = currentDraft ? getManaCurve() : {};
 
   return (
     <>
@@ -163,7 +164,7 @@ export function DraftSidebar({ className = '' }: DraftSidebarProps) {
           <div className="flex items-center justify-between">
             <div>
               <h2 className="text-xl font-bold text-white">Draft Deck</h2>
-              <p className="text-sm text-slate-400 mt-1">{humanDeckCards.length} cards</p>
+              <p className="text-sm text-slate-400 mt-1">{currentDraft ? `${humanDeckCards.length} cards` : 'No draft loaded'}</p>
             </div>
             {/* Close button for mobile */}
             <button
@@ -178,8 +179,22 @@ export function DraftSidebar({ className = '' }: DraftSidebarProps) {
         </div>
 
         <div className="flex-1 p-4 space-y-6 overflow-y-auto">
-          {/* Selected Card Detail */}
-          {selectedCard && (
+          {!currentDraft ? (
+            <div className="flex items-center justify-center h-full">
+              <div className="text-center">
+                <div className="text-slate-400 mb-4">
+                  <svg className="w-16 h-16 mx-auto" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10"></path>
+                  </svg>
+                </div>
+                <p className="text-slate-300 text-lg">No draft in progress</p>
+                <p className="text-slate-400 text-sm mt-2">Start a draft to see your deck here</p>
+              </div>
+            </div>
+          ) : (
+            <>
+              {/* Selected Card Detail */}
+              {selectedCard && (
             <div className="bg-slate-700/30 rounded-2xl p-4 border border-slate-600/30">
               <h3 className="text-lg font-bold text-white mb-3 flex items-center gap-2">
                 <svg className="w-5 h-5 text-blue-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -458,6 +473,8 @@ export function DraftSidebar({ className = '' }: DraftSidebarProps) {
               </div>
             </div>
           </div>
+            </>
+          )}
         </div>
       </aside>
     </>

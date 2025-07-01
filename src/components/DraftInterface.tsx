@@ -205,9 +205,9 @@ function DraftInterfaceContent({ routeData }: { routeData: DraftRouteData }) {
       
       {/* Main content area */}
       <div className="flex-1 relative overflow-hidden">
-        {/* Main content - shifts when sidebar is open on desktop */}
+        {/* Main content - shifts when sidebar is open on desktop, hidden on mobile when sidebar open */}
         <main className={`h-full p-6 overflow-y-auto transition-all duration-300 ${
-          sidebarOpen ? 'lg:mr-80' : ''
+          sidebarOpen ? 'lg:mr-80 hidden lg:block' : ''
         }`}>
           {/* Show overview if no position in URL and draft is complete */}
           {isCompleted && !routeData.round && !routeData.pick && isViewingCurrent ? (
