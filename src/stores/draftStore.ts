@@ -116,11 +116,26 @@ export const $draftProgress = computed([$currentDraft], (draft) => {
 export const $canPick = computed(
   [$currentDraft, $isLoading, $isPickingCard, $isViewingCurrent], 
   (draft, loading, picking, isViewingCurrent) => {
-    return draft && 
+    const canPick = draft && 
            draft.status === 'active' && 
            !loading && 
            !picking &&
            isViewingCurrent; // Can only pick when viewing current engine position
+    
+    // Debug logging
+    if (!canPick && draft) {
+      console.log('Cannot pick because:', {
+        hasDraft: !!draft,
+        status: draft?.status,
+        isLoading: loading,
+        isPicking: picking,
+        isViewingCurrent,
+        enginePos: { round: draft.currentRound, pick: draft.currentPick },
+        viewingPos: { round: $viewingRound.get(), pick: $viewingPick.get() }
+      });
+    }
+    
+    return canPick;
   }
 );
 
@@ -306,6 +321,24 @@ export const draftActions = {
       }
       
       $currentDraft.set(currentState);
+      
+      // Debug: Log state after bot picks
+      console.log('After bot picks:', {
+        currentRound: currentState.currentRound,
+        currentPick: currentState.currentPick,
+        viewingRound: $viewingRound.get(),
+        viewingPick: $viewingPick.get(),
+        humanPack: currentState.packs[currentState.currentRound]?.[0],
+        isViewingCurrent: $isViewingCurrent.get()
+      });
+      
+      // UI viewing should follow engine progression after bot picks
+      if (currentState.currentRound !== $viewingRound.get() || 
+          currentState.currentPick !== $viewingPick.get()) {
+        console.log('Following engine progression after bot picks');
+        $viewingRound.set(currentState.currentRound);
+        $viewingPick.set(currentState.currentPick);
+      }
     } catch (error) {
       const message = error instanceof Error ? error.message : 'Failed to process bot picks';
       $error.set(message);

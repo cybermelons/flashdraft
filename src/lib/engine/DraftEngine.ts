@@ -545,7 +545,7 @@ export class DraftEngine {
     const currentPacks = updatedDraft.packs[updatedDraft.currentRound];
 
     if (currentPacks) {
-      const newPacks: BoosterPack[] = [];
+      const newPacks: Record<number, BoosterPack> = {};
 
       for (let i = 0; i < updatedDraft.playerCount; i++) {
         const sourceIndex =
@@ -553,10 +553,26 @@ export class DraftEngine {
             ? (i + 1) % updatedDraft.playerCount
             : (i - 1 + updatedDraft.playerCount) % updatedDraft.playerCount;
 
-        newPacks[i] = currentPacks[sourceIndex];
+        // Deep clone the pack to avoid reference issues
+        const sourcePack = currentPacks[sourceIndex];
+        if (sourcePack) {
+          newPacks[i] = {
+            ...sourcePack,
+            cards: [...sourcePack.cards]
+          };
+        }
       }
 
       updatedDraft.packs[updatedDraft.currentRound] = newPacks;
+      
+      // Debug: Log pack passing
+      console.log('Packs passed:', {
+        round: updatedDraft.currentRound,
+        direction,
+        humanPackBefore: currentPacks[0]?.cards.length,
+        humanPackAfter: newPacks[0]?.cards.length,
+        allPackSizes: Object.keys(newPacks).map(i => newPacks[Number(i)]?.cards.length)
+      });
     }
 
     return updatedDraft;
