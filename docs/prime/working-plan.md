@@ -42,14 +42,15 @@ A rules-free testing environment for rapid deck iteration. No mechanics enforcem
 
 ## Implementation Phases
 
-### Phase 0: Critical Bug Fixes (PRIORITY)
-- [ ] Fix dual-faced card pack generation
-- [ ] Detailed plan: [phase-0-dfc-fix.md](./phase-0-dfc-fix.md)
+### Phase 0: Critical Bug Fixes (PRIORITY) ✅
+- [x] Fix dual-faced card pack generation
+- [x] Detailed plan: [phase-0-dfc-fix.md](./phase-0-dfc-fix.md)
 
 ### Phase 1: Draft UI Polish & Loading States
-- [ ] Implement loading skeletons for draft data fetch
-- [ ] Fix "invalid draft url" flash by showing skeleton during route validation
-- [ ] Add proper error boundaries with user-friendly messages
+- [ ] Fix loading states and remove UI flashes
+- [ ] Clean up visual design and remove clutter
+- [ ] Fix history view interaction and selection display
+- [ ] Detailed plan: [phase-1-ui-polish.md](./phase-1-ui-polish.md)
 
 ### Phase 2: Enhanced Card Display
 - [ ] Redesign decklist card display (cascade view)
