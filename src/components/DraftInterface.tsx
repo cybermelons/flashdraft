@@ -77,6 +77,16 @@ function DraftInterfaceContent({ routeData }: { routeData: DraftRouteData }) {
   const isLoading = useStore($isLoading);
   const error = useStore($error);
   const isViewingCurrent = useStore($isViewingCurrent);
+  const currentPosition = useStore($currentPosition);
+  
+  // Debug logging
+  console.log('DraftInterface state:', {
+    canPick,
+    isViewingCurrent,
+    viewingPosition: currentPosition,
+    enginePosition: currentDraft ? { round: currentDraft.currentRound, pick: currentDraft.currentPick } : null,
+    draftStatus: currentDraft?.status
+  });
   
   const navigation = useDraftNavigation();
 

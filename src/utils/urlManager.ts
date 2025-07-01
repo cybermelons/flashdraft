@@ -18,7 +18,7 @@ export const urlManager = {
     window.history.pushState({}, '', url);
     
     // Notify computed stores of URL change
-    window.dispatchEvent(new StorageEvent('storage'));
+    window.dispatchEvent(new Event('urlchange'));
   },
 
   /**
@@ -31,7 +31,7 @@ export const urlManager = {
     window.history.replaceState({}, '', url);
     
     // Notify computed stores of URL change
-    window.dispatchEvent(new StorageEvent('storage'));
+    window.dispatchEvent(new Event('urlchange'));
   },
 
   /**

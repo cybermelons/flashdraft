@@ -10,7 +10,9 @@ import { useStore } from '@nanostores/react';
 import { 
   $currentDraft, 
   $draftProgress,
-  $currentPosition
+  $currentPosition,
+  $viewingRound,
+  $viewingPick
 } from '@/stores/draftStore';
 import { useDraftNavigation } from './SimpleDraftRouter';
 
@@ -25,52 +27,53 @@ export function DraftHeader({ className = '' }: DraftHeaderProps) {
   const currentDraft = useStore($currentDraft);
   const draftProgress = useStore($draftProgress);
   const currentPosition = useStore($currentPosition);
+  const viewingRound = useStore($viewingRound);
+  const viewingPick = useStore($viewingPick);
   const navigation = useDraftNavigation();
 
   if (!currentDraft) return null;
 
-  const handlePreviousPick = () => {
-    if (!draftProgress) return;
+  const getPreviousPosition = () => {
+    let newRound = viewingRound;
+    let newPick = viewingPick - 1;
     
-    const { currentRound, currentPick } = draftProgress;
-    let prevRound = currentRound;
-    let prevPick = currentPick - 1;
-    
-    if (prevPick < 1) {
-      prevRound = Math.max(1, currentRound - 1);
-      prevPick = 15;
+    if (newPick < 1) {
+      newRound = viewingRound - 1;
+      newPick = 15;
     }
     
-    if (prevRound >= 1 && prevPick >= 1) {
-      navigation.navigateToPosition(prevRound, prevPick);
-    }
+    return { round: newRound, pick: newPick };
   };
 
-  const handleNextPick = () => {
-    if (!draftProgress) return;
+  const getNextPosition = () => {
+    let newRound = viewingRound;
+    let newPick = viewingPick + 1;
     
-    const { currentRound, currentPick } = draftProgress;
-    let nextRound = currentRound;
-    let nextPick = currentPick + 1;
-    
-    if (nextPick > 15) {
-      nextRound = Math.min(3, currentRound + 1);
-      nextPick = 1;
+    if (newPick > 15) {
+      newRound = viewingRound + 1;
+      newPick = 1;
     }
     
-    if (nextRound <= 3 && nextPick <= 15) {
-      navigation.navigateToPosition(nextRound, nextPick);
-    }
+    return { round: newRound, pick: newPick };
   };
 
   const canGoPrevious = () => {
-    if (!draftProgress) return false;
-    return !(draftProgress.currentRound === 1 && draftProgress.currentPick === 1);
+    return !(viewingRound === 1 && viewingPick === 1);
   };
 
   const canGoNext = () => {
     if (!draftProgress) return false;
-    return !(draftProgress.currentRound === 3 && draftProgress.currentPick === 15);
+    
+    // Can navigate forward if:
+    // 1. We're viewing a position before the current engine position
+    // 2. We're not at the absolute end (round 3, pick 15)
+    
+    // Check if we're before the engine position
+    if (viewingRound < draftProgress.currentRound) return true;
+    if (viewingRound === draftProgress.currentRound && viewingPick < draftProgress.currentPick) return true;
+    
+    // If we're at or past engine position, we can't go forward
+    return false;
   };
 
   return (
@@ -101,36 +104,48 @@ export function DraftHeader({ className = '' }: DraftHeaderProps) {
 
             {/* Position Navigation */}
             <div className="flex items-center gap-3">
-              <button
-                onClick={handlePreviousPick}
-                disabled={!canGoPrevious()}
-                className="w-10 h-10 rounded-xl bg-slate-700/50 hover:bg-slate-600/50 disabled:bg-slate-800/50 disabled:text-slate-500 text-white font-bold transition-colors disabled:cursor-not-allowed"
-                title="Previous pick"
-              >
-                <svg className="w-5 h-5 mx-auto" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15 19l-7-7 7-7"></path>
-                </svg>
-              </button>
+              {canGoPrevious() ? (
+                <a
+                  href={`/draft/${currentDraft.draftId}/p${getPreviousPosition().round}p${getPreviousPosition().pick}`}
+                  className="w-10 h-10 rounded-xl bg-slate-700/50 hover:bg-slate-600/50 text-white font-bold transition-colors flex items-center justify-center"
+                  title="Previous pick"
+                >
+                  <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15 19l-7-7 7-7"></path>
+                  </svg>
+                </a>
+              ) : (
+                <span className="w-10 h-10 rounded-xl bg-slate-800/50 text-slate-500 font-bold flex items-center justify-center cursor-not-allowed">
+                  <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15 19l-7-7 7-7"></path>
+                  </svg>
+                </span>
+              )}
               
               <div className="text-center min-w-0">
-                {draftProgress && (
-                  <div className="text-white font-semibold">
-                    <div className="text-lg">Round {draftProgress.currentRound}</div>
-                    <div className="text-sm text-slate-300">Pick {draftProgress.currentPick}</div>
-                  </div>
-                )}
+                <div className="text-white font-semibold">
+                  <div className="text-lg">Round {viewingRound}</div>
+                  <div className="text-sm text-slate-300">Pick {viewingPick}</div>
+                </div>
               </div>
               
-              <button
-                onClick={handleNextPick}
-                disabled={!canGoNext()}
-                className="w-10 h-10 rounded-xl bg-slate-700/50 hover:bg-slate-600/50 disabled:bg-slate-800/50 disabled:text-slate-500 text-white font-bold transition-colors disabled:cursor-not-allowed"
-                title="Next pick"
-              >
-                <svg className="w-5 h-5 mx-auto" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 5l7 7-7 7"></path>
-                </svg>
-              </button>
+              {canGoNext() ? (
+                <a
+                  href={`/draft/${currentDraft.draftId}/p${getNextPosition().round}p${getNextPosition().pick}`}
+                  className="w-10 h-10 rounded-xl bg-slate-700/50 hover:bg-slate-600/50 text-white font-bold transition-colors flex items-center justify-center"
+                  title="Next pick"
+                >
+                  <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 5l7 7-7 7"></path>
+                  </svg>
+                </a>
+              ) : (
+                <span className="w-10 h-10 rounded-xl bg-slate-800/50 text-slate-500 font-bold flex items-center justify-center cursor-not-allowed">
+                  <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 5l7 7-7 7"></path>
+                  </svg>
+                </span>
+              )}
             </div>
           </div>
 

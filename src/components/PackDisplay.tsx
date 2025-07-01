@@ -45,19 +45,18 @@ export function PackDisplay({ pack, onCardPick, canPick, className = '' }: PackD
   const displayCards = sortAndFilterCards(pack.cards, sortBy, filterBy);
 
   const handleCardClick = (card: Card) => {
-    if (!canPick) return;
-    
-    if (quickPickMode) {
-      // Quick pick mode: immediately pick card
+    // Always allow selection for highlighting
+    if (selectedCard?.id === card.id && canPick) {
+      // Double-click or second click picks the card (only if canPick)
       onCardPick(card.id);
     } else {
-      // Select card first, then pick with confirm
-      if (selectedCard?.id === card.id) {
-        // Double-click or second click picks the card
-        onCardPick(card.id);
-      } else {
-        uiActions.selectCard(card);
-      }
+      // Select card for highlighting (works even in history view)
+      uiActions.selectCard(card);
+    }
+    
+    // Quick pick mode only works when canPick
+    if (quickPickMode && canPick) {
+      onCardPick(card.id);
     }
   };
 
@@ -226,7 +225,7 @@ export function PackDisplay({ pack, onCardPick, canPick, className = '' }: PackD
               card={card}
               isSelected={selectedCard?.id === card.id}
               isHovered={hoveredCard?.id === card.id}
-              canInteract={canPick}
+              canInteract={true} // Always allow interaction for selection
               quickPickNumber={index < 9 ? index + 1 : undefined}
               onClick={() => handleCardClick(card)}
               onMouseEnter={() => handleCardHover(card)}
@@ -236,7 +235,7 @@ export function PackDisplay({ pack, onCardPick, canPick, className = '' }: PackD
                   ? 'ring-2 ring-blue-500 ring-offset-2 ring-offset-slate-900 scale-105' 
                   : 'hover:scale-105 hover:shadow-xl'
               } ${
-                canPick ? 'cursor-pointer' : 'cursor-default opacity-75'
+                !canPick ? 'opacity-75' : ''
               }`}
             />
           </div>

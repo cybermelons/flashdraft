@@ -49,8 +49,8 @@ if (typeof window !== 'undefined') {
     $urlPath.set(window.location.pathname);
   });
   
-  // Update on storage events (our custom trigger for pushState/replaceState)
-  window.addEventListener('storage', () => {
+  // Custom event for programmatic navigation
+  window.addEventListener('urlchange', () => {
     $urlPath.set(window.location.pathname);
   });
 }
