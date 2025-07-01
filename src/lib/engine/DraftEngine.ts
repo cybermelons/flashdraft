@@ -572,14 +572,6 @@ export class DraftEngine {
 
       updatedDraft.packs[updatedDraft.currentRound] = newPacks;
       
-      // Debug: Log pack passing
-      console.log('Packs passed:', {
-        round: updatedDraft.currentRound,
-        direction,
-        humanPackBefore: currentPacks[0]?.cards.length,
-        humanPackAfter: newPacks[0]?.cards.length,
-        allPackSizes: Object.keys(newPacks).map(i => newPacks[Number(i)]?.cards.length)
-      });
     }
 
     return updatedDraft;

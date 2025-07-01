@@ -21,7 +21,6 @@ try {
   const allSets = loadAllSets();
   for (const [setCode, setData] of Object.entries(allSets)) {
     draftEngine.loadSetData(setData);
-    console.log(`Loaded set data: ${setCode} (${setData.cards.length} cards)`);
   }
 } catch (error) {
   console.error('Failed to load set data:', error);
@@ -83,7 +82,6 @@ export const $viewingDraftState = computed(
     try {
       return draftEngine.replayToPosition(draft.draftId, viewingRound, viewingPick);
     } catch (error) {
-      console.warn('Failed to replay to position:', error);
       return draft; // Fallback to current state
     }
   }
@@ -172,18 +170,6 @@ export const $canPick = computed(
            !picking &&
            isViewingCurrent; // Can only pick when viewing current engine position
     
-    // Debug logging
-    if (!canPick && draft) {
-      console.log('Cannot pick because:', {
-        hasDraft: !!draft,
-        status: draft?.status,
-        isLoading: loading,
-        isPicking: picking,
-        isViewingCurrent,
-        enginePos: { round: draft.currentRound, pick: draft.currentPick },
-        viewingPos: { round: $viewingRound.get(), pick: $viewingPick.get() }
-      });
-    }
     
     return canPick;
   }
@@ -376,20 +362,10 @@ export const draftActions = {
       
       $currentDraft.set(currentState);
       
-      // Debug: Log state after bot picks
-      console.log('After bot picks:', {
-        currentRound: currentState.currentRound,
-        currentPick: currentState.currentPick,
-        viewingRound: $viewingRound.get(),
-        viewingPick: $viewingPick.get(),
-        humanPack: currentState.packs[currentState.currentRound]?.[0],
-        isViewingCurrent: $isViewingCurrent.get()
-      });
       
       // UI viewing should follow engine progression after bot picks
       if (currentState.currentRound !== $viewingRound.get() || 
           currentState.currentPick !== $viewingPick.get()) {
-        console.log('Following engine progression after bot picks');
         $viewingRound.set(currentState.currentRound);
         $viewingPick.set(currentState.currentPick);
       }
