@@ -465,16 +465,6 @@ export class DraftEngine {
       const pack = currentPacks[Number(key)];
       return pack && pack.cards.length === expectedCardsRemaining;
     });
-    
-    console.log('Auto-advance check:', {
-      currentRound: draft.currentRound,
-      currentPick: draft.currentPick,
-      expectedCardsRemaining,
-      packCounts: Object.entries(currentPacks).map(([player, pack]) => 
-        `Player ${player}: ${pack?.cards.length || 0} cards`
-      ),
-      allPlayersHavePicked
-    });
 
     if (allPlayersHavePicked) {
       // All players have picked - advance to next position

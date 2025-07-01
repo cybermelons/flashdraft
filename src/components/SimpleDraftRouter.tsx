@@ -52,8 +52,26 @@ export function SimpleDraftRouter({ children }: SimpleDraftRouterProps) {
 
   // Parse URL and update route data  
   useEffect(() => {
-    // Only parse URL on mount and popstate, don't cause state changes
-    const handleURLChange = () => {
+    // Parse URL on mount
+    const parsed = parseDraftURL(window.location.pathname);
+    
+    setRouteData({
+      draftId: parsed.draftId,
+      round: parsed.round,
+      pick: parsed.pick,
+      isLoading: false,
+      error: null,
+      isValidRoute: parsed.isValid,
+      routeError: parsed.error,
+    });
+    
+    // Load draft if needed
+    if (parsed.isValid && parsed.draftId && parsed.draftId !== currentDraftId) {
+      handleDraftLoad(parsed.draftId);
+    }
+    
+    // Handle browser navigation (back/forward)
+    const handlePopstate = () => {
       const parsed = parseDraftURL(window.location.pathname);
       
       setRouteData(prevData => ({
@@ -65,27 +83,18 @@ export function SimpleDraftRouter({ children }: SimpleDraftRouterProps) {
         routeError: parsed.error,
       }));
       
-      // Load different draft or update viewing position
-      if (parsed.isValid && parsed.draftId) {
-        if (parsed.draftId !== currentDraftId) {
-          handleDraftLoad(parsed.draftId);
-        } else if (parsed.round && parsed.pick) {
-          // Update viewing position when navigating to a specific position
-          draftActions.navigateToPosition(parsed.round, parsed.pick);
-        }
+      // Only update position on actual browser navigation
+      if (parsed.isValid && parsed.draftId === currentDraftId && parsed.round && parsed.pick) {
+        draftActions.navigateToPosition(parsed.round, parsed.pick);
       }
     };
     
-    // Initial route parsing
-    handleURLChange();
-    
-    // Listen for browser navigation (back/forward)
-    window.addEventListener('popstate', handleURLChange);
+    window.addEventListener('popstate', handlePopstate);
     
     return () => {
-      window.removeEventListener('popstate', handleURLChange);
+      window.removeEventListener('popstate', handlePopstate);
     };
-  }, [currentDraftId, currentDraft]);
+  }, [currentDraftId]); // Don't re-run on draft changes, only on draft ID changes
   
   // Update URL when viewing position changes
   const viewingRound = useStore($viewingRound);
@@ -95,14 +104,6 @@ export function SimpleDraftRouter({ children }: SimpleDraftRouterProps) {
     if (currentDraftId && viewingRound && viewingPick) {
       const currentPath = window.location.pathname;
       const expectedPath = `/draft/${currentDraftId}/p${viewingRound}p${viewingPick}`;
-      
-      console.log('URL update check:', {
-        currentPath,
-        expectedPath,
-        viewingRound,
-        viewingPick,
-        shouldUpdate: currentPath !== expectedPath
-      });
       
       // Only update if path doesn't match
       if (currentPath !== expectedPath) {
