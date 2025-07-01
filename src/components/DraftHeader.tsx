@@ -65,35 +65,23 @@ export function DraftHeader({ className = '' }: DraftHeaderProps) {
     if (!draftProgress) return false;
     if (!currentDraft) return false;
     
-    // Can navigate forward if:
-    // 1. We're viewing a position before the current engine position
-    // 2. We're not at the absolute end (round 3, pick 15)
+    // For completed drafts, allow navigation up to the last pick
+    if (currentDraft.status === 'completed') {
+      // Can go next unless we're at the absolute end (round 3, pick 15)
+      return !(viewingRound === 3 && viewingPick === 15);
+    }
     
-    // Debug logging
-    console.log('canGoNext check:', {
-      viewingRound,
-      viewingPick,
-      engineRound: draftProgress.currentRound,
-      enginePick: draftProgress.currentPick,
-      humanDeckSize: currentDraft.playerDecks[currentDraft.humanPlayerIndex]?.length || 0,
-      comparison: {
-        roundLess: viewingRound < draftProgress.currentRound,
-        pickLess: viewingRound === draftProgress.currentRound && viewingPick < draftProgress.currentPick
-      }
-    });
-    
+    // For active drafts, use the existing logic
     // Check if we're before the engine position
     if (viewingRound < draftProgress.currentRound) return true;
     if (viewingRound === draftProgress.currentRound && viewingPick < draftProgress.currentPick) return true;
     
     // Special case: If we've made picks, we can navigate through our pick history
-    // even if we're at the current engine position
     const humanDeckSize = currentDraft.playerDecks[currentDraft.humanPlayerIndex]?.length || 0;
     const totalPicksMade = (viewingRound - 1) * 15 + viewingPick - 1;
     
     // If we're viewing a position where we've already made a pick, we can go forward
     if (totalPicksMade < humanDeckSize) {
-      console.log('Can go forward based on pick history:', { totalPicksMade, humanDeckSize });
       return true;
     }
     
@@ -150,7 +138,12 @@ export function DraftHeader({ className = '' }: DraftHeaderProps) {
               <div className="text-center min-w-0">
                 <div className="text-white font-semibold">
                   <div className="text-lg">Round {viewingRound}</div>
-                  <div className="text-sm text-slate-300">Pick {viewingPick}</div>
+                  <div className="text-sm text-slate-300">
+                    Pick {viewingPick}
+                    {!isViewingCurrent && (
+                      <span className="text-yellow-400 text-xs ml-1">(history)</span>
+                    )}
+                  </div>
                 </div>
               </div>
               
