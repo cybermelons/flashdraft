@@ -139,26 +139,6 @@ export function PackDisplay({ pack, onCardPick, canPick, className = '' }: PackD
     }
   }, [canPick, selectedCard, displayCards]);
 
-  const getViewModeClass = () => {
-    switch (packViewMode) {
-      case 'spread': return 'pack-spread';
-      case 'compact': return 'pack-compact';
-      case 'list': return 'pack-list';
-      default: return 'pack-spread';
-    }
-  };
-
-  const getGridStyle = () => {
-    const { width } = cardDisplaySize;
-    const gap = 16;
-    const minCardsPerRow = packViewMode === 'list' ? 1 : 3;
-    const maxCardsPerRow = packViewMode === 'list' ? 1 : 6;
-    
-    return {
-      gridTemplateColumns: `repeat(auto-fit, minmax(${width}px, 1fr))`,
-      gap: `${gap}px`,
-    };
-  };
 
   return (
     <div className={`${className}`}>
@@ -213,23 +193,30 @@ export function PackDisplay({ pack, onCardPick, canPick, className = '' }: PackD
         </div>
       </div>
       
-      {/* Pack Cards Grid */}
-      <div 
-        className={`grid gap-4 ${
-          packViewMode === 'list' 
-            ? 'grid-cols-1' 
-            : packViewMode === 'compact'
-            ? 'grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6'
-            : 'grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5'
-        }`}
-        style={packViewMode !== 'list' ? getGridStyle() : undefined}
-      >
+      {/* Pack Cards Grid - Fixed layout with minimal spacing */}
+      <div className="flex justify-center">
+        <div 
+          className={`inline-flex flex-wrap gap-2 ${
+            packViewMode === 'list' 
+              ? 'flex-col' 
+              : ''
+          }`}
+          style={{
+            maxWidth: packViewMode === 'list' ? '280px' : '1200px'
+          }}
+        >
         {displayCards.map((card, index) => {
           const isPicked = pickedCardId === card.id;
           const showPickNumber = !isViewingHistory && index < 9;
           
           return (
-            <div key={card.id} className="relative group">
+            <div 
+              key={card.id} 
+              className="relative group flex-shrink-0"
+              style={{
+                width: packViewMode === 'compact' ? '180px' : '220px'
+              }}
+            >
               {showPickNumber && (
                 <div className="absolute -top-2 -left-2 w-6 h-6 bg-blue-600 text-white rounded-full flex items-center justify-center text-xs font-bold z-10 shadow-lg">
                   {index + 1}
@@ -269,6 +256,7 @@ export function PackDisplay({ pack, onCardPick, canPick, className = '' }: PackD
             </div>
           );
         })}
+        </div>
       </div>
       
       {/* Empty State */}
