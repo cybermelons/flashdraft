@@ -48,7 +48,7 @@ export function SimpleDraftRouter({ children }: SimpleDraftRouterProps) {
     isValidRoute: false,
   });
 
-  // Parse URL and update route data
+  // Parse URL and update route data  
   useEffect(() => {
     const updateRoute = () => {
       const parsed = parseDraftURL(window.location.pathname);
@@ -62,15 +62,14 @@ export function SimpleDraftRouter({ children }: SimpleDraftRouterProps) {
         routeError: parsed.error,
       }));
       
-      // If we have a valid draft ID that's different from current, load it
+      // Only handle URL-driven operations without causing loops
       if (parsed.isValid && parsed.draftId && parsed.draftId !== currentDraftId) {
-        handleDraftLoad(parsed.draftId, parsed.round, parsed.pick);
-      }
-      
-      // If we have a position and the current draft is loaded, navigate to position
-      if (parsed.isValid && parsed.draftId === currentDraftId && 
-          parsed.round && parsed.pick && currentDraft) {
-        handlePositionNavigation(parsed.round, parsed.pick);
+        // Load different draft
+        handleDraftLoad(parsed.draftId);
+      } else if (parsed.isValid && parsed.draftId === currentDraftId && 
+                 parsed.round && parsed.pick) {
+        // Update UI viewing position only (no engine operations)
+        draftActions.navigateToPosition(parsed.round, parsed.pick);
       }
     };
 
@@ -101,34 +100,15 @@ export function SimpleDraftRouter({ children }: SimpleDraftRouterProps) {
   /**
    * Load a draft and optionally navigate to position
    */
-  const handleDraftLoad = async (draftId: string, round?: number | null, pick?: number | null) => {
+  const handleDraftLoad = async (draftId: string) => {
     try {
       await draftActions.loadDraft(draftId);
-      
-      // After loading, navigate to position if specified
-      if (round && pick) {
-        await draftActions.navigateToPosition(round, pick);
-      }
+      // loadDraft now automatically initializes viewing position to current engine position
     } catch (loadError) {
       console.error('Failed to load draft:', loadError);
     }
   };
 
-  /**
-   * Navigate to a specific position in the current draft
-   */
-  const handlePositionNavigation = async (round: number, pick: number) => {
-    if (!currentDraft) return;
-    
-    // Only navigate if we're not already at this position
-    if (currentDraft.currentRound !== round || currentDraft.currentPick !== pick) {
-      try {
-        await draftActions.navigateToPosition(round, pick);
-      } catch (navError) {
-        console.error('Failed to navigate to position:', navError);
-      }
-    }
-  };
 
   return <>{children(routeData)}</>;
 }
@@ -141,15 +121,17 @@ export function useDraftNavigation() {
   
   return {
     /**
-     * Navigate to a draft position and update URL
+     * Navigate to a draft position and update URL (UI navigation only)
      */
-    navigateToPosition: async (round: number, pick: number) => {
+    navigateToPosition: (round: number, pick: number) => {
       if (!currentDraftId) return;
       
-      const url = `/draft/${currentDraftId}/p${round}p${pick}`;
-      window.history.pushState({}, '', url);
+      // Update UI viewing position (no engine operations)
+      draftActions.navigateToPosition(round, pick);
       
-      await draftActions.navigateToPosition(round, pick);
+      // Update URL to reflect new viewing position
+      const url = `/draft/${currentDraftId}/viewing/p${round}p${pick}`;
+      window.history.pushState({}, '', url);
     },
     
     /**

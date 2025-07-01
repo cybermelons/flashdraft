@@ -1,38 +1,43 @@
 /**
  * Draft Engine - Pure Event-Sourced State Machine
- * 
+ *
  * Core draft logic with zero dependencies.
  * All state changes go through actions for perfect reproducibility.
  */
 
-import type { DraftAction } from './actions';
-import { PackGenerator, type Card, type SetData, type BoosterPack } from './packGenerator';
-import { SeededRandom } from './seededRandom';
-import type { DraftStorageAdapter } from './storage/DraftStorageAdapter';
+import type { DraftAction } from "./actions";
+import {
+  PackGenerator,
+  type Card,
+  type SetData,
+  type BoosterPack,
+} from "./packGenerator";
+import { SeededRandom } from "./seededRandom";
+import type { DraftStorageAdapter } from "./storage/DraftStorageAdapter";
 
 export interface DraftState {
   draftId: string;
   seed: string;
   setCode: string;
-  status: 'created' | 'active' | 'completed';
-  
+  status: "created" | "active" | "completed";
+
   // Draft configuration
   playerCount: number;
   humanPlayerIndex: number;
-  
+
   // Current position
   currentRound: number; // 1, 2, 3
-  currentPick: number;   // 1-15
-  
+  currentPick: number; // 1-15
+
   // Packs and cards
-  packs: Record<number, BoosterPack[]>; // round -> packs for each player
+  packs: Record<number, Record<number, BoosterPack>>; // round -> packs for each player
   playerDecks: Record<number, string[]>; // playerIndex -> cardIds
-  
+
   // Action history for reproducibility
   actionHistory: DraftAction[];
-  
+
   // Draft flow
-  packPassDirection: Record<number, 'left' | 'right'>; // round -> direction
+  packPassDirection: Record<number, "left" | "right">; // round -> direction
 }
 
 export interface DraftEngineState {
@@ -49,7 +54,7 @@ export class DraftEngine {
       drafts: {},
       setData: {},
     };
-    
+
     if (storage) {
       this.setStorage(storage);
     }
@@ -60,10 +65,10 @@ export class DraftEngine {
    */
   setStorage(storage: DraftStorageAdapter): void {
     this.storage = storage;
-    
+
     // Set up error handling
     storage.onError((error) => {
-      console.error('Draft storage error:', error);
+      console.error("Draft storage error:", error);
     });
   }
 
@@ -89,44 +94,50 @@ export class DraftEngine {
     if (!action.payload) {
       throw new Error(`Unknown action type: ${(action as any).type}`);
     }
-    
-    const currentState = action.type === 'CREATE_DRAFT' ? undefined : this.state.drafts[action.payload.draftId];
+
+    const currentState =
+      action.type === "CREATE_DRAFT"
+        ? undefined
+        : this.state.drafts[action.payload.draftId];
     const newState = this.applyActionToState(currentState, action);
-    
+
     // Update in-memory state
     this.state.drafts[newState.draftId] = newState;
-    
+
     // Auto-save only on human actions to avoid excessive saves
     if (this.storage && this.shouldAutoSave(action)) {
-      this.storage.saveDraft(newState).catch(error => {
-        console.error('Storage failed:', error);
+      this.storage.saveDraft(newState).catch((error) => {
+        console.error("Storage failed:", error);
         // Continue anyway - draft is in memory
       });
     }
-    
+
     return newState;
   }
 
   /**
    * Apply action to state (pure function for testing)
    */
-  applyActionToState(currentState: DraftState | undefined, action: DraftAction): DraftState {
+  applyActionToState(
+    currentState: DraftState | undefined,
+    action: DraftAction,
+  ): DraftState {
     switch (action.type) {
-      case 'CREATE_DRAFT':
+      case "CREATE_DRAFT":
         return this.handleCreateDraft(action);
-      case 'START_DRAFT':
+      case "START_DRAFT":
         return this.handleStartDraft(action, currentState);
-      case 'HUMAN_PICK':
+      case "HUMAN_PICK":
         return this.handleHumanPick(action, currentState);
-      case 'BOT_PICK':
+      case "BOT_PICK":
         return this.handleBotPick(action, currentState);
-      case 'PASS_PACKS':
+      case "PASS_PACKS":
         return this.handlePassPacks(action, currentState);
-      case 'ADVANCE_POSITION':
+      case "ADVANCE_POSITION":
         return this.handleAdvancePosition(action, currentState);
-      case 'START_ROUND':
+      case "START_ROUND":
         return this.handleStartRound(action, currentState);
-      case 'COMPLETE_DRAFT':
+      case "COMPLETE_DRAFT":
         return this.handleCompleteDraft(action, currentState);
       default:
         throw new Error(`Unknown action type: ${(action as any).type}`);
@@ -139,17 +150,21 @@ export class DraftEngine {
   private shouldAutoSave(action: DraftAction): boolean {
     // Only save on human actions and key state transitions
     return [
-      'HUMAN_PICK',
-      'CREATE_DRAFT', 
-      'START_DRAFT',
-      'COMPLETE_DRAFT'
+      "HUMAN_PICK",
+      "CREATE_DRAFT",
+      "START_DRAFT",
+      "COMPLETE_DRAFT",
     ].includes(action.type);
   }
 
   /**
    * Replay actions from history to reach specific state
    */
-  replayToPosition(draftId: string, targetRound: number, targetPick: number): DraftState {
+  replayToPosition(
+    draftId: string,
+    targetRound: number,
+    targetPick: number,
+  ): DraftState {
     const draft = this.state.drafts[draftId];
     if (!draft) {
       throw new Error(`Draft not found: ${draftId}`);
@@ -161,17 +176,19 @@ export class DraftEngine {
       draft.seed,
       draft.setCode,
       draft.playerCount,
-      draft.humanPlayerIndex
+      draft.humanPlayerIndex,
     );
 
     // Replay actions until we reach target position
     let currentState = initialDraft;
     for (const action of draft.actionHistory) {
       currentState = this.applyActionToState(currentState, action);
-      
+
       // Stop if we've reached the target position
-      if (currentState.currentRound >= targetRound && 
-          currentState.currentPick >= targetPick) {
+      if (
+        currentState.currentRound >= targetRound &&
+        currentState.currentPick >= targetPick
+      ) {
         break;
       }
     }
@@ -257,7 +274,7 @@ export class DraftEngine {
   async listDrafts() {
     if (!this.storage) {
       // Return in-memory drafts as summaries
-      return Object.values(this.state.drafts).map(draft => ({
+      return Object.values(this.state.drafts).map((draft) => ({
         draftId: draft.draftId,
         seed: draft.seed,
         setCode: draft.setCode,
@@ -274,7 +291,7 @@ export class DraftEngine {
     try {
       return await this.storage.listDrafts();
     } catch (error) {
-      console.error('Failed to list drafts:', error);
+      console.error("Failed to list drafts:", error);
       return [];
     }
   }
@@ -288,7 +305,7 @@ export class DraftEngine {
     try {
       return await this.storage.getStorageAudit();
     } catch (error) {
-      console.error('Failed to get storage audit:', error);
+      console.error("Failed to get storage audit:", error);
       return null;
     }
   }
@@ -302,7 +319,7 @@ export class DraftEngine {
     try {
       return await this.storage.cleanup(options);
     } catch (error) {
-      console.error('Failed to cleanup storage:', error);
+      console.error("Failed to cleanup storage:", error);
       return 0;
     }
   }
@@ -310,24 +327,34 @@ export class DraftEngine {
   // Private action handlers
 
   private handleCreateDraft(action: DraftAction): DraftState {
-    if (action.type !== 'CREATE_DRAFT') throw new Error('Invalid action type');
+    if (action.type !== "CREATE_DRAFT") throw new Error("Invalid action type");
 
-    const { draftId, seed, setCode, playerCount, humanPlayerIndex } = action.payload;
-    
-    const draft = this.createInitialDraftState(draftId, seed, setCode, playerCount, humanPlayerIndex);
+    const { draftId, seed, setCode, playerCount, humanPlayerIndex } =
+      action.payload;
+
+    const draft = this.createInitialDraftState(
+      draftId,
+      seed,
+      setCode,
+      playerCount,
+      humanPlayerIndex,
+    );
     draft.actionHistory.push(action);
-    
+
     return draft;
   }
 
-  private handleStartDraft(action: DraftAction, currentState?: DraftState): DraftState {
-    if (action.type !== 'START_DRAFT') throw new Error('Invalid action type');
+  private handleStartDraft(
+    action: DraftAction,
+    currentState?: DraftState,
+  ): DraftState {
+    if (action.type !== "START_DRAFT") throw new Error("Invalid action type");
 
     const draft = currentState || this.state.drafts[action.payload.draftId];
-    if (!draft) throw new Error('Draft not found');
+    if (!draft) throw new Error("Draft not found");
 
     const updatedDraft = { ...draft };
-    updatedDraft.status = 'active';
+    updatedDraft.status = "active";
     updatedDraft.actionHistory = [...draft.actionHistory, action];
 
     // Generate initial packs for round 1
@@ -336,40 +363,64 @@ export class DraftEngine {
     return updatedDraft;
   }
 
-  private handleHumanPick(action: DraftAction, currentState?: DraftState): DraftState {
-    if (action.type !== 'HUMAN_PICK') throw new Error('Invalid action type');
+  private handleHumanPick(
+    action: DraftAction,
+    currentState?: DraftState,
+  ): DraftState {
+    if (action.type !== "HUMAN_PICK") throw new Error("Invalid action type");
 
     const draft = currentState || this.state.drafts[action.payload.draftId];
-    if (!draft) throw new Error('Draft not found');
+    if (!draft) throw new Error("Draft not found");
 
-    return this.handlePlayerPick(draft, draft.humanPlayerIndex, action.payload.cardId, action);
+    return this.handlePlayerPick(
+      draft,
+      draft.humanPlayerIndex,
+      action.payload.cardId,
+      action,
+    );
   }
 
-  private handleBotPick(action: DraftAction, currentState?: DraftState): DraftState {
-    if (action.type !== 'BOT_PICK') throw new Error('Invalid action type');
+  private handleBotPick(
+    action: DraftAction,
+    currentState?: DraftState,
+  ): DraftState {
+    if (action.type !== "BOT_PICK") throw new Error("Invalid action type");
 
     const draft = currentState || this.state.drafts[action.payload.draftId];
-    if (!draft) throw new Error('Draft not found');
+    if (!draft) throw new Error("Draft not found");
 
-    return this.handlePlayerPick(draft, action.payload.playerIndex, action.payload.cardId, action);
+    return this.handlePlayerPick(
+      draft,
+      action.payload.playerIndex,
+      action.payload.cardId,
+      action,
+    );
   }
 
-  private handlePlayerPick(draft: DraftState, playerIndex: number, cardId: string, action: DraftAction): DraftState {
-    const updatedDraft = { ...draft };
+  private handlePlayerPick(
+    draft: DraftState,
+    playerIndex: number,
+    cardId: string,
+    action: DraftAction,
+  ): DraftState {
+    const updatedDraft: DraftState = { ...draft };
     updatedDraft.actionHistory = [...draft.actionHistory, action];
 
     // Add card to player's deck
     if (!updatedDraft.playerDecks[playerIndex]) {
       updatedDraft.playerDecks[playerIndex] = [];
     }
-    updatedDraft.playerDecks[playerIndex] = [...updatedDraft.playerDecks[playerIndex], cardId];
+    updatedDraft.playerDecks[playerIndex] = [
+      ...updatedDraft.playerDecks[playerIndex],
+      cardId,
+    ];
 
     // Remove card from current pack
     const currentPacks = updatedDraft.packs[updatedDraft.currentRound];
     if (currentPacks && currentPacks[playerIndex]) {
       const pack = currentPacks[playerIndex];
-      const updatedCards = pack.cards.filter(card => card.id !== cardId);
-      
+      const updatedCards = pack.cards.filter((card) => card.id !== cardId);
+
       updatedDraft.packs[updatedDraft.currentRound] = {
         ...currentPacks,
         [playerIndex]: {
@@ -381,7 +432,7 @@ export class DraftEngine {
 
     // Auto-advance: Check if all players have made their pick for this position
     const finalDraft = this.autoAdvanceIfReady(updatedDraft);
-    
+
     this.state.drafts[draft.draftId] = finalDraft;
     return finalDraft;
   }
@@ -395,13 +446,19 @@ export class DraftEngine {
     if (!currentPacks) return draft;
 
     // Count how many players still have cards to pick in their packs
-    const playersWithCards = currentPacks.filter(pack => pack && pack.cards.length > 0).length;
-    
+    const packs = Object.keys(currentPacks).map((key: string) => {
+      const pack = currentPacks[Number(key)];
+      return pack;
+    });
+    const playersWithCards = packs.filter(
+      (pack) => pack && pack.cards.length > 0,
+    ).length;
+
     if (playersWithCards === 0) {
       // All players have picked - advance to next position
       return this.advanceToNextPosition(draft);
     }
-    
+
     // Still waiting for other players to pick
     return draft;
   }
@@ -416,58 +473,68 @@ export class DraftEngine {
     if (updatedDraft.currentPick < 15) {
       // Move to next pick in same round
       updatedDraft.currentPick += 1;
-      
+
       // Pass packs after each pick
-      updatedDraft = this.handlePassPacks({
-        type: 'PASS_PACKS',
-        payload: { draftId: draft.draftId },
-        timestamp: Date.now()
-      }, updatedDraft);
-      
+      updatedDraft = this.handlePassPacks(
+        {
+          type: "PASS_PACKS",
+          payload: { draftId: draft.draftId },
+          timestamp: Date.now(),
+        },
+        updatedDraft,
+      );
     } else if (updatedDraft.currentRound < 3) {
       // Move to next round
       updatedDraft.currentRound += 1;
       updatedDraft.currentPick = 1;
-      
+
       // Start new round (generates new packs)
-      updatedDraft = this.handleStartRound({
-        type: 'START_ROUND',
-        payload: { 
-          draftId: draft.draftId,
-          round: updatedDraft.currentRound 
+      updatedDraft = this.handleStartRound(
+        {
+          type: "START_ROUND",
+          payload: {
+            draftId: draft.draftId,
+            round: updatedDraft.currentRound,
+          },
+          timestamp: Date.now(),
         },
-        timestamp: Date.now()
-      }, updatedDraft);
-      
+        updatedDraft,
+      );
     } else {
       // Draft complete
-      updatedDraft = this.handleCompleteDraft({
-        type: 'COMPLETE_DRAFT',
-        payload: { draftId: draft.draftId },
-        timestamp: Date.now()
-      }, updatedDraft);
+      updatedDraft = this.handleCompleteDraft(
+        {
+          type: "COMPLETE_DRAFT",
+          payload: { draftId: draft.draftId },
+          timestamp: Date.now(),
+        },
+        updatedDraft,
+      );
     }
 
     // Add advancement action to history
     const advanceAction: DraftAction = {
-      type: 'ADVANCE_POSITION',
-      payload: { 
+      type: "ADVANCE_POSITION",
+      payload: {
         draftId: draft.draftId,
         newRound: updatedDraft.currentRound,
-        newPick: updatedDraft.currentPick
+        newPick: updatedDraft.currentPick,
       },
-      timestamp: Date.now()
+      timestamp: Date.now(),
     };
     updatedDraft.actionHistory = [...updatedDraft.actionHistory, advanceAction];
 
     return updatedDraft;
   }
 
-  private handlePassPacks(action: DraftAction, currentState?: DraftState): DraftState {
-    if (action.type !== 'PASS_PACKS') throw new Error('Invalid action type');
+  private handlePassPacks(
+    action: DraftAction,
+    currentState?: DraftState,
+  ): DraftState {
+    if (action.type !== "PASS_PACKS") throw new Error("Invalid action type");
 
     const draft = currentState || this.state.drafts[action.payload.draftId];
-    if (!draft) throw new Error('Draft not found');
+    if (!draft) throw new Error("Draft not found");
 
     const updatedDraft = { ...draft };
     updatedDraft.actionHistory = [...draft.actionHistory, action];
@@ -475,29 +542,34 @@ export class DraftEngine {
     // Pass packs according to current round direction
     const direction = updatedDraft.packPassDirection[updatedDraft.currentRound];
     const currentPacks = updatedDraft.packs[updatedDraft.currentRound];
-    
+
     if (currentPacks) {
       const newPacks: BoosterPack[] = [];
-      
+
       for (let i = 0; i < updatedDraft.playerCount; i++) {
-        const sourceIndex = direction === 'left' 
-          ? (i + 1) % updatedDraft.playerCount
-          : (i - 1 + updatedDraft.playerCount) % updatedDraft.playerCount;
-        
+        const sourceIndex =
+          direction === "left"
+            ? (i + 1) % updatedDraft.playerCount
+            : (i - 1 + updatedDraft.playerCount) % updatedDraft.playerCount;
+
         newPacks[i] = currentPacks[sourceIndex];
       }
-      
+
       updatedDraft.packs[updatedDraft.currentRound] = newPacks;
     }
 
     return updatedDraft;
   }
 
-  private handleAdvancePosition(action: DraftAction, currentState?: DraftState): DraftState {
-    if (action.type !== 'ADVANCE_POSITION') throw new Error('Invalid action type');
+  private handleAdvancePosition(
+    action: DraftAction,
+    currentState?: DraftState,
+  ): DraftState {
+    if (action.type !== "ADVANCE_POSITION")
+      throw new Error("Invalid action type");
 
     const draft = currentState || this.state.drafts[action.payload.draftId];
-    if (!draft) throw new Error('Draft not found');
+    if (!draft) throw new Error("Draft not found");
 
     const updatedDraft = { ...draft };
     updatedDraft.actionHistory = [...draft.actionHistory, action];
@@ -507,30 +579,40 @@ export class DraftEngine {
     return updatedDraft;
   }
 
-  private handleStartRound(action: DraftAction, currentState?: DraftState): DraftState {
-    if (action.type !== 'START_ROUND') throw new Error('Invalid action type');
+  private handleStartRound(
+    action: DraftAction,
+    currentState?: DraftState,
+  ): DraftState {
+    if (action.type !== "START_ROUND") throw new Error("Invalid action type");
 
     const draft = currentState || this.state.drafts[action.payload.draftId];
-    if (!draft) throw new Error('Draft not found');
+    if (!draft) throw new Error("Draft not found");
 
     const updatedDraft = { ...draft };
     updatedDraft.actionHistory = [...draft.actionHistory, action];
 
     // Generate packs for the new round
-    updatedDraft.packs[action.payload.round] = this.generatePacksForRound(draft, action.payload.round);
+    updatedDraft.packs[action.payload.round] = this.generatePacksForRound(
+      draft,
+      action.payload.round,
+    );
 
     return updatedDraft;
   }
 
-  private handleCompleteDraft(action: DraftAction, currentState?: DraftState): DraftState {
-    if (action.type !== 'COMPLETE_DRAFT') throw new Error('Invalid action type');
+  private handleCompleteDraft(
+    action: DraftAction,
+    currentState?: DraftState,
+  ): DraftState {
+    if (action.type !== "COMPLETE_DRAFT")
+      throw new Error("Invalid action type");
 
     const draft = currentState || this.state.drafts[action.payload.draftId];
-    if (!draft) throw new Error('Draft not found');
+    if (!draft) throw new Error("Draft not found");
 
     const updatedDraft = { ...draft };
     updatedDraft.actionHistory = [...draft.actionHistory, action];
-    updatedDraft.status = 'completed';
+    updatedDraft.status = "completed";
 
     return updatedDraft;
   }
@@ -542,13 +624,13 @@ export class DraftEngine {
     seed: string,
     setCode: string,
     playerCount: number,
-    humanPlayerIndex: number
+    humanPlayerIndex: number,
   ): DraftState {
     return {
       draftId,
       seed,
       setCode,
-      status: 'created',
+      status: "created",
       playerCount,
       humanPlayerIndex,
       currentRound: 1,
@@ -557,21 +639,30 @@ export class DraftEngine {
       playerDecks: {},
       actionHistory: [],
       packPassDirection: {
-        1: 'left',  // Round 1: pass left
-        2: 'right', // Round 2: pass right  
-        3: 'left',  // Round 3: pass left
+        1: "left", // Round 1: pass left
+        2: "right", // Round 2: pass right
+        3: "left", // Round 3: pass left
       },
     };
   }
 
-  private generatePacksForRound(draft: DraftState, round: number): BoosterPack[] {
+  private generatePacksForRound(
+    draft: DraftState,
+    round: number,
+  ): BoosterPack[] {
     const setData = this.state.setData[draft.setCode];
     if (!setData) {
       throw new Error(`Set data not found: ${draft.setCode}`);
     }
 
-    const packGenerator = new PackGenerator(setData, `${draft.seed}_round_${round}`);
-    return packGenerator.generatePacks(draft.playerCount, `${draft.seed}_round_${round}`);
+    const packGenerator = new PackGenerator(
+      setData,
+      `${draft.seed}_round_${round}`,
+    );
+    return packGenerator.generatePacks(
+      draft.playerCount,
+      `${draft.seed}_round_${round}`,
+    );
   }
-
 }
+

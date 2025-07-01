@@ -267,48 +267,22 @@ function DraftInterfaceContent({ routeData }: { routeData: DraftRouteData }) {
   );
 
   /**
-   * Handle card pick
+   * Handle card pick (engine auto-advances, UI follows)
    */
   async function handleCardPick(cardId: string) {
     if (!canPick) return;
     
     try {
+      // Engine processes pick and auto-advances
       await draftActions.pickCard(cardId);
       
       // Process bot picks after human pick
       await draftActions.processBotPicks();
       
-      // Advance to next position if available
-      if (draftProgress && !draftProgress.isComplete) {
-        const nextPosition = getNextPosition(
-          draftProgress.currentRound, 
-          draftProgress.currentPick
-        );
-        
-        if (nextPosition) {
-          await navigation.navigateToPosition(nextPosition.round, nextPosition.pick);
-        }
-      }
+      // No manual advancement needed - engine auto-advances and UI viewing follows
     } catch (pickError) {
       console.error('Failed to pick card:', pickError);
     }
   }
 }
 
-/**
- * Get next position helper
- */
-function getNextPosition(round: number, pick: number): { round: number; pick: number } | null {
-  // Last pick of round 3
-  if (round === 3 && pick === 15) {
-    return null;
-  }
-  
-  // Last pick of round, move to next round
-  if (pick === 15) {
-    return { round: round + 1, pick: 1 };
-  }
-  
-  // Next pick in same round
-  return { round, pick: pick + 1 };
-}
