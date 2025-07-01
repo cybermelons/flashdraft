@@ -220,7 +220,7 @@ function DraftInterfaceContent({ routeData }: { routeData: DraftRouteData }) {
           sidebarOpen ? 'lg:mr-80 hidden lg:block' : ''
         }`}>
           {/* Show overview if no position in URL and draft is complete */}
-          {isCompleted && !routeData.round && !routeData.pick && isViewingCurrent ? (
+          {isCompleted && !routeData.round && !routeData.pick ? (
             <div className="max-w-6xl mx-auto">
               <div className="mb-6">
                 <h2 className="text-3xl font-bold text-white mb-2">Draft Complete - Final Deck</h2>
