@@ -22,7 +22,7 @@ import {
   draftActions,
   uiActions 
 } from '@/stores/draftStore';
-import { $isDarkMode } from '@/stores/uiStore';
+import { $isDarkMode, $sidebarOpen } from '@/stores/uiStore';
 import { SimpleDraftRouter, useDraftNavigation, type DraftRouteData } from './SimpleDraftRouter';
 import { PackDisplay } from './PackDisplay';
 import { DraftHeader } from './DraftHeader';
@@ -85,6 +85,7 @@ function DraftInterfaceContent({ routeData }: { routeData: DraftRouteData }) {
   const error = useStore($error);
   const isViewingCurrent = useStore($isViewingCurrent);
   const currentPosition = useStore($currentPosition);
+  const sidebarOpen = useStore($sidebarOpen);
   
   
   // Debug logging - only on mount and key state changes
@@ -170,7 +171,7 @@ function DraftInterfaceContent({ routeData }: { routeData: DraftRouteData }) {
 
   // Active draft interface (also used for completed drafts with navigation)
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900">
+    <div className="min-h-screen bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900 flex flex-col">
       <DraftHeader />
       <HoverCardPreview />
       
@@ -199,8 +200,15 @@ function DraftInterfaceContent({ routeData }: { routeData: DraftRouteData }) {
         </div>
       )}
       
-      <div className="flex flex-1 min-h-0">
-        <main className="flex-1 p-6">
+      {/* Main content area with sidebar */}
+      <div className="flex-1 relative overflow-hidden">
+        {/* Sidebar overlay/sheet */}
+        <DraftSidebar />
+        
+        {/* Main content - shifts when sidebar is open */}
+        <main className={`h-full p-6 overflow-y-auto transition-all duration-300 ${
+          sidebarOpen ? 'mr-80' : 'mr-0'
+        }`}>
           {/* Show overview if no position in URL and draft is complete */}
           {isCompleted && !routeData.round && !routeData.pick && isViewingCurrent ? (
             <div className="max-w-6xl mx-auto">
@@ -272,8 +280,6 @@ function DraftInterfaceContent({ routeData }: { routeData: DraftRouteData }) {
             </div>
           )}
         </main>
-        
-        <DraftSidebar />
       </div>
       
       {/* Debug component to show engine state */}

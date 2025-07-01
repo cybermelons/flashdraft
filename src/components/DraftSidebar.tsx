@@ -142,20 +142,29 @@ export function DraftSidebar({ className = '' }: DraftSidebarProps) {
   const manaCurve = getManaCurve();
 
   return (
-    <aside className={`${sidebarOpen ? 'w-80' : 'w-12'} transition-all duration-300 bg-slate-800/50 backdrop-blur-sm border-l border-slate-700/50 flex flex-col ${className}`}>
-      {/* Sidebar Toggle */}
+    <>
+      {/* Sidebar toggle button - always visible */}
       <button
         onClick={toggleSidebar}
-        className="p-3 m-3 bg-slate-700/50 hover:bg-slate-600/50 text-slate-300 hover:text-white rounded-xl transition-colors"
+        className="fixed top-20 right-4 z-40 p-3 bg-slate-700/90 hover:bg-slate-600/90 text-slate-300 hover:text-white rounded-xl transition-all duration-200 shadow-lg"
         title={sidebarOpen ? 'Close sidebar' : 'Open sidebar'}
       >
         <svg className={`w-5 h-5 transition-transform duration-200 ${sidebarOpen ? '' : 'rotate-180'}`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 5l7 7-7 7"></path>
         </svg>
       </button>
+      
+      {/* Sidebar sheet */}
+      <aside className={`fixed top-0 right-0 h-full w-80 bg-slate-800/95 backdrop-blur-sm border-l border-slate-700/50 flex flex-col transition-transform duration-300 z-30 ${
+        sidebarOpen ? 'translate-x-0' : 'translate-x-full'
+      } ${className}`}>
+        {/* Sidebar header */}
+        <div className="p-4 border-b border-slate-700/50">
+          <h2 className="text-xl font-bold text-white">Draft Deck</h2>
+          <p className="text-sm text-slate-400 mt-1">{humanDeckCards.length} cards</p>
+        </div>
 
-      {sidebarOpen && (
-        <div className="flex-1 px-3 pb-3 space-y-6 overflow-y-auto">
+        <div className="flex-1 p-4 space-y-6 overflow-y-auto">
           {/* Selected Card Detail */}
           {selectedCard && (
             <div className="bg-slate-700/30 rounded-2xl p-4 border border-slate-600/30">
@@ -437,8 +446,8 @@ export function DraftSidebar({ className = '' }: DraftSidebarProps) {
             </div>
           </div>
         </div>
-      )}
-    </aside>
+      </aside>
+    </>
   );
 }
 
