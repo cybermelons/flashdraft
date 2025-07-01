@@ -14,6 +14,20 @@ DraftSidebar.tsx:400 Uncaught ReferenceError: humanDeck is not defined
   </log>
 </issue>
 
+<issue>
+  i can't navigate to previous picks. directly going to p1p2 when i'm on p1p3 shows me the p1p3 picks and not the immutable state of p1p2.
+</issue>
+
+
+<issue>
+  decklist is showing card names but nothing else.
+  <log>
+    Hope Estheim
+    Unknown Type
+    0
+  </log>
+</issue>
+
 # Development Plan: Fix URL Format and UI Improvements
 
 ## Progress: 16/17 tasks complete (94%)

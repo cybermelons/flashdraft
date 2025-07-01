@@ -26,6 +26,30 @@ interface DraftSidebarProps {
 /**
  * Sidebar component for draft interface
  */
+// Calculate converted mana cost from mana cost string
+function calculateCMC(manaCost?: string): number {
+  if (!manaCost) return 0;
+  
+  // Remove curly braces and count numeric values
+  const matches = manaCost.match(/\{(\d+)\}/g);
+  let cmc = 0;
+  
+  if (matches) {
+    matches.forEach(match => {
+      const num = parseInt(match.replace(/[{}]/g, ''));
+      cmc += num;
+    });
+  }
+  
+  // Count colored mana symbols
+  const coloredSymbols = manaCost.match(/\{[WUBRG]\}/g);
+  if (coloredSymbols) {
+    cmc += coloredSymbols.length;
+  }
+  
+  return cmc;
+}
+
 export function DraftSidebar({ className = '' }: DraftSidebarProps) {
   const currentDraft = useStore($currentDraft);
   const humanDeckCards = useStore($humanDeckCards);
@@ -61,15 +85,15 @@ export function DraftSidebar({ className = '' }: DraftSidebarProps) {
     const stats: Record<string, number> = { W: 0, U: 0, B: 0, R: 0, G: 0, Colorless: 0 };
     
     humanDeckCards.forEach(card => {
-      if (!card.mana_cost || card.mana_cost === '') {
+      if (!card.manaCost || card.manaCost === '') {
         stats.Colorless++;
       } else {
         // Count each color symbol in mana cost
-        if (card.mana_cost.includes('W')) stats.W++;
-        if (card.mana_cost.includes('U')) stats.U++;
-        if (card.mana_cost.includes('B')) stats.B++;
-        if (card.mana_cost.includes('R')) stats.R++;
-        if (card.mana_cost.includes('G')) stats.G++;
+        if (card.manaCost.includes('W')) stats.W++;
+        if (card.manaCost.includes('U')) stats.U++;
+        if (card.manaCost.includes('B')) stats.B++;
+        if (card.manaCost.includes('R')) stats.R++;
+        if (card.manaCost.includes('G')) stats.G++;
       }
     });
     
@@ -88,7 +112,7 @@ export function DraftSidebar({ className = '' }: DraftSidebarProps) {
     };
     
     humanDeckCards.forEach(card => {
-      const typeLine = (card.type_line || '').toLowerCase();
+      const typeLine = (card.type || '').toLowerCase();
       if (typeLine.includes('creature')) stats.creatures++;
       if (typeLine.includes('artifact')) stats.artifacts++;
       if (typeLine.includes('instant')) stats.instants++;
@@ -105,7 +129,8 @@ export function DraftSidebar({ className = '' }: DraftSidebarProps) {
     const curve: Record<number, number> = {};
     
     humanDeckCards.forEach(card => {
-      const cmc = Math.min(card.cmc || 0, 7); // Cap at 7+
+      // Calculate CMC from mana cost
+      const cmc = Math.min(calculateCMC(card.manaCost), 7); // Cap at 7+
       curve[cmc] = (curve[cmc] || 0) + 1;
     });
     
@@ -220,9 +245,9 @@ export function DraftSidebar({ className = '' }: DraftSidebarProps) {
                     >
                       <div className="flex-1 min-w-0">
                         <div className="text-sm text-white font-medium truncate">{card.name}</div>
-                        <div className="text-xs text-slate-400">{card.type_line || 'Unknown Type'}</div>
+                        <div className="text-xs text-slate-400">{card.type || 'Unknown Type'}</div>
                       </div>
-                      <div className="text-xs text-slate-300 font-mono ml-2">{card.mana_cost || '0'}</div>
+                      <div className="text-xs text-slate-300 font-mono ml-2">{card.manaCost || ''}</div>
                     </div>
                   ))}
                 </div>
@@ -397,7 +422,7 @@ export function DraftSidebar({ className = '' }: DraftSidebarProps) {
               </div>
               <div className="bg-slate-600/30 rounded-lg p-3 text-center">
                 <div className="text-xs text-slate-400">Cards</div>
-                <div className="text-lg font-bold text-white">{humanDeck.length}</div>
+                <div className="text-lg font-bold text-white">{humanDeckCards.length}</div>
               </div>
               <div className="bg-slate-600/30 rounded-lg p-3 text-center">
                 <div className="text-xs text-slate-400">Status</div>

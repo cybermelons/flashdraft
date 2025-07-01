@@ -65,9 +65,14 @@ export function SimpleDraftRouter({ children }: SimpleDraftRouterProps) {
         routeError: parsed.error,
       }));
       
-      // Only load different draft, never change position from URL
-      if (parsed.isValid && parsed.draftId && parsed.draftId !== currentDraftId) {
-        handleDraftLoad(parsed.draftId);
+      // Load different draft or update viewing position
+      if (parsed.isValid && parsed.draftId) {
+        if (parsed.draftId !== currentDraftId) {
+          handleDraftLoad(parsed.draftId);
+        } else if (parsed.round && parsed.pick) {
+          // Update viewing position when navigating to a specific position
+          draftActions.navigateToPosition(parsed.round, parsed.pick);
+        }
       }
     };
     

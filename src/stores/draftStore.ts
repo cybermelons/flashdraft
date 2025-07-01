@@ -60,16 +60,18 @@ export const $viewingPosition = computed(
   (round, pick) => ({ round, pick })
 );
 
-// Current pack based on whether viewing current or history
+// Current pack based on viewing position
 export const $currentPack = computed(
-  [$currentDraft, $viewingRound, $isViewingCurrent], 
-  (draft, viewingRound, isViewingCurrent) => {
-    if (!draft) return null;
+  [$viewingDraftState, $viewingRound, $viewingPick], 
+  (viewingState, viewingRound, viewingPick) => {
+    if (!viewingState) return null;
     
-    const { humanPlayerIndex } = draft;
-    // Use engine's current round when viewing current, otherwise use viewing round
-    const round = isViewingCurrent ? draft.currentRound : viewingRound;
-    const roundPacks = draft.packs[round];
+    const { humanPlayerIndex } = viewingState;
+    
+    // When viewing historical state, we need to show the pack BEFORE the pick was made
+    // For example, at p1p2, we should see the pack that was available when making pick 2
+    // This means showing the state as it was at the START of that pick
+    const roundPacks = viewingState.packs[viewingRound];
     return roundPacks?.[humanPlayerIndex] || null;
   }
 );
@@ -111,9 +113,19 @@ export const $cardLookup = computed([$currentDraft], (draft) => {
   return lookup;
 });
 
+// Get human deck based on viewing state
+export const $viewingHumanDeck = computed(
+  [$viewingDraftState],
+  (viewingState) => {
+    if (!viewingState) return [];
+    const { humanPlayerIndex } = viewingState;
+    return viewingState.playerDecks[humanPlayerIndex] || [];
+  }
+);
+
 // Get full card data for human player's deck
 export const $humanDeckCards = computed(
-  [$humanDeck, $cardLookup], 
+  [$viewingHumanDeck, $cardLookup], 
   (deckIds, lookup) => {
     if (!deckIds || !lookup) return [];
     
