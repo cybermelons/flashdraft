@@ -202,17 +202,18 @@ export function PackDisplay({ pack, onCardPick, canPick, className = '' }: PackD
         </div>
       </div>
       
-      {/* Pack Cards Grid - Fixed layout with minimal spacing */}
+      {/* Pack Cards Grid - Responsive grid that shrinks cards until breakpoint */}
       <div className="flex justify-center">
         <div 
-          className={`inline-flex flex-wrap gap-2 ${
+          className={`${
             packViewMode === 'list' 
-              ? 'flex-col' 
-              : ''
+              ? 'flex flex-col gap-2 max-w-[280px]' 
+              : 'grid gap-2 w-full max-w-[1200px]'
           }`}
-          style={{
-            maxWidth: packViewMode === 'list' ? '280px' : '1200px'
-          }}
+          style={packViewMode !== 'list' ? {
+            gridTemplateColumns: 'repeat(auto-fit, minmax(160px, 1fr))',
+            gridAutoRows: 'auto'
+          } : {}}
         >
         {displayCards.map((card, index) => {
           const isPicked = pickedCardId === card.id;
@@ -221,7 +222,7 @@ export function PackDisplay({ pack, onCardPick, canPick, className = '' }: PackD
           return (
             <div 
               key={card.id} 
-              className="relative group flex-shrink-0"
+              className="relative group w-full"
             >
               {showPickNumber && (
                 <div className="absolute -top-2 -left-2 w-6 h-6 bg-blue-600 text-white rounded-full flex items-center justify-center text-xs font-bold z-10 shadow-lg">
@@ -253,6 +254,7 @@ export function PackDisplay({ pack, onCardPick, canPick, className = '' }: PackD
                 onClick={() => handleCardClick(card)}
                 onMouseEnter={() => handleCardHover(card)}
                 onMouseLeave={() => handleCardHover(null)}
+                responsive={packViewMode !== 'list'}
                 className={`${
                   isViewingHistory ? 'cursor-default' : ''
                 } ${

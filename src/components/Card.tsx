@@ -21,6 +21,7 @@ interface CardProps {
   className?: string;
   size?: 'small' | 'medium' | 'large';
   showBackFace?: boolean; // For dual-sided cards
+  responsive?: boolean; // Make card fill container width
 }
 
 /**
@@ -37,7 +38,8 @@ export function Card({
   onMouseLeave,
   className = '',
   size = 'medium',
-  showBackFace = false
+  showBackFace = false,
+  responsive = false
 }: CardProps) {
   const [currentFace, setCurrentFace] = useState(0);
   const [imageError, setImageError] = useState(false);
@@ -81,6 +83,10 @@ export function Card({
 
   // Size classes
   const getSizeClasses = () => {
+    if (responsive) {
+      // For responsive cards, use full width and aspect ratio
+      return 'w-full aspect-[488/680]';
+    }
     switch (size) {
       case 'small': return 'w-20 h-28';
       case 'large': return 'w-64 h-90';
