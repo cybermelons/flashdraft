@@ -12,7 +12,8 @@ import {
   $draftProgress,
   $currentPosition,
   $viewingRound,
-  $viewingPick
+  $viewingPick,
+  $isViewingCurrent
 } from '@/stores/draftStore';
 import { useDraftNavigation } from './SimpleDraftRouter';
 
@@ -29,6 +30,7 @@ export function DraftHeader({ className = '' }: DraftHeaderProps) {
   const currentPosition = useStore($currentPosition);
   const viewingRound = useStore($viewingRound);
   const viewingPick = useStore($viewingPick);
+  const isViewingCurrent = useStore($isViewingCurrent);
   const navigation = useDraftNavigation();
 
   if (!currentDraft) return null;
