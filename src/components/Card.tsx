@@ -41,6 +41,7 @@ export function Card({
 }: CardProps) {
   const [currentFace, setCurrentFace] = useState(0);
   const [imageError, setImageError] = useState(false);
+  const [imageLoaded, setImageLoaded] = useState(false);
 
   const handleClick = () => {
     if (canInteract && onClick) {
@@ -58,6 +59,11 @@ export function Card({
   const isDualSided = card.card_faces && card.card_faces.length > 0;
   const activeFace = isDualSided && showBackFace ? card.card_faces[currentFace] : null;
   const displayCard = activeFace || card;
+  
+  // Reset image loaded state when card changes
+  React.useEffect(() => {
+    setImageLoaded(false);
+  }, [card.id]);
 
   // Get image URL with fallback logic
   const getImageUrl = (imageUris?: CardImageUris): string | null => {
@@ -132,14 +138,22 @@ export function Card({
         </button>
       )}
 
+      {/* Hover darkening overlay */}
+      {isHovered && (
+        <div className="absolute inset-0 bg-black/20 z-20 pointer-events-none rounded-lg" />
+      )}
+      
       {/* Card image or fallback */}
       <div className="relative w-full h-full bg-gradient-to-br from-slate-100 to-slate-200">
         {imageUrl && !imageError ? (
           <img
             src={imageUrl}
             alt={displayCard.name}
-            loading="lazy"
-            className="w-full h-full object-cover"
+            loading="eager"
+            className={`w-full h-full object-cover transition-opacity duration-150 ${
+              imageLoaded ? 'opacity-100' : 'opacity-0'
+            }`}
+            onLoad={() => setImageLoaded(true)}
             onError={() => setImageError(true)}
           />
         ) : (

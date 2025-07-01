@@ -1,5 +1,8 @@
 # Phase 1: Draft UI Polish & Loading States ✅ COMPLETE
 
+make ui elements consistent sizes, like "pick <cardname>" button.
+
+standardize the layout and component sizing per major layout size breakpoint.
 `
 <issue>
 width: packViewMode === 'compact' ? '180px' : '220px'

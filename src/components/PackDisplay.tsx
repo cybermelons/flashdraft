@@ -226,7 +226,8 @@ export function PackDisplay({ pack, onCardPick, canPick, className = '' }: PackD
               {/* Confirm overlay for selected card in normal view */}
               <SelectedCardOverlay 
                 isSelected={!isViewingHistory && selectedCard?.id === card.id} 
-                label="Confirm" 
+                label="Confirm"
+                isHovered={hoveredCard?.id === card.id}
               />
               {/* Green checkmark for non-history view */}
               {!isViewingHistory && isPicked && (
