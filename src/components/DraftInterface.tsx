@@ -101,9 +101,14 @@ function DraftInterfaceContent({ routeData }: { routeData: DraftRouteData }) {
   
   const navigation = useDraftNavigation();
 
-  // Show skeleton for any loading state when we have a draft ID
-  // This covers initial load, navigation to historical picks, etc.
-  if (routeData.draftId && (isLoading || !currentDraft) && !error) {
+  // Show skeleton when we have a draft ID but no draft loaded yet
+  // This prevents any flash of "No Draft Loaded" content
+  if (routeData.draftId && !currentDraft && !error) {
+    return <DraftSkeleton />;
+  }
+  
+  // Also show skeleton during any loading state
+  if (isLoading) {
     return <DraftSkeleton />;
   }
 
@@ -162,6 +167,7 @@ function DraftInterfaceContent({ routeData }: { routeData: DraftRouteData }) {
   }
 
   // No draft loaded (only show this if we don't have a draft ID in the route)
+  // This should never show if there's a draftId - skeleton should show instead
   if (!currentDraft && !routeData.draftId) {
     return (
       <div className="min-h-screen bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900 flex items-center justify-center p-6">
@@ -182,6 +188,12 @@ function DraftInterfaceContent({ routeData }: { routeData: DraftRouteData }) {
         </div>
       </div>
     );
+  }
+
+  // Safety check - if we have a draftId but still no draft, show skeleton
+  // This catches any edge cases we might have missed
+  if (routeData.draftId && !currentDraft) {
+    return <DraftSkeleton />;
   }
 
   // Show completion banner but allow navigation for completed drafts
