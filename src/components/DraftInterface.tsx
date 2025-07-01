@@ -64,6 +64,9 @@ export function DraftInterface({ className = '' }: DraftInterfaceProps) {
     <div 
       className={`draft-interface ${clientTheme} ${className}`}
     >
+      {/* Sidebar at root level - always present */}
+      <DraftSidebar />
+      
       <SimpleDraftRouter>
         {(routeData) => <DraftInterfaceContent routeData={routeData} />}
       </SimpleDraftRouter>
@@ -200,14 +203,11 @@ function DraftInterfaceContent({ routeData }: { routeData: DraftRouteData }) {
         </div>
       )}
       
-      {/* Main content area with sidebar */}
+      {/* Main content area */}
       <div className="flex-1 relative overflow-hidden">
-        {/* Sidebar overlay/sheet */}
-        <DraftSidebar />
-        
-        {/* Main content - shifts when sidebar is open */}
+        {/* Main content - shifts when sidebar is open on desktop */}
         <main className={`h-full p-6 overflow-y-auto transition-all duration-300 ${
-          sidebarOpen ? 'mr-80' : 'mr-0'
+          sidebarOpen ? 'lg:mr-80' : ''
         }`}>
           {/* Show overview if no position in URL and draft is complete */}
           {isCompleted && !routeData.round && !routeData.pick && isViewingCurrent ? (

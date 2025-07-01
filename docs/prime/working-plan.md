@@ -48,6 +48,15 @@ A rules-free testing environment for rapid deck iteration. No mechanics enforcem
 
 ### Phase 1: Draft UI Polish & Loading States ✅
 - [x] Fix loading states and remove UI flashes
+- [x] Implement responsive design for mobile/tablet
+  - 2x2 card grid on mobile (grid-cols-2)
+  - Progressive grid columns: 2 → 3 → 4 → 5 → 6 → 7 based on screen size
+  - Full-screen sidebar on mobile with toggle button
+  - Desktop sidebar shifts content (mr-80) when open
+- [x] Remove double-click to pick - single click selects, confirm button picks
+- [x] Quick pick mode remains as instant-pick option
+- [x] Fix layout shifts with fixed dimensions for UI elements
+- [x] Add mobile toggle between pack view and decklist view
 - [x] Clean up visual design and remove clutter
 - [x] Fix history view interaction and selection display
 - [x] Detailed plan: [phase-1-ui-polish.md](./phase-1-ui-polish.md)
