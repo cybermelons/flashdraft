@@ -343,8 +343,8 @@ function sortAndFilterCards(
         return a.name.localeCompare(b.name);
       
       case 'type':
-        const typeA = a.type || '';
-        const typeB = b.type || '';
+        const typeA = a.type_line || '';
+        const typeB = b.type_line || '';
         return typeA.localeCompare(typeB);
       
       default:

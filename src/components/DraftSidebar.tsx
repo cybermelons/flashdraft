@@ -88,7 +88,7 @@ export function DraftSidebar({ className = '' }: DraftSidebarProps) {
     };
     
     humanDeckCards.forEach(card => {
-      const typeLine = card.type_line.toLowerCase();
+      const typeLine = (card.type_line || '').toLowerCase();
       if (typeLine.includes('creature')) stats.creatures++;
       if (typeLine.includes('artifact')) stats.artifacts++;
       if (typeLine.includes('instant')) stats.instants++;
@@ -219,7 +219,7 @@ export function DraftSidebar({ className = '' }: DraftSidebarProps) {
                     >
                       <div className="flex-1 min-w-0">
                         <div className="text-sm text-white font-medium truncate">{card.name}</div>
-                        <div className="text-xs text-slate-400">{card.type_line}</div>
+                        <div className="text-xs text-slate-400">{card.type_line || 'Unknown Type'}</div>
                       </div>
                       <div className="text-xs text-slate-300 font-mono ml-2">{card.mana_cost || '0'}</div>
                     </div>
