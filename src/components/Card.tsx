@@ -104,7 +104,6 @@ export function Card({
         relative rounded-lg overflow-hidden
         ${getSizeClasses()}
         ${getBorderClasses()}
-        ${isSelected ? 'ring-2 ring-blue-500' : ''}
         ${canInteract ? 'cursor-pointer' : 'cursor-default'}
         ${className}
       `.trim()}

@@ -223,6 +223,11 @@ export function PackDisplay({ pack, onCardPick, canPick, className = '' }: PackD
               )}
               {/* Selected overlay for history view */}
               <SelectedCardOverlay isSelected={isViewingHistory && isPicked} />
+              {/* Confirm overlay for selected card in normal view */}
+              <SelectedCardOverlay 
+                isSelected={!isViewingHistory && selectedCard?.id === card.id} 
+                label="Confirm" 
+              />
               {/* Green checkmark for non-history view */}
               {!isViewingHistory && isPicked && (
                 <div className="absolute -top-2 -right-2 bg-green-600 text-white rounded-full p-1.5 z-10 shadow-lg" title="You picked this card">
@@ -241,10 +246,6 @@ export function PackDisplay({ pack, onCardPick, canPick, className = '' }: PackD
                 onMouseEnter={() => handleCardHover(card)}
                 onMouseLeave={() => handleCardHover(null)}
                 className={`${
-                  !isViewingHistory && selectedCard?.id === card.id 
-                    ? 'ring-2 ring-blue-500 ring-offset-2 ring-offset-slate-900' 
-                    : ''
-                } ${
                   isViewingHistory ? 'cursor-default' : ''
                 } ${
                   !canPick && !isViewingHistory ? 'opacity-75' : ''

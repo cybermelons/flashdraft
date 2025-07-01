@@ -7,9 +7,10 @@
 
 interface SelectedCardOverlayProps {
   isSelected: boolean;
+  label?: string;
 }
 
-export function SelectedCardOverlay({ isSelected }: SelectedCardOverlayProps) {
+export function SelectedCardOverlay({ isSelected, label = "Selected" }: SelectedCardOverlayProps) {
   if (!isSelected) return null;
   
   return (
@@ -23,7 +24,7 @@ export function SelectedCardOverlay({ isSelected }: SelectedCardOverlayProps) {
             d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"
           />
         </svg>
-        <span className="text-xl font-bold">Selected</span>
+        <span className="text-xl font-bold">{label}</span>
       </div>
     </div>
   );
