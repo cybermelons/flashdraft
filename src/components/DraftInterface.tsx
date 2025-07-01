@@ -101,9 +101,9 @@ function DraftInterfaceContent({ routeData }: { routeData: DraftRouteData }) {
   
   const navigation = useDraftNavigation();
 
-  // Show skeleton immediately if we have a draft ID but no draft loaded yet
-  // This prevents the "invalid draft url" flash
-  if (routeData.draftId && !currentDraft && !error) {
+  // Show skeleton for any loading state when we have a draft ID
+  // This covers initial load, navigation to historical picks, etc.
+  if (routeData.draftId && (isLoading || !currentDraft) && !error) {
     return <DraftSkeleton />;
   }
 
@@ -128,11 +128,6 @@ function DraftInterfaceContent({ routeData }: { routeData: DraftRouteData }) {
         </div>
       </div>
     );
-  }
-
-  // Loading state - show skeleton during async operations
-  if (isLoading) {
-    return <DraftSkeleton />;
   }
 
   // Error state
@@ -166,8 +161,8 @@ function DraftInterfaceContent({ routeData }: { routeData: DraftRouteData }) {
     );
   }
 
-  // No draft loaded
-  if (!currentDraft) {
+  // No draft loaded (only show this if we don't have a draft ID in the route)
+  if (!currentDraft && !routeData.draftId) {
     return (
       <div className="min-h-screen bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900 flex items-center justify-center p-6">
         <div className="bg-slate-800/50 backdrop-blur-sm rounded-2xl p-8 border border-slate-700/50 text-center max-w-md">
