@@ -101,14 +101,9 @@ function DraftInterfaceContent({ routeData }: { routeData: DraftRouteData }) {
   }, [canPick, currentDraft?.currentRound, currentDraft?.currentPick]);
   
   const navigation = useDraftNavigation();
-
-  // Check if we're on a draft route by looking at the URL
-  const isDraftRoute = typeof window !== 'undefined' && 
-    window.location.pathname.startsWith('/draft/') && 
-    window.location.pathname.split('/')[2];
-    
-  // Show skeleton if loading or if we have a draft ID (or are on draft route) but no draft loaded yet
-  if (isLoading || ((routeData.draftId || isDraftRoute) && !currentDraft && !error)) {
+  
+  // Default to skeleton until we have definitive state
+  if (!currentDraft && !error && !routeData.routeError) {
     return <DraftSkeleton />;
   }
 
@@ -166,29 +161,6 @@ function DraftInterfaceContent({ routeData }: { routeData: DraftRouteData }) {
     );
   }
 
-  // No draft loaded - but only show this if we're not on a draft route
-  // If we're on a draft route, the skeleton should have shown
-  if (!currentDraft && !routeData.draftId && !isDraftRoute) {
-    return (
-      <div className="min-h-screen bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900 flex items-center justify-center p-6">
-        <div className="bg-slate-800/50 backdrop-blur-sm rounded-2xl p-8 border border-slate-700/50 text-center max-w-md">
-          <div className="text-slate-400 mb-6">
-            <svg className="w-16 h-16 mx-auto" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10"></path>
-            </svg>
-          </div>
-          <h2 className="text-2xl font-bold text-white mb-3">No Draft Loaded</h2>
-          <p className="text-slate-300 mb-6">Select a draft to continue or create a new one.</p>
-          <button 
-            onClick={() => navigation.navigateToDraftList()}
-            className="bg-blue-600 hover:bg-blue-500 text-white px-6 py-3 rounded-xl font-semibold transition-colors"
-          >
-            Browse Drafts
-          </button>
-        </div>
-      </div>
-    );
-  }
 
 
   // Show completion banner but allow navigation for completed drafts

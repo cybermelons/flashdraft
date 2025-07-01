@@ -13,7 +13,7 @@ export function SelectedCardOverlay({ isSelected }: SelectedCardOverlayProps) {
   if (!isSelected) return null;
   
   return (
-    <div className="absolute inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center rounded-lg z-10 pointer-events-none">
+    <div className="absolute inset-0 bg-black/60 flex items-center justify-center rounded-lg z-10 pointer-events-none">
       <div className="text-white text-center">
         <svg className="w-16 h-16 mx-auto mb-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
           <path 

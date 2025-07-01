@@ -234,12 +234,12 @@ export function PackDisplay({ pack, onCardPick, canPick, className = '' }: PackD
               <CardComponent
                 card={card}
                 isSelected={!isViewingHistory && selectedCard?.id === card.id}
-                isHovered={!isViewingHistory && hoveredCard?.id === card.id}
+                isHovered={hoveredCard?.id === card.id}
                 canInteract={!isViewingHistory}
                 quickPickNumber={showPickNumber ? index + 1 : undefined}
                 onClick={() => handleCardClick(card)}
-                onMouseEnter={() => !isViewingHistory && handleCardHover(card)}
-                onMouseLeave={() => !isViewingHistory && handleCardHover(null)}
+                onMouseEnter={() => handleCardHover(card)}
+                onMouseLeave={() => handleCardHover(null)}
                 className={`${
                   !isViewingHistory && selectedCard?.id === card.id 
                     ? 'ring-2 ring-blue-500 ring-offset-2 ring-offset-slate-900' 
