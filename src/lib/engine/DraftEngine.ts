@@ -128,6 +128,7 @@ export class DraftEngine {
   applyActionToState(
     currentState: DraftState | undefined,
     action: DraftAction,
+    isReplaying: boolean = false,
   ): DraftState {
     switch (action.type) {
       case "CREATE_DRAFT":
@@ -135,9 +136,9 @@ export class DraftEngine {
       case "START_DRAFT":
         return this.handleStartDraft(action, currentState);
       case "HUMAN_PICK":
-        return this.handleHumanPick(action, currentState);
+        return this.handleHumanPick(action, currentState, isReplaying);
       case "BOT_PICK":
-        return this.handleBotPick(action, currentState);
+        return this.handleBotPick(action, currentState, isReplaying);
       case "PASS_PACKS":
         return this.handlePassPacks(action, currentState);
       case "ADVANCE_POSITION":
@@ -189,19 +190,19 @@ export class DraftEngine {
     // Replay actions until we reach target position
     let currentState = initialDraft;
     for (const action of draft.actionHistory) {
-      // For position 1,1, we need to include START_DRAFT to see packs
-      // but exclude any picks made at that position
-      const isPickAction = action.type === 'HUMAN_PICK' || action.type === 'BOT_PICK';
-      const wouldAdvancePastTarget = isPickAction && 
-        currentState.currentRound === targetRound && 
-        currentState.currentPick === targetPick;
-      
-      // Stop before applying picks that would advance past our target
-      if (wouldAdvancePastTarget) {
-        break;
+      // Check if we've reached our target position
+      if (currentState.currentRound === targetRound && currentState.currentPick === targetPick) {
+        // We're at the target position
+        // Only continue if this is NOT a pick action (we want to see the state before picks at this position)
+        const isPickAction = action.type === 'HUMAN_PICK' || action.type === 'BOT_PICK';
+        if (isPickAction) {
+          break; // Stop before applying picks at the target position
+        }
       }
       
-      currentState = this.applyActionToState(currentState, action);
+      // Apply all actions that happen before reaching the target position
+      // Pass isReplaying=true to prevent auto-advancement during replay
+      currentState = this.applyActionToState(currentState, action, true);
     }
 
     return currentState;
@@ -375,6 +376,7 @@ export class DraftEngine {
   private handleHumanPick(
     action: DraftAction,
     currentState?: DraftState,
+    isReplaying: boolean = false,
   ): DraftState {
     if (action.type !== "HUMAN_PICK") throw new Error("Invalid action type");
     if (!currentState) throw new Error("Draft not found");
@@ -384,12 +386,14 @@ export class DraftEngine {
       currentState.humanPlayerIndex,
       action.payload.cardId,
       action,
+      isReplaying,
     );
   }
 
   private handleBotPick(
     action: DraftAction,
     currentState?: DraftState,
+    isReplaying: boolean = false,
   ): DraftState {
     if (action.type !== "BOT_PICK") throw new Error("Invalid action type");
     if (!currentState) throw new Error("Draft not found");
@@ -399,6 +403,7 @@ export class DraftEngine {
       action.payload.playerIndex,
       action.payload.cardId,
       action,
+      isReplaying,
     );
   }
 
@@ -407,6 +412,7 @@ export class DraftEngine {
     playerIndex: number,
     cardId: string,
     action: DraftAction,
+    isReplaying: boolean = false,
   ): DraftState {
     const updatedDraft: DraftState = { ...draft };
     updatedDraft.actionHistory = [...draft.actionHistory, action];
@@ -436,7 +442,8 @@ export class DraftEngine {
     }
 
     // Auto-advance: Check if all players have made their pick for this position
-    const finalDraft = this.autoAdvanceIfReady(updatedDraft);
+    // Skip auto-advance during replay to avoid double advancement
+    const finalDraft = isReplaying ? updatedDraft : this.autoAdvanceIfReady(updatedDraft);
 
     // Don't save to state here - let applyAction handle it
     return finalDraft;

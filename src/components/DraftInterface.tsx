@@ -17,6 +17,7 @@ import {
   $isLoading,
   $error,
   $isViewingCurrent,
+  $currentPosition,
   draftActions,
   uiActions 
 } from '@/stores/draftStore';
