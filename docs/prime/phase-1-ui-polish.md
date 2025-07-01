@@ -1,6 +1,22 @@
 # Phase 1: Draft UI Polish & Loading States ✅ COMPLETE
 
-make ui elements consistent sizes, like "pick <cardname>" button.
+<card-hover-issues>
+  <issue>
+    make card hover stay still while mousing over the same card.
+  </issue>
+  <issue>
+    card hover should take whole vertical screen space, 
+  </issue>
+
+  <card>
+    not flash from white -> card image. lighten from black
+  </card>
+</card-hover-issues>
+
+
+<issue>
+  make ui elements consistent sizes, like "pick <cardname>" button.
+</issue>
 
 standardize the layout and component sizing per major layout size breakpoint.
 `
