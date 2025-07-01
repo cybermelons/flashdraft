@@ -332,7 +332,9 @@ export const draftActions = {
       $selectedCard.set(null); // Clear selection after pick
       
       // Process all picks and position updates together
+      console.log('About to process bot picks');
       await this.processAllPicksAndAdvance();
+      console.log('Bot picks processed');
       
     } catch (error) {
       const message = error instanceof Error ? error.message : 'Failed to pick card';
@@ -358,8 +360,10 @@ export const draftActions = {
       let currentState = draft;
       
       // Process picks for all non-human players
+      console.log('Processing bot picks, player count:', draft.playerCount);
       for (let playerIndex = 1; playerIndex < draft.playerCount; playerIndex++) {
         const currentPack = currentState.packs[currentState.currentRound]?.[playerIndex];
+        console.log(`Bot ${playerIndex} pack:`, currentPack?.cards.length || 0, 'cards');
         if (currentPack && currentPack.cards.length > 0) {
           // Simple bot logic: pick first card
           const cardToPickId = currentPack.cards[0].id;
@@ -371,6 +375,7 @@ export const draftActions = {
           };
           
           currentState = draftEngine.applyAction(action);
+          console.log(`Bot ${playerIndex} picked card`);
         }
       }
       
@@ -378,6 +383,10 @@ export const draftActions = {
       $currentDraft.set(currentState);
       
       // Update viewing position to match engine
+      console.log('Final state after all picks:', {
+        currentRound: currentState.currentRound,
+        currentPick: currentState.currentPick
+      });
       $viewingRound.set(currentState.currentRound);
       $viewingPick.set(currentState.currentPick);
       
