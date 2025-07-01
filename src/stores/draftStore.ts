@@ -332,7 +332,8 @@ export const draftActions = {
       $selectedCard.set(null); // Clear selection after pick
       
       // Process all picks and position updates together
-      await this.processAllPicksAndAdvance();
+      // Pass the updated draft directly to avoid race conditions
+      await this.processAllPicksAndAdvance(updatedDraft);
       
     } catch (error) {
       const message = error instanceof Error ? error.message : 'Failed to pick card';
@@ -346,8 +347,8 @@ export const draftActions = {
   /**
    * Process all picks and advance position atomically
    */
-  async processAllPicksAndAdvance(): Promise<void> {
-    const draft = $currentDraft.get();
+  async processAllPicksAndAdvance(draftAfterHumanPick?: DraftState): Promise<void> {
+    const draft = draftAfterHumanPick || $currentDraft.get();
     const draftId = $currentDraftId.get();
     
     if (!draft || !draftId) throw new Error('No current draft');
