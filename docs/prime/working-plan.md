@@ -1,5 +1,7 @@
 # issues
 
+- invalid draft url while loading draft data. put correspondingly sized skeletons while loading.
+
 - for decklist show cards, just the top part with the name and pips. cascade them. 
 - don't put that much space between cards for pick layout.
 - at bottom of decklist, put sideboard beneath. clicking on decklist puts it in sideboard and vice versa
