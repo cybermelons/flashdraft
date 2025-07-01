@@ -41,7 +41,18 @@ export function SimpleDraftRouter({ children }: SimpleDraftRouterProps) {
   const error = useStore($error);
   
   const [routeData, setRouteData] = useState<DraftRouteData>(() => {
-    // Initialize with parsed URL data
+    // Initialize with parsed URL data (check for window to avoid SSR issues)
+    if (typeof window === 'undefined') {
+      return {
+        draftId: null,
+        round: null,
+        pick: null,
+        isLoading: true, // Show loading during SSR
+        error: null,
+        isValidRoute: true,
+      };
+    }
+    
     const parsed = parseDraftURL(window.location.pathname);
     return {
       draftId: parsed.draftId,
@@ -57,6 +68,9 @@ export function SimpleDraftRouter({ children }: SimpleDraftRouterProps) {
 
   // Parse URL and update route data  
   useEffect(() => {
+    // Skip on SSR
+    if (typeof window === 'undefined') return;
+    
     // Parse URL on mount
     const parsed = parseDraftURL(window.location.pathname);
     
@@ -189,6 +203,9 @@ export function useDraftRoute(): DraftRouteData {
   });
 
   useEffect(() => {
+    // Skip on SSR
+    if (typeof window === 'undefined') return;
+    
     const parsed = parseDraftURL(window.location.pathname);
     
     setRouteData({
