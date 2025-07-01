@@ -144,9 +144,9 @@ export function PackDisplay({ pack, onCardPick, canPick, className = '' }: PackD
 
   return (
     <div className={`${className}`}>
-      {/* Pack Header */}
-      <div className="bg-slate-800/50 backdrop-blur-sm rounded-2xl p-6 border border-slate-700/50 mb-6">
-        <div className="flex items-center justify-between">
+      {/* Pack Header - Fixed height to prevent layout shifts */}
+      <div className="bg-slate-800/50 backdrop-blur-sm rounded-2xl p-6 border border-slate-700/50 mb-6 h-[108px]">
+        <div className="flex items-center justify-between h-full">
           <div className="flex items-center gap-4">
             <div>
               <h2 className="text-2xl font-bold text-white">Current Pack</h2>
@@ -154,7 +154,7 @@ export function PackDisplay({ pack, onCardPick, canPick, className = '' }: PackD
                 <span className="bg-slate-700/50 text-slate-300 px-3 py-1 rounded-full text-sm font-medium">
                   {pack.id}
                 </span>
-                <span className="text-slate-400 text-sm">
+                <span className="text-slate-400 text-sm min-w-[120px] inline-block">
                   {displayCards.length} cards remaining
                 </span>
               </div>
@@ -165,31 +165,38 @@ export function PackDisplay({ pack, onCardPick, canPick, className = '' }: PackD
             <div className="flex items-center gap-3">
               <button
                 onClick={() => uiStoreActions.toggleQuickPickMode()}
-                className={`px-4 py-2 rounded-xl font-medium transition-colors ${
+                className={`w-[140px] h-[44px] rounded-xl font-medium transition-colors flex items-center justify-center ${
                   quickPickMode 
                     ? 'bg-blue-600 hover:bg-blue-500 text-white' 
                     : 'bg-slate-700/50 hover:bg-slate-600/50 text-slate-300 hover:text-white'
                 }`}
                 title={quickPickMode ? 'Quick pick: ON - Click to pick immediately' : 'Quick pick: OFF - Click to select, double-click to pick'}
               >
-                <svg className="w-4 h-4 inline mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <svg className="w-4 h-4 mr-2 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M13 10V3L4 14h7v7l9-11h-7z"></path>
                 </svg>
-                Quick Pick
+                <span>Quick Pick</span>
               </button>
               
-              {selectedCard && (
-                <button
-                  onClick={() => onCardPick(selectedCard.id)}
-                  disabled={!canPick}
-                  className="bg-gradient-to-r from-green-600 to-green-500 hover:from-green-500 hover:to-green-400 disabled:from-slate-600 disabled:to-slate-600 text-white px-6 py-2 rounded-xl font-semibold transition-all duration-200 disabled:cursor-not-allowed min-w-[200px]"
-                >
-                  <svg className="w-4 h-4 inline mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M5 13l4 4L19 7"></path>
-                  </svg>
-                  <span className="truncate">Pick {selectedCard.name}</span>
-                </button>
-              )}
+              {/* Pick button container - always reserve space */}
+              <div className="w-[250px] h-[44px]">
+                {selectedCard ? (
+                  <button
+                    onClick={() => onCardPick(selectedCard.id)}
+                    disabled={!canPick}
+                    className="w-full h-full bg-gradient-to-r from-green-600 to-green-500 hover:from-green-500 hover:to-green-400 disabled:from-slate-600 disabled:to-slate-600 text-white px-6 rounded-xl font-semibold transition-all duration-200 disabled:cursor-not-allowed flex items-center justify-center"
+                  >
+                    <svg className="w-4 h-4 mr-2 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M5 13l4 4L19 7"></path>
+                    </svg>
+                    <span className="truncate">Pick {selectedCard.name}</span>
+                  </button>
+                ) : (
+                  <div className="w-full h-full bg-slate-700/30 rounded-xl flex items-center justify-center text-slate-500">
+                    Select a card
+                  </div>
+                )}
+              </div>
             </div>
           )}
         </div>
@@ -271,9 +278,9 @@ export function PackDisplay({ pack, onCardPick, canPick, className = '' }: PackD
         </div>
       )}
       
-      {/* Keyboard Hints */}
-      {canPick && displayCards.length > 0 && !isViewingHistory && (
-        <div className="mt-6 bg-blue-500/10 backdrop-blur-sm rounded-xl p-4 border border-blue-500/20">
+      {/* Keyboard Hints - Reserve space to prevent layout shift */}
+      <div className={`mt-6 ${canPick && displayCards.length > 0 && !isViewingHistory ? '' : 'invisible'}`}>
+        <div className="bg-blue-500/10 backdrop-blur-sm rounded-xl p-4 border border-blue-500/20">
           <div className="flex items-start gap-3">
             <div className="text-blue-400 mt-0.5">
               <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -283,7 +290,7 @@ export function PackDisplay({ pack, onCardPick, canPick, className = '' }: PackD
             <div className="text-sm text-blue-300">
               <p className="font-medium mb-1">Keyboard Controls:</p>
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 text-blue-200">
-                <div>• Numbers <span className="bg-blue-500/20 px-1.5 py-0.5 rounded font-mono">1-{Math.min(9, displayCards.length)}</span> for quick pick</div>
+                <div>• Numbers <span className="bg-blue-500/20 px-1.5 py-0.5 rounded font-mono">1-9</span> for quick pick</div>
                 <div>• <span className="bg-blue-500/20 px-1.5 py-0.5 rounded font-mono">Enter</span> to pick selected card</div>
                 <div>• <span className="bg-blue-500/20 px-1.5 py-0.5 rounded font-mono">Arrow keys</span> to navigate</div>
                 <div>• <span className="bg-blue-500/20 px-1.5 py-0.5 rounded font-mono">Double-click</span> to pick directly</div>
@@ -291,7 +298,7 @@ export function PackDisplay({ pack, onCardPick, canPick, className = '' }: PackD
             </div>
           </div>
         </div>
-      )}
+      </div>
     </div>
   );
 }

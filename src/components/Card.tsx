@@ -106,6 +106,7 @@ export function Card({
 
   return (
     <div
+      data-card-id={card.id}
       className={`
         relative rounded-lg overflow-hidden
         ${getSizeClasses()}

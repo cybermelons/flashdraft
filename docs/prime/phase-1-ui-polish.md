@@ -1,6 +1,11 @@
 # Phase 1: Draft UI Polish & Loading States ✅ COMPLETE
 
 <issue>
+  actually don't use double click method. use the static "confirm pick" button.
+  users canenable quickpick
+</issue>
+
+<issue>
   /draft/ route
   overview of finished draft should show decklist, otherwise redirect to 
   current pick.
@@ -28,9 +33,16 @@
 
 <issue>
   make ui elements consistent sizes, like "pick <cardname>" button.
+    there's still a lot of resizing issues. 
 </issue>
 
-standardize the layout and component sizing per major layout size breakpoint.
+<issue>
+  the overview is viewing p1p1 still, so no cards displayed.
+</issue>
+
+<issue>
+  standardize the layout and component sizing per major layout size breakpoint.
+</issue>
 `
 <issue>
 width: packViewMode === 'compact' ? '180px' : '220px'

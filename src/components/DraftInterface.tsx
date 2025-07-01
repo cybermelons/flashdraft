@@ -30,6 +30,7 @@ import { DraftSidebar } from './DraftSidebar';
 import { EngineDebug } from './EngineDebug';
 import { DraftSkeleton } from './DraftSkeleton';
 import { HoverCardPreview } from './HoverCardPreview';
+import { DecklistOverview } from './DecklistOverview';
 
 interface DraftInterfaceProps {
   className?: string;
@@ -200,7 +201,29 @@ function DraftInterfaceContent({ routeData }: { routeData: DraftRouteData }) {
       
       <div className="flex flex-1 min-h-0">
         <main className="flex-1 p-6">
-          {currentPack ? (
+          {/* Show overview if no position in URL and draft is complete */}
+          {isCompleted && !routeData.round && !routeData.pick && isViewingCurrent ? (
+            <div className="max-w-6xl mx-auto">
+              <div className="mb-6">
+                <h2 className="text-3xl font-bold text-white mb-2">Draft Complete - Final Deck</h2>
+                <div className="flex gap-3">
+                  <button 
+                    onClick={() => navigation.navigateToPosition(1, 1)}
+                    className="bg-blue-600 hover:bg-blue-500 text-white px-4 py-2 rounded-xl font-medium transition-colors"
+                  >
+                    Review Draft Picks
+                  </button>
+                  <button 
+                    onClick={() => navigation.navigateToDraftList()}
+                    className="bg-slate-600 hover:bg-slate-500 text-white px-4 py-2 rounded-xl font-medium transition-colors"
+                  >
+                    Back to Draft List
+                  </button>
+                </div>
+              </div>
+              <DecklistOverview cards={humanDeckCards} draftId={currentDraft.draftId} />
+            </div>
+          ) : currentPack ? (
             <PackDisplay 
               pack={currentPack}
               onCardPick={handleCardPick}

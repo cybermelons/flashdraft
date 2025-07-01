@@ -89,6 +89,22 @@ export function SimpleDraftRouter({ children }: SimpleDraftRouterProps) {
       handleDraftLoad(parsed.draftId);
     }
     
+    // Handle draft overview route (no position specified)
+    if (parsed.isValid && parsed.draftId && !parsed.round && !parsed.pick && currentDraft) {
+      // If draft is complete, stay on overview to show decklist
+      if (currentDraft.status === 'completed') {
+        // Stay on overview page - no navigation needed
+      } else if (currentDraft.draftId === parsed.draftId) {
+        // Only redirect if we're looking at the same draft
+        // Redirect to current position
+        urlManager.navigateToPosition(
+          currentDraft.draftId,
+          currentDraft.currentRound,
+          currentDraft.currentPick
+        );
+      }
+    }
+    
     // Handle browser navigation (back/forward)
     const handlePopstate = () => {
       const parsed = parseDraftURL(window.location.pathname);
@@ -114,7 +130,7 @@ export function SimpleDraftRouter({ children }: SimpleDraftRouterProps) {
     return () => {
       window.removeEventListener('popstate', handlePopstate);
     };
-  }, [currentDraftId]); // Don't re-run on draft changes, only on draft ID changes
+  }, [currentDraftId, currentDraft?.status, currentDraft?.currentRound, currentDraft?.currentPick]); // Re-run when draft status or position changes
   
   // Don't automatically update URL - let navigation be explicit
   // URL updates should only happen through:
