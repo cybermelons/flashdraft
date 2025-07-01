@@ -11,6 +11,8 @@ import { LocalStorageAdapter } from '@/lib/engine/storage/LocalStorageAdapter';
 import type { DraftAction } from '@/lib/engine/actions';
 import type { Card, SetData } from '@/lib/engine/PackGenerator';
 import { loadAllSets, getAvailableSetCodes } from '@/lib/setData';
+import { parseDraftURL } from '@/utils/navigation';
+import { urlManager } from '@/utils/urlManager';
 
 // Initialize draft engine with storage
 const storage = new LocalStorageAdapter();
@@ -37,9 +39,35 @@ export const $selectedCard = atom<Card | null>(null);
 export const $hoveredCard = atom<Card | null>(null);
 export const $isPickingCard = atom<boolean>(false);
 
-// UI navigation state (separate from engine progression)
-export const $viewingRound = atom<number>(1);
-export const $viewingPick = atom<number>(1);
+// Track URL changes
+const $urlPath = atom<string>(typeof window !== 'undefined' ? window.location.pathname : '');
+
+// Listen for URL changes
+if (typeof window !== 'undefined') {
+  // Update on popstate (browser navigation)
+  window.addEventListener('popstate', () => {
+    $urlPath.set(window.location.pathname);
+  });
+  
+  // Update on storage events (our custom trigger for pushState/replaceState)
+  window.addEventListener('storage', () => {
+    $urlPath.set(window.location.pathname);
+  });
+}
+
+// Get viewing position from URL - single source of truth
+export const $viewingPosition = computed([$urlPath], (urlPath) => {
+  if (typeof window === 'undefined') return { round: 1, pick: 1 };
+  
+  const parsed = parseDraftURL(urlPath || window.location.pathname);
+  return {
+    round: parsed.round || 1,
+    pick: parsed.pick || 1
+  };
+});
+
+export const $viewingRound = computed([$viewingPosition], (pos) => pos.round);
+export const $viewingPick = computed([$viewingPosition], (pos) => pos.pick);
 
 // Derived navigation state
 export const $isViewingCurrent = computed(
@@ -53,11 +81,6 @@ export const $isViewingCurrent = computed(
 export const $isViewingHistory = computed(
   [$isViewingCurrent], 
   (isViewingCurrent) => !isViewingCurrent
-);
-
-export const $viewingPosition = computed(
-  [$viewingRound, $viewingPick], 
-  (round, pick) => ({ round, pick })
 );
 
 // Get historical state at viewing position
@@ -231,9 +254,7 @@ export const draftActions = {
       $currentDraftId.set(draftId);
       $currentDraft.set(newDraft);
       
-      // Initialize viewing position
-      $viewingRound.set(1);
-      $viewingPick.set(1);
+      // URL will be updated by the router when navigating to the draft
       
       return draftId;
     } catch (error) {
@@ -262,9 +283,7 @@ export const draftActions = {
       $currentDraftId.set(draftId);
       $currentDraft.set(draft);
       
-      // Initialize viewing position to current engine progression
-      $viewingRound.set(draft.currentRound);
-      $viewingPick.set(draft.currentPick);
+      // URL will be updated by the router to match engine position
     } catch (error) {
       const message = error instanceof Error ? error.message : 'Failed to load draft';
       $error.set(message);
@@ -293,9 +312,7 @@ export const draftActions = {
       const updatedDraft = draftEngine.applyAction(action);
       $currentDraft.set(updatedDraft);
       
-      // Initialize viewing position to current engine progression  
-      $viewingRound.set(updatedDraft.currentRound);
-      $viewingPick.set(updatedDraft.currentPick);
+      // URL will be updated after draft starts
     } catch (error) {
       const message = error instanceof Error ? error.message : 'Failed to start draft';
       $error.set(message);
@@ -384,9 +401,12 @@ export const draftActions = {
       // Now update everything atomically
       $currentDraft.set(currentState);
       
-      // Update viewing position to match engine
-      $viewingRound.set(currentState.currentRound);
-      $viewingPick.set(currentState.currentPick);
+      // Update URL to reflect new position after draft progression
+      urlManager.updatePositionAfterProgression(
+        draftId, 
+        currentState.currentRound, 
+        currentState.currentPick
+      );
       
     } catch (error) {
       const message = error instanceof Error ? error.message : 'Failed to process picks';
@@ -431,13 +451,16 @@ export const draftActions = {
       
       $currentDraft.set(currentState);
       
-      // Always update viewing position to match engine after bot picks
-      console.log('After bot picks, updating viewing position:', {
+      // Update URL to match engine position after bot picks
+      console.log('After bot picks, updating URL to:', {
         engineRound: currentState.currentRound,
         enginePick: currentState.currentPick
       });
-      $viewingRound.set(currentState.currentRound);
-      $viewingPick.set(currentState.currentPick);
+      urlManager.updatePositionAfterProgression(
+        draftId,
+        currentState.currentRound,
+        currentState.currentPick
+      );
     } catch (error) {
       const message = error instanceof Error ? error.message : 'Failed to process bot picks';
       $error.set(message);
@@ -451,8 +474,10 @@ export const draftActions = {
    * Navigate UI viewing position (does not affect engine state)
    */
   navigateToPosition(round: number, pick: number): void {
-    $viewingRound.set(round);
-    $viewingPick.set(pick);
+    const draftId = $currentDraftId.get();
+    if (!draftId) return;
+    
+    urlManager.navigateToPosition(draftId, round, pick);
   },
 
   /**
@@ -461,8 +486,7 @@ export const draftActions = {
   jumpToCurrentPosition(): void {
     const draft = $currentDraft.get();
     if (draft) {
-      $viewingRound.set(draft.currentRound);
-      $viewingPick.set(draft.currentPick);
+      urlManager.navigateToPosition(draft.draftId, draft.currentRound, draft.currentPick);
     }
   },
 

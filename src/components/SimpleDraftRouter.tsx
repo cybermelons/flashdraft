@@ -12,11 +12,10 @@ import {
   $currentDraft, 
   $isLoading, 
   $error,
-  $viewingRound,
-  $viewingPick,
   draftActions 
 } from '@/stores/draftStore';
 import { parseDraftURL, type ParsedDraftURL } from '@/utils/navigation';
+import { urlManager } from '@/utils/urlManager';
 
 interface SimpleDraftRouterProps {
   children: (routeData: DraftRouteData) => React.ReactNode;
@@ -83,10 +82,11 @@ export function SimpleDraftRouter({ children }: SimpleDraftRouterProps) {
         routeError: parsed.error,
       }));
       
-      // Only update position on actual browser navigation
-      if (parsed.isValid && parsed.draftId === currentDraftId && parsed.round && parsed.pick) {
-        draftActions.navigateToPosition(parsed.round, parsed.pick);
+      // Load different draft if needed
+      if (parsed.isValid && parsed.draftId && parsed.draftId !== currentDraftId) {
+        handleDraftLoad(parsed.draftId);
       }
+      // Position updates are now handled by URL-based computed stores
     };
     
     window.addEventListener('popstate', handlePopstate);
@@ -96,21 +96,10 @@ export function SimpleDraftRouter({ children }: SimpleDraftRouterProps) {
     };
   }, [currentDraftId]); // Don't re-run on draft changes, only on draft ID changes
   
-  // Update URL when viewing position changes
-  const viewingRound = useStore($viewingRound);
-  const viewingPick = useStore($viewingPick);
-  
-  useEffect(() => {
-    if (currentDraftId && viewingRound && viewingPick) {
-      const currentPath = window.location.pathname;
-      const expectedPath = `/draft/${currentDraftId}/p${viewingRound}p${viewingPick}`;
-      
-      // Only update if path doesn't match
-      if (currentPath !== expectedPath) {
-        window.history.replaceState({}, '', expectedPath);
-      }
-    }
-  }, [currentDraftId, viewingRound, viewingPick]);
+  // Don't automatically update URL - let navigation be explicit
+  // URL updates should only happen through:
+  // 1. User navigation (useDraftNavigation hook)
+  // 2. Draft progression (in draftStore after picks)
 
   // Update loading and error state separately to avoid infinite loops
   useEffect(() => {
@@ -149,13 +138,7 @@ export function useDraftNavigation() {
      */
     navigateToPosition: (round: number, pick: number) => {
       if (!currentDraftId) return;
-      
-      // Update UI viewing position (no engine operations)
-      draftActions.navigateToPosition(round, pick);
-      
-      // Update URL to reflect new viewing position
-      const url = `/draft/${currentDraftId}/p${round}p${pick}`;
-      window.history.pushState({}, '', url);
+      urlManager.navigateToPosition(currentDraftId, round, pick);
     },
     
     /**
@@ -163,25 +146,21 @@ export function useDraftNavigation() {
      */
     navigateToOverview: () => {
       if (!currentDraftId) return;
-      
-      const url = `/draft/${currentDraftId}`;
-      // Use actual navigation for Astro SSR
-      window.location.href = url;
+      urlManager.navigateToOverview(currentDraftId);
     },
     
     /**
      * Navigate to draft list
      */
     navigateToDraftList: () => {
-      // Use actual navigation for Astro SSR
-      window.location.href = '/draft';
+      urlManager.navigateToDraftList();
     },
     
     /**
      * Go back in history
      */
     goBack: () => {
-      window.history.back();
+      urlManager.goBack();
     }
   };
 }
