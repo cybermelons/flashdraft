@@ -381,10 +381,6 @@ export const draftActions = {
       $viewingRound.set(currentState.currentRound);
       $viewingPick.set(currentState.currentPick);
       
-      console.log('Position after all picks:', {
-        round: currentState.currentRound,
-        pick: currentState.currentPick
-      });
     } catch (error) {
       const message = error instanceof Error ? error.message : 'Failed to process picks';
       $error.set(message);
