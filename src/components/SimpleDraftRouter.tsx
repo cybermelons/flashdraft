@@ -52,7 +52,8 @@ export function SimpleDraftRouter({ children }: SimpleDraftRouterProps) {
 
   // Parse URL and update route data  
   useEffect(() => {
-    const updateRoute = () => {
+    // Only parse URL on mount and popstate, don't cause state changes
+    const handleURLChange = () => {
       const parsed = parseDraftURL(window.location.pathname);
       
       setRouteData(prevData => ({
@@ -64,29 +65,20 @@ export function SimpleDraftRouter({ children }: SimpleDraftRouterProps) {
         routeError: parsed.error,
       }));
       
-      // Only handle URL-driven operations without causing loops
+      // Only load different draft, never change position from URL
       if (parsed.isValid && parsed.draftId && parsed.draftId !== currentDraftId) {
-        // Load different draft
         handleDraftLoad(parsed.draftId);
-      } else if (parsed.isValid && parsed.draftId === currentDraftId && 
-                 parsed.round && parsed.pick) {
-        // Update UI viewing position only (no engine operations)
-        draftActions.navigateToPosition(parsed.round, parsed.pick);
       }
     };
-
+    
     // Initial route parsing
-    updateRoute();
+    handleURLChange();
     
     // Listen for browser navigation (back/forward)
-    const handlePopstate = () => {
-      updateRoute();
-    };
-    
-    window.addEventListener('popstate', handlePopstate);
+    window.addEventListener('popstate', handleURLChange);
     
     return () => {
-      window.removeEventListener('popstate', handlePopstate);
+      window.removeEventListener('popstate', handleURLChange);
     };
   }, [currentDraftId, currentDraft]);
   

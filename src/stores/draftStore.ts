@@ -313,21 +313,15 @@ export const draftActions = {
         timestamp: Date.now(),
       };
       
-      // Engine processes pick and auto-advances
+      // Engine processes pick
       const updatedDraft = draftEngine.applyAction(action);
       $currentDraft.set(updatedDraft);
       
-      // UI viewing follows engine progression to new current position
-      console.log('After human pick:', {
-        engineRound: updatedDraft.currentRound,
-        enginePick: updatedDraft.currentPick,
-        settingViewingRound: updatedDraft.currentRound,
-        settingViewingPick: updatedDraft.currentPick
-      });
-      $viewingRound.set(updatedDraft.currentRound);
-      $viewingPick.set(updatedDraft.currentPick);
-      
       $selectedCard.set(null); // Clear selection after pick
+      
+      // Process all picks and position updates together
+      await this.processAllPicksAndAdvance();
+      
     } catch (error) {
       const message = error instanceof Error ? error.message : 'Failed to pick card';
       $error.set(message);
@@ -338,7 +332,59 @@ export const draftActions = {
   },
 
   /**
+   * Process all picks and advance position atomically
+   */
+  async processAllPicksAndAdvance(): Promise<void> {
+    const draft = $currentDraft.get();
+    const draftId = $currentDraftId.get();
+    
+    if (!draft || !draftId) throw new Error('No current draft');
+    
+    $isLoading.set(true);
+    
+    try {
+      let currentState = draft;
+      
+      // Process picks for all non-human players
+      for (let playerIndex = 1; playerIndex < draft.playerCount; playerIndex++) {
+        const currentPack = currentState.packs[currentState.currentRound]?.[playerIndex];
+        if (currentPack && currentPack.cards.length > 0) {
+          // Simple bot logic: pick first card
+          const cardToPickId = currentPack.cards[0].id;
+          
+          const action: DraftAction = {
+            type: 'BOT_PICK',
+            payload: { draftId, playerIndex, cardId: cardToPickId },
+            timestamp: Date.now(),
+          };
+          
+          currentState = draftEngine.applyAction(action);
+        }
+      }
+      
+      // Now update everything atomically
+      $currentDraft.set(currentState);
+      
+      // Update viewing position to match engine
+      $viewingRound.set(currentState.currentRound);
+      $viewingPick.set(currentState.currentPick);
+      
+      console.log('Position after all picks:', {
+        round: currentState.currentRound,
+        pick: currentState.currentPick
+      });
+    } catch (error) {
+      const message = error instanceof Error ? error.message : 'Failed to process picks';
+      $error.set(message);
+      throw error;
+    } finally {
+      $isLoading.set(false);
+    }
+  },
+
+  /**
    * Simulate bot picks for all other players
+   * @deprecated Use processAllPicksAndAdvance instead
    */
   async processBotPicks(): Promise<void> {
     const draft = $currentDraft.get();
@@ -370,13 +416,13 @@ export const draftActions = {
       
       $currentDraft.set(currentState);
       
-      
-      // UI viewing should follow engine progression after bot picks
-      if (currentState.currentRound !== $viewingRound.get() || 
-          currentState.currentPick !== $viewingPick.get()) {
-        $viewingRound.set(currentState.currentRound);
-        $viewingPick.set(currentState.currentPick);
-      }
+      // Always update viewing position to match engine after bot picks
+      console.log('After bot picks, updating viewing position:', {
+        engineRound: currentState.currentRound,
+        enginePick: currentState.currentPick
+      });
+      $viewingRound.set(currentState.currentRound);
+      $viewingPick.set(currentState.currentPick);
     } catch (error) {
       const message = error instanceof Error ? error.message : 'Failed to process bot picks';
       $error.set(message);
