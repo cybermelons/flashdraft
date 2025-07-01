@@ -10,10 +10,22 @@ import { DraftEngine, type DraftState } from '@/lib/engine/DraftEngine';
 import { LocalStorageAdapter } from '@/lib/engine/storage/LocalStorageAdapter';
 import type { DraftAction } from '@/lib/engine/actions';
 import type { Card, SetData } from '@/lib/engine/PackGenerator';
+import { loadAllSets, getAvailableSetCodes } from '@/lib/setData';
 
 // Initialize draft engine with storage
 const storage = new LocalStorageAdapter();
 const draftEngine = new DraftEngine(storage);
+
+// Auto-load all available set data into the engine
+try {
+  const allSets = loadAllSets();
+  for (const [setCode, setData] of Object.entries(allSets)) {
+    draftEngine.loadSetData(setData);
+    console.log(`Loaded set data: ${setCode} (${setData.cards.length} cards)`);
+  }
+} catch (error) {
+  console.error('Failed to load set data:', error);
+}
 
 // Core draft state
 export const $currentDraftId = atom<string | null>(null);
@@ -26,14 +38,56 @@ export const $selectedCard = atom<Card | null>(null);
 export const $hoveredCard = atom<Card | null>(null);
 export const $isPickingCard = atom<boolean>(false);
 
-// Draft progress state
-export const $currentPack = computed([$currentDraft], (draft) => {
-  if (!draft) return null;
-  
-  const { currentRound, humanPlayerIndex } = draft;
-  const roundPacks = draft.packs[currentRound];
-  return roundPacks?.[humanPlayerIndex] || null;
-});
+// UI navigation state (separate from engine progression)
+export const $viewingRound = atom<number>(1);
+export const $viewingPick = atom<number>(1);
+
+// Derived navigation state
+export const $isViewingCurrent = computed(
+  [$currentDraft, $viewingRound, $viewingPick], 
+  (draft, viewingRound, viewingPick) => {
+    if (!draft) return false;
+    return draft.currentRound === viewingRound && draft.currentPick === viewingPick;
+  }
+);
+
+export const $isViewingHistory = computed(
+  [$isViewingCurrent], 
+  (isViewingCurrent) => !isViewingCurrent
+);
+
+export const $viewingPosition = computed(
+  [$viewingRound, $viewingPick], 
+  (round, pick) => ({ round, pick })
+);
+
+// Draft progress state (based on viewing position, not engine progression)
+export const $currentPack = computed(
+  [$currentDraft, $viewingRound], 
+  (draft, viewingRound) => {
+    if (!draft) return null;
+    
+    const { humanPlayerIndex } = draft;
+    const roundPacks = draft.packs[viewingRound];
+    return roundPacks?.[humanPlayerIndex] || null;
+  }
+);
+
+// Get historical state at viewing position
+export const $viewingDraftState = computed(
+  [$currentDraft, $viewingRound, $viewingPick], 
+  (draft, viewingRound, viewingPick) => {
+    if (!draft) return null;
+    
+    // Use engine's replay functionality to get historical state
+    try {
+      return draftEngine.replayToPosition(draft.draftId, viewingRound, viewingPick);
+    } catch (error) {
+      console.warn('Failed to replay to position:', error);
+      return draft; // Fallback to current state
+    }
+  }
+);
 
 export const $humanDeck = computed([$currentDraft], (draft) => {
   if (!draft) return [];
@@ -60,24 +114,43 @@ export const $draftProgress = computed([$currentDraft], (draft) => {
 
 // Derived state for UI
 export const $canPick = computed(
-  [$currentDraft, $isLoading, $isPickingCard], 
-  (draft, loading, picking) => {
-    return draft && 
+  [$currentDraft, $isLoading, $isPickingCard, $isViewingCurrent], 
+  (draft, loading, picking, isViewingCurrent) => {
+    const canPick = draft && 
            draft.status === 'active' && 
            !loading && 
-           !picking;
+           !picking &&
+           isViewingCurrent; // Can only pick when viewing current engine position
+    
+    // Debug logging
+    if (!canPick && draft) {
+      console.log('Cannot pick because:', {
+        hasDraft: !!draft,
+        status: draft?.status,
+        isLoading: loading,
+        isPicking: picking,
+        isViewingCurrent,
+        enginePos: { round: draft.currentRound, pick: draft.currentPick },
+        viewingPos: { round: $viewingRound.get(), pick: $viewingPick.get() }
+      });
+    }
+    
+    return canPick;
   }
 );
 
-export const $currentPosition = computed([$currentDraft], (draft) => {
-  if (!draft) return null;
-  
-  return {
-    round: draft.currentRound,
-    pick: draft.currentPick,
-    urlPath: `/draft/${draft.draftId}/p${draft.currentRound}p${draft.currentPick}`,
-  };
-});
+export const $currentPosition = computed(
+  [$currentDraft, $viewingRound, $viewingPick], 
+  (draft, viewingRound, viewingPick) => {
+    if (!draft) return null;
+    
+    return {
+      round: viewingRound,
+      pick: viewingPick,
+      urlPath: `/draft/${draft.draftId}/viewing/p${viewingRound}p${viewingPick}`,
+    };
+  }
+);
 
 // Draft management actions
 export const draftActions = {
@@ -134,6 +207,10 @@ export const draftActions = {
       
       $currentDraftId.set(draftId);
       $currentDraft.set(draft);
+      
+      // Initialize viewing position to current engine progression
+      $viewingRound.set(draft.currentRound);
+      $viewingPick.set(draft.currentPick);
     } catch (error) {
       const message = error instanceof Error ? error.message : 'Failed to load draft';
       $error.set(message);
@@ -161,6 +238,10 @@ export const draftActions = {
       
       const updatedDraft = draftEngine.applyAction(action);
       $currentDraft.set(updatedDraft);
+      
+      // Initialize viewing position to current engine progression  
+      $viewingRound.set(updatedDraft.currentRound);
+      $viewingPick.set(updatedDraft.currentPick);
     } catch (error) {
       const message = error instanceof Error ? error.message : 'Failed to start draft';
       $error.set(message);
@@ -175,7 +256,10 @@ export const draftActions = {
    */
   async pickCard(cardId: string): Promise<void> {
     const draftId = $currentDraftId.get();
+    const isViewingCurrent = $isViewingCurrent.get();
+    
     if (!draftId) throw new Error('No current draft');
+    if (!isViewingCurrent) throw new Error('Cannot pick cards when viewing historical positions');
     
     $isPickingCard.set(true);
     $error.set(null);
@@ -187,8 +271,14 @@ export const draftActions = {
         timestamp: Date.now(),
       };
       
+      // Engine processes pick and auto-advances
       const updatedDraft = draftEngine.applyAction(action);
       $currentDraft.set(updatedDraft);
+      
+      // UI viewing follows engine progression to new current position
+      $viewingRound.set(updatedDraft.currentRound);
+      $viewingPick.set(updatedDraft.currentPick);
+      
       $selectedCard.set(null); // Clear selection after pick
     } catch (error) {
       const message = error instanceof Error ? error.message : 'Failed to pick card';
@@ -231,6 +321,24 @@ export const draftActions = {
       }
       
       $currentDraft.set(currentState);
+      
+      // Debug: Log state after bot picks
+      console.log('After bot picks:', {
+        currentRound: currentState.currentRound,
+        currentPick: currentState.currentPick,
+        viewingRound: $viewingRound.get(),
+        viewingPick: $viewingPick.get(),
+        humanPack: currentState.packs[currentState.currentRound]?.[0],
+        isViewingCurrent: $isViewingCurrent.get()
+      });
+      
+      // UI viewing should follow engine progression after bot picks
+      if (currentState.currentRound !== $viewingRound.get() || 
+          currentState.currentPick !== $viewingPick.get()) {
+        console.log('Following engine progression after bot picks');
+        $viewingRound.set(currentState.currentRound);
+        $viewingPick.set(currentState.currentPick);
+      }
     } catch (error) {
       const message = error instanceof Error ? error.message : 'Failed to process bot picks';
       $error.set(message);
@@ -241,23 +349,21 @@ export const draftActions = {
   },
 
   /**
-   * Navigate to a specific position in the draft
+   * Navigate UI viewing position (does not affect engine state)
    */
-  async navigateToPosition(round: number, pick: number): Promise<void> {
-    const draftId = $currentDraftId.get();
-    if (!draftId) throw new Error('No current draft');
-    
-    $isLoading.set(true);
-    
-    try {
-      const replayedState = draftEngine.replayToPosition(draftId, round, pick);
-      $currentDraft.set(replayedState);
-    } catch (error) {
-      const message = error instanceof Error ? error.message : 'Failed to navigate to position';
-      $error.set(message);
-      throw error;
-    } finally {
-      $isLoading.set(false);
+  navigateToPosition(round: number, pick: number): void {
+    $viewingRound.set(round);
+    $viewingPick.set(pick);
+  },
+
+  /**
+   * Jump viewing position to current engine progression
+   */
+  jumpToCurrentPosition(): void {
+    const draft = $currentDraft.get();
+    if (draft) {
+      $viewingRound.set(draft.currentRound);
+      $viewingPick.set(draft.currentPick);
     }
   },
 

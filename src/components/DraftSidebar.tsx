@@ -68,149 +68,209 @@ export function DraftSidebar({ className = '' }: DraftSidebarProps) {
   const colorStats = getColorStats();
 
   return (
-    <aside className={`draft-sidebar ${sidebarOpen ? 'sidebar-open' : 'sidebar-closed'} ${className}`}>
+    <aside className={`${sidebarOpen ? 'w-80' : 'w-12'} transition-all duration-300 bg-slate-800/50 backdrop-blur-sm border-l border-slate-700/50 flex flex-col ${className}`}>
       {/* Sidebar Toggle */}
       <button
         onClick={toggleSidebar}
-        className="sidebar-toggle"
+        className="p-3 m-3 bg-slate-700/50 hover:bg-slate-600/50 text-slate-300 hover:text-white rounded-xl transition-colors"
         title={sidebarOpen ? 'Close sidebar' : 'Open sidebar'}
       >
-        {sidebarOpen ? '→' : '←'}
+        <svg className={`w-5 h-5 transition-transform duration-200 ${sidebarOpen ? '' : 'rotate-180'}`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 5l7 7-7 7"></path>
+        </svg>
       </button>
 
-      <div className="sidebar-content">
-        {/* Selected Card Detail */}
-        {selectedCard && (
-          <div className="selected-card-section">
-            <h3>Selected Card</h3>
-            <Card 
-              card={selectedCard}
-              isSelected={true}
-              canInteract={false}
-              size="medium"
-            />
-            <div className="card-details">
-              <div className="card-info">
-                <strong>{selectedCard.name}</strong>
+      {sidebarOpen && (
+        <div className="flex-1 px-3 pb-3 space-y-6 overflow-y-auto">
+          {/* Selected Card Detail */}
+          {selectedCard && (
+            <div className="bg-slate-700/30 rounded-2xl p-4 border border-slate-600/30">
+              <h3 className="text-lg font-bold text-white mb-3 flex items-center gap-2">
+                <svg className="w-5 h-5 text-blue-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"></path>
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"></path>
+                </svg>
+                Selected Card
+              </h3>
+              <Card 
+                card={selectedCard}
+                isSelected={true}
+                canInteract={false}
+                size="medium"
+                className="mb-3"
+              />
+              <div className="space-y-2">
+                <div className="font-bold text-white text-lg">{selectedCard.name}</div>
                 {selectedCard.manaCost && (
-                  <div className="mana-cost">{selectedCard.manaCost}</div>
+                  <div className="bg-slate-600/50 text-slate-200 px-3 py-1 rounded-lg text-sm font-mono">
+                    {selectedCard.manaCost}
+                  </div>
                 )}
-                <div className="type-line">{selectedCard.type}</div>
-                <div className="rarity">{selectedCard.rarity}</div>
+                <div className="text-slate-300">{selectedCard.type}</div>
+                <div className={`inline-block px-2 py-1 rounded-full text-xs font-semibold ${
+                  selectedCard.rarity === 'common' ? 'bg-gray-500/20 text-gray-300' :
+                  selectedCard.rarity === 'uncommon' ? 'bg-green-500/20 text-green-300' :
+                  selectedCard.rarity === 'rare' ? 'bg-yellow-500/20 text-yellow-300' :
+                  'bg-red-500/20 text-red-300'
+                }`}>
+                  {selectedCard.rarity}
+                </div>
               </div>
             </div>
-          </div>
-        )}
+          )}
 
-        {/* Picked Cards */}
-        <div className="picked-cards-section">
-          <h3>Your Picks ({humanDeck.length})</h3>
-          
-          {/* Color distribution */}
-          <div className="color-stats">
-            <div className="color-distribution">
-              {Object.entries(colorStats).map(([color, count]) => (
-                <div key={color} className={`color-stat color-${color.toLowerCase()}`}>
-                  <span className="color-symbol">{color}</span>
-                  <span className="color-count">{count}</span>
-                </div>
-              ))}
-            </div>
-          </div>
-
-          {/* Picked cards list */}
-          <div className="picked-cards-list">
-            {humanDeck.length === 0 ? (
-              <p className="no-picks">No cards picked yet</p>
-            ) : (
-              <div className="picked-cards-grid">
-                {humanDeck.map(cardId => (
-                  <div key={cardId} className="picked-card-item">
-                    {/* This would need card data lookup */}
-                    <div className="picked-card-placeholder">
-                      {cardId}
-                    </div>
+          {/* Picked Cards */}
+          <div className="bg-slate-700/30 rounded-2xl p-4 border border-slate-600/30">
+            <h3 className="text-lg font-bold text-white mb-3 flex items-center gap-2">
+              <svg className="w-5 h-5 text-green-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10"></path>
+              </svg>
+              Your Picks ({humanDeck.length})
+            </h3>
+            
+            {/* Color distribution */}
+            <div className="mb-4">
+              <div className="grid grid-cols-3 gap-2">
+                {Object.entries(colorStats).map(([color, count]) => (
+                  <div key={color} className={`text-center p-2 rounded-lg ${
+                    color === 'W' ? 'bg-yellow-500/20 text-yellow-300' :
+                    color === 'U' ? 'bg-blue-500/20 text-blue-300' :
+                    color === 'B' ? 'bg-gray-500/20 text-gray-300' :
+                    color === 'R' ? 'bg-red-500/20 text-red-300' :
+                    color === 'G' ? 'bg-green-500/20 text-green-300' :
+                    'bg-slate-500/20 text-slate-300'
+                  }`}>
+                    <div className="text-xs font-bold">{color}</div>
+                    <div className="text-sm font-semibold">{count}</div>
                   </div>
                 ))}
               </div>
+            </div>
+
+            {/* Picked cards list */}
+            <div className="space-y-2">
+              {humanDeck.length === 0 ? (
+                <div className="text-center py-6 text-slate-400">
+                  <svg className="w-12 h-12 mx-auto mb-2 opacity-50" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M20 13V6a2 2 0 00-2-2H6a2 2 0 00-2 2v7m16 0v5a2 2 0 01-2 2H6a2 2 0 01-2-2v-5m16 0h-2.586a1 1 0 00-.707.293l-2.414 2.414a1 1 0 01-.707.293h-3.172a1 1 0 01-.707-.293l-2.414-2.414A1 1 0 006.586 13H4"></path>
+                  </svg>
+                  <p className="text-sm">No cards picked yet</p>
+                </div>
+              ) : (
+                <div className="grid grid-cols-2 gap-2 max-h-48 overflow-y-auto">
+                  {humanDeck.map(cardId => (
+                    <div key={cardId} className="bg-slate-600/30 rounded-lg p-2 border border-slate-500/30">
+                      <div className="text-xs text-slate-300 font-mono truncate">
+                        {cardId.slice(-8)}
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+          </div>
+
+          {/* Filters and Sorting */}
+          <div className="bg-slate-700/30 rounded-2xl p-4 border border-slate-600/30">
+            <h3 className="text-lg font-bold text-white mb-3 flex items-center gap-2">
+              <svg className="w-5 h-5 text-purple-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M3 4a1 1 0 011-1h16a1 1 0 011 1v2.586a1 1 0 01-.293.707l-6.414 6.414a1 1 0 00-.293.707V17l-4 4v-6.586a1 1 0 00-.293-.707L3.293 7.207A1 1 0 013 6.5V4z"></path>
+              </svg>
+              Filters
+            </h3>
+            
+            {/* Sort options */}
+            <div className="mb-4">
+              <label htmlFor="sort-select" className="block text-sm font-medium text-slate-300 mb-2">Sort by:</label>
+              <select
+                id="sort-select"
+                value={sortBy}
+                onChange={(e) => handleSortChange(e.target.value)}
+                className="w-full bg-slate-600/50 border border-slate-500/50 text-white rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+              >
+                <option value="cmc">Mana Cost</option>
+                <option value="name">Name</option>
+                <option value="color">Color</option>
+                <option value="rarity">Rarity</option>
+                <option value="type">Type</option>
+              </select>
+            </div>
+
+            {/* Color filters */}
+            <div className="mb-4">
+              <div className="text-sm font-medium text-slate-300 mb-2">Colors:</div>
+              <div className="grid grid-cols-5 gap-1">
+                {['W', 'U', 'B', 'R', 'G'].map(color => (
+                  <button
+                    key={color}
+                    onClick={() => handleColorFilter(color)}
+                    className={`w-10 h-10 rounded-lg font-bold text-sm transition-all ${
+                      filterBy.colors.includes(color)
+                        ? color === 'W' ? 'bg-yellow-500 text-black' :
+                          color === 'U' ? 'bg-blue-500 text-white' :
+                          color === 'B' ? 'bg-gray-800 text-white' :
+                          color === 'R' ? 'bg-red-500 text-white' :
+                          'bg-green-500 text-white'
+                        : color === 'W' ? 'bg-yellow-500/20 text-yellow-300 hover:bg-yellow-500/30' :
+                          color === 'U' ? 'bg-blue-500/20 text-blue-300 hover:bg-blue-500/30' :
+                          color === 'B' ? 'bg-gray-500/20 text-gray-300 hover:bg-gray-500/30' :
+                          color === 'R' ? 'bg-red-500/20 text-red-300 hover:bg-red-500/30' :
+                          'bg-green-500/20 text-green-300 hover:bg-green-500/30'
+                    }`}
+                    title={getColorName(color)}
+                  >
+                    {color}
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            {/* Clear filters */}
+            {(filterBy.colors.length > 0 || filterBy.rarities.length > 0) && (
+              <button
+                onClick={clearFilters}
+                className="w-full bg-slate-600/50 hover:bg-slate-500/50 text-slate-300 hover:text-white px-3 py-2 rounded-lg text-sm font-medium transition-colors"
+              >
+                Clear Filters
+              </button>
             )}
           </div>
-        </div>
 
-        {/* Filters and Sorting */}
-        <div className="filters-section">
-          <h3>Filters & Sorting</h3>
-          
-          {/* Sort options */}
-          <div className="sort-options">
-            <label htmlFor="sort-select">Sort by:</label>
-            <select
-              id="sort-select"
-              value={sortBy}
-              onChange={(e) => handleSortChange(e.target.value)}
-              className="sort-select"
-            >
-              <option value="cmc">Mana Cost</option>
-              <option value="name">Name</option>
-              <option value="color">Color</option>
-              <option value="rarity">Rarity</option>
-              <option value="type">Type</option>
-            </select>
-          </div>
-
-          {/* Color filters */}
-          <div className="color-filters">
-            <div className="filter-label">Colors:</div>
-            <div className="color-filter-buttons">
-              {['W', 'U', 'B', 'R', 'G'].map(color => (
-                <button
-                  key={color}
-                  onClick={() => handleColorFilter(color)}
-                  className={`color-filter-btn color-${color.toLowerCase()} ${
-                    filterBy.colors.includes(color) ? 'active' : ''
-                  }`}
-                  title={getColorName(color)}
-                >
-                  {color}
-                </button>
-              ))}
-            </div>
-          </div>
-
-          {/* Clear filters */}
-          {(filterBy.colors.length > 0 || filterBy.rarities.length > 0) && (
-            <button
-              onClick={clearFilters}
-              className="btn btn-secondary btn-sm"
-            >
-              Clear Filters
-            </button>
-          )}
-        </div>
-
-        {/* Draft Statistics */}
-        <div className="stats-section">
-          <h3>Draft Stats</h3>
-          <div className="stats-grid">
-            <div className="stat-item">
-              <span className="stat-label">Round:</span>
-              <span className="stat-value">{currentDraft.currentRound}</span>
-            </div>
-            <div className="stat-item">
-              <span className="stat-label">Pick:</span>
-              <span className="stat-value">{currentDraft.currentPick}</span>
-            </div>
-            <div className="stat-item">
-              <span className="stat-label">Cards:</span>
-              <span className="stat-value">{humanDeck.length}</span>
-            </div>
-            <div className="stat-item">
-              <span className="stat-label">Status:</span>
-              <span className="stat-value">{currentDraft.status}</span>
+          {/* Draft Statistics */}
+          <div className="bg-slate-700/30 rounded-2xl p-4 border border-slate-600/30">
+            <h3 className="text-lg font-bold text-white mb-3 flex items-center gap-2">
+              <svg className="w-5 h-5 text-orange-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"></path>
+              </svg>
+              Stats
+            </h3>
+            <div className="grid grid-cols-2 gap-3">
+              <div className="bg-slate-600/30 rounded-lg p-3 text-center">
+                <div className="text-xs text-slate-400">Round</div>
+                <div className="text-lg font-bold text-white">{currentDraft.currentRound}</div>
+              </div>
+              <div className="bg-slate-600/30 rounded-lg p-3 text-center">
+                <div className="text-xs text-slate-400">Pick</div>
+                <div className="text-lg font-bold text-white">{currentDraft.currentPick}</div>
+              </div>
+              <div className="bg-slate-600/30 rounded-lg p-3 text-center">
+                <div className="text-xs text-slate-400">Cards</div>
+                <div className="text-lg font-bold text-white">{humanDeck.length}</div>
+              </div>
+              <div className="bg-slate-600/30 rounded-lg p-3 text-center">
+                <div className="text-xs text-slate-400">Status</div>
+                <div className={`text-sm font-semibold ${
+                  currentDraft.status === 'active' ? 'text-blue-300' :
+                  currentDraft.status === 'completed' ? 'text-green-300' :
+                  'text-slate-300'
+                }`}>
+                  {currentDraft.status}
+                </div>
+              </div>
             </div>
           </div>
         </div>
-      </div>
+      )}
     </aside>
   );
 }

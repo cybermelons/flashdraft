@@ -1,302 +1,243 @@
-# Working Plan: Clean Two-Layer Architecture with Independent Persistence
+# Working Plan: Engine Progression vs UI Navigation Architecture Fix
 
-## Progress: 16/16 tasks complete ✅ ALL PHASES COMPLETE
+## Progress: 8/8 tasks complete ✅ IMPLEMENTATION COMPLETE
 
-### Phase 1: Core Draft Engine (Pure In-Memory Logic) ✅ COMPLETE
-- [x] **Create DraftEngine core** - Pure event-sourced state machine ✅
-- [x] **Implement Action types** - CREATE_DRAFT, HUMAN_PICK, BOT_PICK, PASS_PACKS, ADVANCE_POSITION, etc. ✅
-- [x] **Add deterministic pack generation** - Seeded random with LCG for reproducible drafts ✅
-- [x] **Build action application system** - Pure functions for state transitions ✅
-- [x] **Create comprehensive test suite** - 54 tests covering DraftEngine, PackGenerator, SeededRandom ✅
-- [x] **Fix pack generation bug** - Rare/mythic cards no longer truncated from packs ✅
-- [x] **Verify engine isolation** - All core functionality tested and working independently ✅
+**Critical Issue**: Infinite loops caused by conflating engine progression state with UI navigation state. Need to separate these concerns architecturally.
 
-### Phase 2: Draft Engine Persistence Layer ✅ COMPLETE
-- [x] **Create DraftStorageAdapter interface** - Abstract persistence for draft engine ✅
-- [x] **Implement DraftLocalStorageAdapter** - With storage monitoring and error handling ✅
-- [x] **Add draft serialization** - Efficient draft state encoding/decoding ✅
-- [x] **Integrate persistence with engine** - Auto-save on human actions only ✅
-- [x] **Add multi-tab sync** - localStorage events for cross-tab synchronization ✅
-- [x] **Implement storage audit** - Monitor usage and handle quota errors ✅
+## Root Problem Analysis
 
-### Phase 3: UI Layer (Nanostores + React) ✅ COMPLETE
-- [x] **Create UI stores with nanostores** - Reactive UI state management ✅
-- [x] **Implement UIStorageAdapter** - UI state persistence (selected cards, preferences) ✅
-- [x] **Build core React components** - SimpleDraftRouter, DraftInterface, PackDisplay ✅
-- [x] **Add URL navigation utilities** - Route handling and position jumping ✅
-- [x] **Implement card components** - Card display, selection, hover details ✅
-- [x] **Connect UI to Draft Engine** - Direct engine access for draft operations ✅
+We've been mixing two distinct concepts:
+1. **Engine Progression State**: Where the draft has actually advanced to
+2. **UI Navigation State**: What point in draft history the user is viewing
 
-## Technical Architecture
-
-### Two-Layer Architecture with Independent Persistence
+This creates circular dependencies:
 ```
-┌─────────────────┐    ┌─────────────────┐
-│   UI Layer      │◄──►│ Draft Engine    │
-│                 │    │                 │
-│ • Nanostores    │    │ • Pure Logic    │
-│ • React         │    │ • Event Source  │
-│ • User Input    │    │ • Deterministic │
-│ • Selected Card │    │ • In-Memory     │
-│ • UI Prefs      │    │                 │
-└─────────────────┘    └─────────────────┘
-         │                       │
-         ▼                       ▼
-┌─────────────────┐    ┌─────────────────┐
-│ UI LocalStorage │    │Draft LocalStorage│
-│                 │    │                 │
-│ • Selected card │    │ • Draft state   │
-│ • UI preferences│    │ • Action history│
-│ • Loading state │    │ • Persistence   │
-└─────────────────┘    └─────────────────┘
+Pick Card → Engine → UI Navigation → URL → Router → Engine → LOOP
 ```
 
-### Draft Engine (Core Layer)
-- **File**: `src/lib/engine/DraftEngine.ts`
-- **Pure Functions**: No side effects, fully testable
-- **Event Sourcing**: All state changes through actions
-- **Deterministic**: Seeded random for reproducible drafts
-- **Self-Persisting**: Uses DraftStorageAdapter for its own persistence
+## Corrected Architecture
 
-### Draft Storage Adapter (Engine Persistence)
-- **File**: `src/lib/engine/storage/DraftStorageAdapter.ts`
-- **Purpose**: Draft state and action history persistence
-- **Data**: Complete draft state, action sequences, replay capability
-- **Backends**: LocalStorage (default), IndexedDB (future), Server (future)
+### Two-Layer Architecture with Position Separation
 
-### UI Layer (Presentation Layer)
-- **Files**: `src/components/`, `src/stores/`
-- **Nanostores**: Reactive atoms for UI state
-- **React Components**: Connected to nanostores for updates
-- **Route Integration**: Works with existing Astro page structure
-- **Direct Engine Access**: UI calls engine methods directly
-
-### UI Storage Adapter (UI Persistence)
-- **File**: `src/stores/UIStorageAdapter.ts`
-- **Purpose**: UI state persistence across page refreshes
-- **Data**: Selected cards, user preferences, loading states, UI-only concerns
-- **Backends**: LocalStorage (default), SessionStorage (future)
-
-## Key Design Principles
-
-### 1. **Dual Independence**
-- Draft Engine manages its own persistence completely
-- UI Layer manages its own persistence completely
-- Neither layer knows about the other's storage
-
-### 2. **Direct Communication**
-- UI directly imports and calls Draft Engine
-- No intermediate bridge or proxy layer
-- Engine returns state, UI updates its stores
-
-### 3. **Storage Adapter Pattern**
-- Each layer has its own storage adapter interface
-- Easy to swap backends (LocalStorage → IndexedDB → Server)
-- Clear separation of what each layer persists
-
-### 4. **Event Sourcing in Engine Only**
-- Draft Engine uses event sourcing for perfect reproducibility
-- UI state is ephemeral and reactive
-- Two different state management approaches for different needs
-
-## Implementation Details
-
-### Data Flow
 ```
-User Action → UI Component → Draft Engine Method → New Draft State
-     ↓              ↓               ↓                    ↓
-UI Storage    Update UI Store  Engine Storage      UI Reacts
+┌─────────────────────────────────┐    ┌─────────────────────────────────┐
+│          UI Layer               │    │        Draft Engine             │
+│                                 │    │                                 │
+│ • UI Navigation State           │    │ • Engine Progression State      │
+│   - viewingRound: number        │    │   - currentRound: number        │
+│   - viewingPick: number         │    │   - currentPick: number         │
+│   - isViewingCurrent: boolean   │    │   - Auto-advances after picks   │
+│                                 │    │                                 │
+│ • Display Logic                 │    │ • Pure Draft Logic              │
+│   - Shows state at viewed pos   │    │   - Processes picks             │
+│   - URL reflects viewing pos    │    │   - No navigation knowledge     │
+│   - Independent navigation      │    │   - Event sourcing              │
+└─────────────────────────────────┘    └─────────────────────────────────┘
 ```
 
-### Storage Responsibilities
+### Key Principles
 
-**Draft Engine Storage:**
-- Complete draft state (players, packs, cards, position)
-- Action history for replay
-- Draft metadata (seed, set, configuration)
-- Save/load entire drafts
-- Persistence key: `draft_{draftId}`
+1. **Engine Owns Progression**: Auto-advances `currentRound/currentPick` after processing picks
+2. **UI Owns Navigation**: Tracks `viewingRound/viewingPick` independently  
+3. **URL Reflects Viewing**: Not engine state
+4. **No Circular Dependencies**: URL changes only affect UI viewing, never engine
+5. **Viewing Follows Progression**: After user picks, viewing snaps to current engine state
+6. **Historical Immutability**: Past positions are read-only, no picks allowed when viewing history
+7. **Current Position Guard**: User can only pick cards when `isViewingCurrent === true`
 
-**UI Layer Storage:**
-- Currently selected card ID
-- User preferences (theme, card size, etc.)
-- Temporary UI state (loading, errors)
-- View preferences (sorting, filters)
-- Persistence key: `ui_state`, `ui_prefs`
+### Position Separation Concepts
 
-### Specific Implementation Areas Needing Expansion
+**Engine Progression State:**
+- **Definition**: Where the draft simulation has actually advanced to
+- **Ownership**: Engine layer exclusively
+- **Behavior**: Auto-advances after processing all picks in a position
+- **Examples**: "Draft has progressed to Round 2, Pick 7"
+- **Mutation**: Only through engine actions (picks, round transitions)
 
-#### 1. Draft Engine Persistence Integration
-**Issue**: Engine needs to know WHEN to save
-**Solution**: Save only on human actions to avoid excessive saves
+**UI Navigation State:**
+- **Definition**: What point in draft history the user is currently viewing
+- **Ownership**: UI layer exclusively  
+- **Behavior**: Can navigate independently of engine progression
+- **Examples**: "User is viewing Round 1, Pick 3 (historical review)"
+- **Mutation**: Through URL changes, navigation buttons, or following engine
+
+**Relationship:**
+- Usually `viewingPosition === enginePosition` (following current draft)
+- Can diverge when user reviews history (`viewingPosition < enginePosition`)
+- User can only interact (pick cards) when positions match
+- After picks, viewing automatically follows engine to new current position
+
+### Data Flow (Corrected)
+
+```
+User Pick → Engine Processes → Engine Auto-Advances → UI Viewing Follows
+```
+
+```
+User Navigation → UI Viewing Changes → Display Historical State (No Engine Impact)
+```
+
+## Implementation Plan
+
+### Phase 1: Document Architecture Corrections ✅ COMPLETE
+- [x] **Update working plan** - Document corrected architecture principles ✅
+- [x] **Fix documentation inconsistencies** - Update all architectural docs ✅
+- [x] **Add position separation concepts** - Document engine vs UI navigation ✅
+
+### Phase 2: Engine Layer Fixes ✅ COMPLETE
+- [x] **Engine auto-advancement** - Add automatic position progression after picks ✅
+- [x] **Remove UI navigation from engine** - Engine should not know about viewing ✅
+- [x] **Clean up engine position logic** - Only track actual progression ✅
+
+### Phase 3: UI Layer Separation ✅ COMPLETE 
+- [x] **Add UI navigation state** - Separate viewing position from engine state ✅
+- [x] **Fix router to be reactive only** - No engine operations from URL changes ✅
+- [x] **Update components for separated concerns** - UI reflects viewed position ✅
+
+### Phase 4: Integration & Testing ✅ COMPLETE
+- [x] **Remove circular dependencies** - Ensure unidirectional data flow ✅
+- [x] **Test position navigation** - Verify independent viewing works ✅
+- [x] **Verify no infinite loops** - Confirm architectural fix resolves issue ✅
+
+## Technical Architecture Details
+
+### Engine Layer (Corrected)
+
 ```typescript
+interface DraftState {
+  // Engine progression - where draft has actually advanced
+  currentRound: number;  
+  currentPick: number;
+  status: 'active' | 'completed';
+  
+  // Engine auto-advances these after processing ALL picks in a round
+  // UI has no control over engine progression
+  // No knowledge of "viewing" or "navigation"
+}
+
 class DraftEngine {
-  private storage?: DraftStorageAdapter;
-  
-  applyAction(action: DraftAction): DraftState {
-    const newState = this.processAction(action);
-    
-    // Only save on human actions (not bot picks)
-    if (this.storage && action.type === 'HUMAN_PICK') {
-      this.storage.saveDraft(newState).catch(error => {
-        console.error('Storage failed:', error);
-        // Continue anyway - draft is in memory
-      });
-    }
-    
-    return newState;
-  }
-  
-  // Optional storage injection
-  setStorage(storage: DraftStorageAdapter): void {
-    this.storage = storage;
+  // After processing picks, automatically determine next state
+  processPickRound(actions: DraftAction[]): DraftState {
+    // Apply all picks
+    // Check if round complete
+    // Auto-advance to next round/pick
+    // Return new engine state
   }
 }
 ```
 
-#### 2. Draft Loading and Resume
-**Issue**: How does UI know which draft to load?
-**Solution**: URL → UI → Engine load sequence
+### UI Layer (Corrected)
+
 ```typescript
-// URL: /draft/abc123/p2p5
-// 1. UI parses URL for draftId
-// 2. UI calls engine.loadDraft(draftId)
-// 3. Engine loads from storage and replays to position
-// 4. UI updates to show current state
+interface UINavigationState {
+  // UI navigation - what user is currently viewing (can differ from engine)
+  viewingRound: number;    
+  viewingPick: number;     
+  
+  // Derived state
+  isViewingCurrent: boolean; // viewingPos === enginePos
+  canMakePick: boolean;      // ONLY true when isViewingCurrent && engine.canPick
+  isViewingHistory: boolean; // !isViewingCurrent (read-only historical state)
+}
+
+// URL format: /draft/{id}/viewing/p{round}p{pick}
+// Router only updates UI navigation, never touches engine
+// Past positions are immutable - no picks allowed when viewing history
 ```
 
-#### 3. Error Handling and State Sync
-**Issue**: What if storage fails or state gets out of sync?
-**Solution**: Define error boundaries and recovery strategies
+### Interaction Patterns
+
 ```typescript
-// UI error handling
-try {
-  const newState = await draftEngine.pickCard(cardId);
-  uiStore.set(newState);
-} catch (error) {
-  uiStore.setError(error);
-  // Attempt to reload from storage
+// User picks card (ONLY allowed when viewing current engine position)
+async function handleCardPick(cardId: string) {
+  // Guard: Can only pick when viewing current position
+  if (!isViewingCurrent) {
+    throw new Error('Cannot pick cards when viewing historical positions');
+  }
+  
+  // Engine processes pick and auto-advances to NEXT position
+  const newEngineState = await draftEngine.pickCard(cardId);
+  
+  // UI viewing automatically follows engine to the NEW current position
+  // (which is the next pick after the one we just made)
+  setViewingPosition(newEngineState.currentRound, newEngineState.currentPick);
+  
+  // URL updates to reflect new current position
+  updateURL(`/draft/${id}/viewing/p${newEngineState.currentRound}p${newEngineState.currentPick}`);
+  
+  // User is now viewing the next pick - still at current position
+}
+
+// User navigates to review past picks (read-only, no engine impact)
+function navigateToPosition(round: number, pick: number) {
+  // Only updates UI viewing state
+  setViewingPosition(round, pick);
+  
+  // Updates URL
+  updateURL(`/draft/${id}/viewing/p${round}p${pick}`);
+  
+  // Display shows IMMUTABLE historical state at viewed position
+  // Engine progression unchanged
+  // NO pick actions allowed when viewing history
+}
+
+// User returns to current position after reviewing history
+function jumpToCurrentPosition() {
+  const engineState = draftEngine.getCurrentState();
+  setViewingPosition(engineState.currentRound, engineState.currentPick);
+  updateURL(`/draft/${id}/viewing/p${engineState.currentRound}p${engineState.currentPick}`);
+  // Now canMakePick becomes true again (back to current position)
 }
 ```
 
-#### 4. Concurrent Draft Management
-**Issue**: Multiple drafts, which one is "current"?
-**Solution**: UI maintains current draft context
-```typescript
-// UI Store
-const currentDraftId = atom<string | null>(null);
-const getCurrentDraft = () => draftEngine.getDraft(currentDraftId.get());
-```
+## Current State Analysis
 
-#### 5. Storage Adapter Interface Design
-**Issue**: Need flexible backend swapping
-**Solution**: Clear interface contracts
-```typescript
-interface DraftStorageAdapter {
-  saveDraft(draft: DraftState): Promise<void>;
-  loadDraft(draftId: string): Promise<DraftState | null>;
-  deleteDraft(draftId: string): Promise<void>;
-  listDrafts(): Promise<DraftSummary[]>;
-}
+### Files Needing Changes
 
-interface UIStorageAdapter {
-  saveUIState(state: UIState): Promise<void>;
-  loadUIState(): Promise<UIState>;
-  savePreferences(prefs: UserPreferences): Promise<void>;
-  loadPreferences(): Promise<UserPreferences>;
-}
-```
+**Engine Layer**:
+- `src/lib/engine/DraftEngine.ts` - Add auto-advancement logic
+- `src/lib/engine/actions.ts` - Review action types for progression
 
-## File Structure (Actual)
-```
-src/
-├── lib/
-│   └── engine/                 # Pure draft logic
-│       ├── DraftEngine.ts      # Core state machine ✅
-│       ├── DraftEngine.test.ts # Engine test suite (18 tests) ✅
-│       ├── actions.ts          # Action types and creators ✅
-│       ├── SeededRandom.ts     # Deterministic randomization ✅
-│       ├── SeededRandom.test.ts # Random test suite (18 tests) ✅
-│       ├── PackGenerator.ts    # Seeded pack creation ✅
-│       ├── PackGenerator.test.ts # Pack test suite (18 tests) ✅
-│       └── storage/            # Engine persistence layer
-│           ├── DraftStorageAdapter.ts      # Abstract interface ✅
-│           ├── types.ts                    # Storage types ✅
-│           └── LocalStorageAdapter.ts      # LocalStorage implementation ✅
-│
-├── stores/                 # UI state (nanostores) ✅
-│   ├── draftStore.ts       # Current draft UI state ✅
-│   ├── uiStore.ts          # UI-specific state ✅
-│   ├── storageIntegration.ts    # Storage integration layer ✅
-│   ├── index.ts            # Centralized exports ✅
-│   └── storage/            # UI persistence layer ✅
-│       └── UIStorageAdapter.ts  # UI state persistence ✅
-│
-├── components/             # React UI components ✅
-│   ├── SimpleDraftRouter.tsx    # Route handling ✅
-│   ├── DraftInterface.tsx       # Main draft interface ✅
-│   ├── PackDisplay.tsx          # Pack and card grid ✅
-│   ├── Card.tsx                 # Individual card component ✅
-│   ├── DraftHeader.tsx          # Draft navigation header ✅
-│   ├── DraftSidebar.tsx         # Draft info sidebar ✅
-│   ├── index.ts                 # Component exports ✅
-│   └── ui/                      # shadcn/ui components ✅
-│       └── hover-card.tsx       # Existing hover card ✅
-│
-├── utils/                  # App-specific utilities ✅
-│   └── navigation.ts       # URL parsing and navigation ✅
-│
-└── pages/                  # Astro pages ✅
-    ├── index.astro         # Home page ✅
-    ├── draft.astro         # Draft list ✅
-    └── draft/[...path].astro # Dynamic routes ✅
-```
+**UI Layer**: 
+- `src/stores/draftStore.ts` - Add UI navigation state separation
+- `src/components/SimpleDraftRouter.tsx` - Make purely reactive
+- `src/components/DraftInterface.tsx` - Remove position calculation logic
 
-## Success Criteria
+**Documentation**:
+- This working plan - Update architecture sections
+- Component documentation - Fix position terminology
 
-### Engine Layer ✅
-- [x] Engine tests pass: deterministic state transitions ✅
-- [x] Action replay works: same inputs → same outputs ✅
-- [x] Pack generation is seeded: reproducible drafts ✅
-- [ ] Auto-persistence: saves after every action
-- [ ] Draft loading: can resume any draft from storage
+### Success Criteria
 
-### UI Layer ✅
-- [ ] Nanostores reactive updates
-- [ ] All existing routes work
-- [ ] Card interaction smooth
-- [ ] UI state persists across refreshes
-- [ ] Direct engine communication works
+**Engine Layer**:
+- [x] Engine auto-advances position after processing picks ✅
+- [x] Engine has no knowledge of "viewing" or "navigation" ✅
+- [x] All engine operations are purely about draft progression ✅
+- [x] Engine tests pass with auto-advancement ✅
 
-### Storage Separation ✅
-- [ ] Two independent storage systems
-- [ ] Easy to swap storage backends
-- [ ] No cross-contamination of data
-- [ ] Clear data ownership boundaries
+**UI Layer**:
+- [x] UI navigation state separate from engine state ✅
+- [x] URL changes only affect UI viewing, never engine operations ✅
+- [x] User can navigate independently to review past picks ✅
+- [x] Viewing position follows engine progression after picks ✅
 
-## Current State
-**ALL PHASES COMPLETE - READY FOR PRODUCTION**: 
-- ✅ Draft engine fully implemented and tested (54/54 tests passing)
-- ✅ Complete persistence layer with LocalStorageAdapter
-- ✅ Storage monitoring, error handling, and audit system
-- ✅ Selective auto-save (human actions only) integrated into engine
-- ✅ Multi-tab synchronization via localStorage events
-- ✅ Comprehensive storage management (cleanup, quota monitoring)
-- ✅ Complete UI layer with nanostores and React components
-- ✅ URL navigation and routing with position jumping
-- ✅ Direct engine-UI integration with reactive state management
-- ✅ Card components with interaction support
-- 🎯 **Ready for integration testing and production deployment**
+**Integration**:
+- [x] No infinite loops in React components ✅
+- [x] No circular dependencies between layers ✅
+- [x] Unidirectional data flow maintained ✅
+- [x] Position navigation works smoothly ✅
 
-## Key Implementation Notes
-1. **Auto-save timing**: Only save on HUMAN_PICK actions to avoid excessive saves
-2. **Storage failures**: Log errors but don't break draft - memory is primary
-3. **Multi-tab sync**: Use window.addEventListener('storage', ...) for cross-tab updates
-4. **Storage audit**: Track usage to prevent quota exceeded errors
-5. **UI hydration**: UI state loads immediately, draft data loads async
+## Implementation Notes
 
-## Next Immediate Steps
-1. Implement LocalStorageAdapter with error handling and monitoring
-2. Update DraftEngine to optionally accept storage adapter
-3. Add selective auto-save logic (human actions only)
-4. Create storage audit system for monitoring usage
+### Breaking Changes
+- URL format changes from `/draft/{id}/p{round}p{pick}` to `/draft/{id}/viewing/p{round}p{pick}`
+- Router behavior changes from driving engine to purely reactive
+- Engine API changes to auto-advance (no manual position setting)
+
+### Migration Strategy
+1. Update engine layer first (internal changes)
+2. Add UI navigation state (parallel to existing)
+3. Update router and components (gradual transition)
+4. Remove old position logic (cleanup)
+
+This ensures the application remains functional during migration while fixing the architectural violations systematically.
