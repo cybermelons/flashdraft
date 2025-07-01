@@ -189,15 +189,19 @@ export class DraftEngine {
     // Replay actions until we reach target position
     let currentState = initialDraft;
     for (const action of draft.actionHistory) {
-      currentState = this.applyActionToState(currentState, action);
-
-      // Stop if we've reached the target position
-      if (
-        currentState.currentRound >= targetRound &&
-        currentState.currentPick >= targetPick
-      ) {
+      // For position 1,1, we need to include START_DRAFT to see packs
+      // but exclude any picks made at that position
+      const isPickAction = action.type === 'HUMAN_PICK' || action.type === 'BOT_PICK';
+      const wouldAdvancePastTarget = isPickAction && 
+        currentState.currentRound === targetRound && 
+        currentState.currentPick === targetPick;
+      
+      // Stop before applying picks that would advance past our target
+      if (wouldAdvancePastTarget) {
         break;
       }
+      
+      currentState = this.applyActionToState(currentState, action);
     }
 
     return currentState;
