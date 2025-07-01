@@ -84,6 +84,13 @@ function DraftInterfaceContent({ routeData }: { routeData: DraftRouteData }) {
   const isViewingCurrent = useStore($isViewingCurrent);
   const currentPosition = useStore($currentPosition);
   
+  // Parse URL directly to avoid any delays
+  const [hasDraftIdInUrl] = useState(() => {
+    if (typeof window === 'undefined') return false;
+    const urlParts = window.location.pathname.split('/');
+    return urlParts[1] === 'draft' && urlParts[2] && urlParts[2] !== '';
+  });
+  
   // Debug logging - only on mount and key state changes
   useEffect(() => {
     console.log('DraftInterface state:', {
@@ -101,6 +108,12 @@ function DraftInterfaceContent({ routeData }: { routeData: DraftRouteData }) {
   
   const navigation = useDraftNavigation();
 
+  // FIRST CHECK: If URL has draft ID but no draft loaded, show skeleton immediately
+  // This prevents the flash because we check URL directly, not async state
+  if (hasDraftIdInUrl && !currentDraft && !error) {
+    return <DraftSkeleton />;
+  }
+  
   // Show skeleton when we have a draft ID but no draft loaded yet
   // This prevents any flash of "No Draft Loaded" content
   if (routeData.draftId && !currentDraft && !error) {
@@ -168,7 +181,7 @@ function DraftInterfaceContent({ routeData }: { routeData: DraftRouteData }) {
 
   // No draft loaded (only show this if we don't have a draft ID in the route)
   // This should never show if there's a draftId - skeleton should show instead
-  if (!currentDraft && !routeData.draftId) {
+  if (!currentDraft && !routeData.draftId && !hasDraftIdInUrl) {
     return (
       <div className="min-h-screen bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900 flex items-center justify-center p-6">
         <div className="bg-slate-800/50 backdrop-blur-sm rounded-2xl p-8 border border-slate-700/50 text-center max-w-md">

@@ -1,9 +1,11 @@
 # Phase 1: Draft UI Polish & Loading States ✅ COMPLETE
 
 `
+<issue>
 width: packViewMode === 'compact' ? '180px' : '220px'
 `
 // this should be same as card image width. there's extra padding on the right here.
+</issue>
 
 ## Overview
 Enhance the draft interface with proper loading states, remove jarring UI flashes, clean up visual design, and improve the overall user experience during drafting.
