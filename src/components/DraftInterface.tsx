@@ -91,6 +91,18 @@ function DraftInterfaceContent({ routeData }: { routeData: DraftRouteData }) {
     return urlParts[1] === 'draft' && urlParts[2] && urlParts[2] !== '';
   });
   
+  // Track if we've attempted to load (to know when to show "No Draft Loaded")
+  const [hasAttemptedLoad, setHasAttemptedLoad] = useState(false);
+  
+  useEffect(() => {
+    // After component mounts and router has had a chance to load
+    // This ensures we don't show "No Draft Loaded" prematurely
+    const timer = setTimeout(() => {
+      setHasAttemptedLoad(true);
+    }, 100);
+    return () => clearTimeout(timer);
+  }, []);
+  
   // Debug logging - only on mount and key state changes
   useEffect(() => {
     console.log('DraftInterface state:', {
@@ -108,25 +120,24 @@ function DraftInterfaceContent({ routeData }: { routeData: DraftRouteData }) {
   
   const navigation = useDraftNavigation();
 
-  // FIRST CHECK: If URL has draft ID but no draft loaded, show skeleton immediately
-  // This prevents the flash because we check URL directly, not async state
-  if (hasDraftIdInUrl && !currentDraft && !error) {
-    return <DraftSkeleton />;
-  }
-  
-  // Show skeleton when we have a draft ID but no draft loaded yet
-  // This prevents any flash of "No Draft Loaded" content
-  if (routeData.draftId && !currentDraft && !error) {
-    return <DraftSkeleton />;
-  }
-  
-  // Also show skeleton during any loading state
-  if (isLoading) {
+  // DEFAULT TO SKELETON: Show skeleton unless we have specific reasons not to
+  // This prevents any flash of incorrect content
+  const shouldShowSkeleton = 
+    // Still loading
+    isLoading ||
+    // URL has draft ID but no draft loaded yet (and no error)
+    (hasDraftIdInUrl && !currentDraft && !error) ||
+    // Route data has draft ID but no draft loaded yet (and no error)
+    (routeData.draftId && !currentDraft && !error) ||
+    // Haven't attempted load yet
+    !hasAttemptedLoad;
+    
+  if (shouldShowSkeleton) {
     return <DraftSkeleton />;
   }
 
   // Handle route errors (only show after we've tried to load)
-  if (!routeData.isValidRoute) {
+  if (!routeData.isValidRoute && hasAttemptedLoad) {
     return (
       <div className="min-h-screen bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900 flex items-center justify-center p-6">
         <div className="bg-red-500/10 backdrop-blur-sm rounded-2xl p-8 border border-red-500/20 text-center max-w-md">
@@ -148,8 +159,8 @@ function DraftInterfaceContent({ routeData }: { routeData: DraftRouteData }) {
     );
   }
 
-  // Error state
-  if (error) {
+  // Error state (only show after attempted load)
+  if (error && hasAttemptedLoad) {
     return (
       <div className="min-h-screen bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900 flex items-center justify-center p-6">
         <div className="bg-red-500/10 backdrop-blur-sm rounded-2xl p-8 border border-red-500/20 text-center max-w-md">
@@ -179,9 +190,8 @@ function DraftInterfaceContent({ routeData }: { routeData: DraftRouteData }) {
     );
   }
 
-  // No draft loaded (only show this if we don't have a draft ID in the route)
-  // This should never show if there's a draftId - skeleton should show instead
-  if (!currentDraft && !routeData.draftId && !hasDraftIdInUrl) {
+  // No draft loaded (only show this after we've tried to load and confirmed no draft)
+  if (!currentDraft && !routeData.draftId && !hasDraftIdInUrl && hasAttemptedLoad) {
     return (
       <div className="min-h-screen bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900 flex items-center justify-center p-6">
         <div className="bg-slate-800/50 backdrop-blur-sm rounded-2xl p-8 border border-slate-700/50 text-center max-w-md">
@@ -203,11 +213,6 @@ function DraftInterfaceContent({ routeData }: { routeData: DraftRouteData }) {
     );
   }
 
-  // Safety check - if we have a draftId but still no draft, show skeleton
-  // This catches any edge cases we might have missed
-  if (routeData.draftId && !currentDraft) {
-    return <DraftSkeleton />;
-  }
 
   // Show completion banner but allow navigation for completed drafts
   const isCompleted = currentDraft.status === 'completed';
