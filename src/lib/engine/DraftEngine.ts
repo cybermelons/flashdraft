@@ -445,16 +445,17 @@ export class DraftEngine {
     const currentPacks = draft.packs[draft.currentRound];
     if (!currentPacks) return draft;
 
-    // Count how many players still have cards to pick in their packs
-    const packs = Object.keys(currentPacks).map((key: string) => {
+    // Calculate expected number of cards remaining after all players pick
+    const expectedCardsRemaining = 15 - draft.currentPick;
+    
+    // Check if all players have the expected number of cards
+    // (meaning they've all picked for this position)
+    const allPlayersHavePicked = Object.keys(currentPacks).every((key: string) => {
       const pack = currentPacks[Number(key)];
-      return pack;
+      return pack && pack.cards.length === expectedCardsRemaining;
     });
-    const playersWithCards = packs.filter(
-      (pack) => pack && pack.cards.length > 0,
-    ).length;
 
-    if (playersWithCards === 0) {
+    if (allPlayersHavePicked) {
       // All players have picked - advance to next position
       return this.advanceToNextPosition(draft);
     }
