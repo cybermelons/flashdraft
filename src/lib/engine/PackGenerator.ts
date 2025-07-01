@@ -5,7 +5,7 @@
  * Follows MTG booster pack rarity distribution.
  */
 
-import { SeededRandom } from './seededRandom';
+import { SeededRandom } from './SeededRandom';
 
 export interface CardImageUris {
   small?: string;
@@ -41,6 +41,7 @@ export interface Card {
   manaCost?: string;
   type?: string;
   colors?: string[];
+  collector_number?: string;
   // Image support
   image_uris?: CardImageUris;
   // Dual-sided card support
@@ -147,6 +148,21 @@ export class PackGenerator {
   }
 
   /**
+   * Filter out cards that shouldn't appear in packs
+   */
+  private filterDraftableCards(cards: Card[]): Card[] {
+    return cards.filter(card => {
+      // Filter out meld back faces (collector numbers ending in 'b')
+      if (card.layout === 'meld' && /\d+b$/.test(card.collector_number || '')) {
+        return false;
+      }
+      
+      // All other cards are draftable
+      return true;
+    });
+  }
+
+  /**
    * Group cards by rarity for pack generation
    */
   private groupCardsByRarity(): Record<string, Card[]> {
@@ -157,7 +173,10 @@ export class PackGenerator {
       mythic: [],
     };
 
-    for (const card of this.setData.cards) {
+    // Filter out non-draftable cards first
+    const draftableCards = this.filterDraftableCards(this.setData.cards);
+
+    for (const card of draftableCards) {
       if (groups[card.rarity]) {
         groups[card.rarity].push(card);
       }

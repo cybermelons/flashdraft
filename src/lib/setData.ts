@@ -171,6 +171,7 @@ function convertScryfallCard(scryfallCard: ScryfallCard): Card {
     type: scryfallCard.type_line,
     colors: scryfallCard.colors || [],
     cmc: scryfallCard.cmc,
+    collector_number: scryfallCard.collector_number,
     // Preserve image URLs
     image_uris: scryfallCard.image_uris,
     // Preserve layout information

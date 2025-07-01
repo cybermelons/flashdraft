@@ -1,135 +1,126 @@
-# issues
-
-<issue>
-  error opening decklist:
-  <log>
-    All players have picked, advancing position
-draftStore.ts:372 Position after all picks: {round: 1, pick: 2}
-SimpleDraftRouter.tsx:94 URL update check: {currentPath: '/draft/draft_1751334173851_1751334173851/p1p1', expectedPath: '/draft/draft_1751334173851_1751334173851/p1p2', viewingRound: 1, viewingPick: 2, shouldUpdate: true}
-DraftEngine.ts:467 All players have picked, advancing position
-draftStore.ts:372 Position after all picks: {round: 1, pick: 3}
-SimpleDraftRouter.tsx:94 URL update check: {currentPath: '/draft/draft_1751334173851_1751334173851/p1p2', expectedPath: '/draft/draft_1751334173851_1751334173851/p1p3', viewingRound: 1, viewingPick: 3, shouldUpdate: true}
-DraftSidebar.tsx:400 Uncaught ReferenceError: humanDeck is not defined
-    at DraftSidebar (DraftSidebar.tsx:400:64)
-  </log>
-</issue>
-
-<issue>
-  i can't navigate to previous picks. directly going to p1p2 when i'm on p1p3 shows me the p1p3 picks and not the immutable state of p1p2.
-</issue>
-
-
-<issue>
-  decklist is showing card names but nothing else.
-  <log>
-    Hope Estheim
-    Unknown Type
-    0
-  </log>
-</issue>
-
-# Development Plan: Fix URL Format and UI Improvements
-
-## Progress: 16/17 tasks complete (94%)
+# Development Plan: Draft UI Improvements & MTG Goldfishing Mat
 
 ## Overview
-Fix navigation issues and enhance the draft UI to show proper card information instead of IDs. This involves creating a proper card lookup system and standardizing navigation patterns across the application.
+Fix critical draft bugs, enhance the draft interface with better loading states and improved card display, add sideboard functionality, then build a goldfishing testmat for rapid deck testing without rules enforcement.
 
-## Approach
-1. **Create Card Lookup Infrastructure**: Build a centralized system for accessing full card data from IDs
-2. **Standardize Navigation**: Remove URL complexity and ensure consistent navigation patterns
-3. **Enhance UI Components**: Use the new infrastructure to show card names, stats, and sorting
+## Critical Bugs to Fix First
 
-## Implementation Checklist
+### Dual-Faced Card Issue
+- [ ] Fix pack generation to only include front faces of dual-faced cards
+- [ ] See detailed plan: [Phase 0 - DFC Fix](./phase-0-dfc-fix.md)
 
-### Phase 1: Card Data Infrastructure
-- [x] Create card lookup computed store in draftStore.ts
-  - Maps card IDs to full card objects using engine's set data
-  - Provides efficient O(1) lookups
-- [x] Add getSetData method to DraftEngine for accessing loaded sets
-- [x] Create $humanDeckCards computed store that returns full card objects
-- [x] Add $cardById function for single card lookups
-- [ ] Test card lookup performance with large sets
+## Current Issues to Fix
 
-### Phase 2: Navigation Standardization
-- [x] Remove '/viewing/' from URL format everywhere
-  - Update parseDraftURL to handle simple format
-  - Update generateDraftURL to use simple format
-  - Update all navigation calls
-- [x] Fix navigation after creating/starting draft
-  - Add navigation to p1p1 in createDraft action
-  - Add navigation to p1p1 in startDraft action
-- [x] Fix overview and all drafts navigation
-  - Ensure navigateToOverview works properly
-  - Ensure navigateToDraftList changes the actual page
-- [x] Add URL update when draft position changes
-- [ ] Test browser back/forward navigation
+### UI/UX Improvements
+- [ ] Add loading skeletons while fetching draft data (fix "invalid draft url" flash)
+- [ ] Redesign decklist to show cascaded cards with name/mana pips visible
+- [ ] Reduce spacing between cards in pack display layout
+- [ ] Add hover effects showing full card image (like 17lands/MTGA)
 
-### Phase 3: Deck Display Enhancements
-- [x] Update DraftSidebar to show card names
-  - Use $humanDeckCards instead of $humanDeck
-  - Display card.name instead of card ID
-- [x] Sort cards by rarity
-  - Create rarity order map (mythic=4, rare=3, uncommon=2, common=1)
-  - Sort $humanDeckCards by rarity then name
-- [x] Add deck statistics section
-  - Count creatures (type_line includes "Creature")
-  - Count artifacts (type_line includes "Artifact")
-  - Count instants (type_line includes "Instant")
-  - Count sorceries (type_line includes "Sorcery")
-- [x] Add mana curve visualization
-  - Extract CMC from each card
-  - Create distribution chart (0-7+ CMC)
-  - Use simple bar chart with Tailwind
+### Sideboard Functionality
+- [ ] Add sideboard support to draft engine
+- [ ] Create sideboard UI at bottom of decklist
+- [ ] Enable click to move cards between deck and sideboard
+- [ ] Persist sideboard state with draft
 
-### Phase 4: Pack Display Improvements
-- [x] Sort pack cards by rarity when displaying
-- [x] Add visual rarity indicators (color coding)
-- [x] Ensure consistent card display between pack and deck
+## New Feature: MTG Goldfishing Mat
 
-## Technical Considerations
+### Core Concept
+A rules-free testing environment for rapid deck iteration. No mechanics enforcement - just visual board state manipulation for learning and testing.
 
-### Card Lookup Architecture
-```typescript
-// Efficient lookup pattern
-export const $cardLookup = computed([$currentDraft], (draft) => {
-  if (!draft) return null;
-  const setData = draftEngine.getSetData(draft.setCode);
-  return new Map(setData.cards.map(card => [card.id, card]));
-});
+### Key Features
+- Quick switch between draft/deckbuilding and testmat
+- Load deck against random 17lands average deck
+- Hide/show opponent's hand
+- Board manipulation tools (counters, markers, tapping)
+- Instant restart with same or new opponent deck
+
+## Implementation Phases
+
+### Phase 0: Critical Bug Fixes (PRIORITY)
+- [ ] Fix dual-faced card pack generation
+- [ ] Detailed plan: [phase-0-dfc-fix.md](./phase-0-dfc-fix.md)
+
+### Phase 1: Draft UI Polish & Loading States
+- [ ] Implement loading skeletons for draft data fetch
+- [ ] Fix "invalid draft url" flash by showing skeleton during route validation
+- [ ] Add proper error boundaries with user-friendly messages
+
+### Phase 2: Enhanced Card Display
+- [ ] Redesign decklist card display (cascade view)
+- [ ] Tighten pack display spacing
+- [ ] Implement hover card preview
+
+### Phase 3: Sideboard Implementation
+- [ ] Engine support for sideboard
+- [ ] UI Components for deck/sideboard management
+- [ ] Validation and persistence
+
+### Phase 4: Testmat Foundation
+- [ ] Create new route `/testmat/[draftId]`
+- [ ] Design board layout with zones
+- [ ] Card rendering and basic controls
+
+### Phase 5: Testmat Game Flow
+- [ ] Deck loading from draft
+- [ ] Hand management and mulligan
+- [ ] Quick restart system
+
+### Phase 6: Quick Switch Integration
+- [ ] Add "Play" button to decklist
+- [ ] Navigation between modes
+- [ ] State persistence
+
+### Phase 7: Board Manipulation Tools
+- [ ] Counter system
+- [ ] Token support
+- [ ] Life tracking
+
+### Phase 8: Testing & Polish
+- [ ] Comprehensive testing
+- [ ] Mobile optimization
+- [ ] Keyboard shortcuts
+
+## Technical Architecture
+
+### Data Flow
+```
+Set Data → Pack Generation (front faces only) → Draft Engine → Deck + Sideboard → Testmat → Game State
+    ↓                                              ↓                                         ↓
+ Filtering                                     Storage                                   Storage
 ```
 
-### Navigation Pattern
-```typescript
-// Consistent navigation after actions
-async createDraft(seed: string, setCode: string) {
-  const draftId = await draftActions.createDraft(seed, setCode);
-  navigation.navigateToPosition(1, 1); // Always go to p1p1
-}
+### Component Structure
 ```
+DraftInterface
+├── PackDisplay (with tighter spacing)
+├── DraftSidebar
+│   ├── Decklist (cascaded view)
+│   └── Sideboard (new)
+└── HoverCardPreview (new, handles dual-faced)
 
-### Rarity Sorting
-```typescript
-const rarityOrder = { mythic: 4, rare: 3, uncommon: 2, common: 1 };
-cards.sort((a, b) => {
-  const rarityDiff = (rarityOrder[b.rarity] || 0) - (rarityOrder[a.rarity] || 0);
-  return rarityDiff || a.name.localeCompare(b.name);
-});
+TestmatInterface (new)
+├── Board
+│   ├── PlayerZones
+│   ├── OpponentZones
+│   └── SharedZones
+├── Controls
+└── QuickSwitch
 ```
 
 ## Success Criteria
-- [x] URLs are clean without '/viewing/' segment
-- [x] Navigation works consistently across all actions
-- [x] Deck shows card names, not IDs
-- [x] Cards are sorted by rarity
-- [x] Deck statistics show accurate counts
-- [x] Mana curve visualization displays correctly
-- [ ] No performance degradation with card lookups
-- [ ] Browser navigation (back/forward) works properly
+- [ ] Dual-faced cards draft correctly (only front faces in packs)
+- [ ] Loading states prevent "invalid url" flashes
+- [ ] Decklist shows cards clearly in compact cascade
+- [ ] Sideboard functionality works seamlessly
+- [ ] Hover previews enhance card selection
+- [ ] Testmat loads quickly from draft
+- [ ] Board manipulation feels responsive
+- [ ] Quick switch maintains context
+- [ ] Mobile experience is smooth
 
-## Architecture Principles
-- **Single Source of Truth**: Card data remains in engine's set data
-- **Computed Stores**: Use nanostores computed for derived state
-- **Consistent Patterns**: All navigation through useDraftNavigation hook
-- **Performance**: Use Map for O(1) card lookups
-- **Type Safety**: Maintain full TypeScript types throughout
+## Notes
+- Phase 0 is CRITICAL - dual-faced card bug breaks draft integrity
+- Each phase will get detailed planning document when we start it
+- Testmat is explicitly not a rules engine - it's a digital playmat
+- Focus on speed and ease of use over feature completeness

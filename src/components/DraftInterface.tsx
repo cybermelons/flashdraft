@@ -11,7 +11,8 @@ import { clearCorruptedDraftData } from '@/utils/storageCleanup';
 import { 
   $currentDraft, 
   $currentPack, 
-  $humanDeck, 
+  $humanDeck,
+  $humanDeckCards, 
   $draftProgress,
   $canPick,
   $isLoading,
@@ -74,6 +75,7 @@ function DraftInterfaceContent({ routeData }: { routeData: DraftRouteData }) {
   const currentDraft = useStore($currentDraft);
   const currentPack = useStore($currentPack);
   const humanDeck = useStore($humanDeck);
+  const humanDeckCards = useStore($humanDeckCards);
   const draftProgress = useStore($draftProgress);
   const canPick = useStore($canPick);
   const isLoading = useStore($isLoading);
@@ -187,58 +189,38 @@ function DraftInterfaceContent({ routeData }: { routeData: DraftRouteData }) {
     );
   }
 
-  // Draft completed
-  if (currentDraft.status === 'completed') {
-    return (
-      <div className="min-h-screen bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900">
-        <DraftHeader />
-        <div className="p-6">
-          <div className="max-w-4xl mx-auto">
-            <div className="bg-gradient-to-br from-green-500/10 to-green-600/10 backdrop-blur-sm rounded-3xl p-12 border border-green-500/20 text-center">
-              <div className="text-green-400 mb-6">
-                <svg className="w-20 h-20 mx-auto" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path>
-                </svg>
-              </div>
-              <h2 className="text-4xl font-bold text-white mb-4">Draft Complete!</h2>
-              <p className="text-xl text-slate-300 mb-8">You've successfully drafted your {humanDeck.length}-card deck.</p>
-              
-              <div className="bg-slate-800/50 rounded-2xl p-6 mb-8">
-                <h3 className="text-xl font-bold text-white mb-4">Your Deck ({humanDeck.length} cards)</h3>
-                <div className="grid grid-cols-2 sm:grid-cols-4 md:grid-cols-6 lg:grid-cols-8 gap-2 max-h-64 overflow-y-auto">
-                  {humanDeck.map(cardId => (
-                    <div key={cardId} className="bg-slate-700/50 rounded-lg p-2 text-xs text-slate-300 border border-slate-600/50">
-                      {cardId}
-                    </div>
-                  ))}
-                </div>
-              </div>
-              
-              <div className="flex gap-4 justify-center">
-                <button 
-                  onClick={() => navigation.navigateToPosition(1, 1)}
-                  className="bg-slate-600 hover:bg-slate-500 text-white px-6 py-3 rounded-xl font-semibold transition-colors"
-                >
-                  Review Draft
-                </button>
-                <button 
-                  onClick={() => navigation.navigateToDraftList()}
-                  className="bg-green-600 hover:bg-green-500 text-white px-6 py-3 rounded-xl font-semibold transition-colors"
-                >
-                  Back to Drafts
-                </button>
-              </div>
-            </div>
-          </div>
-        </div>
-      </div>
-    );
-  }
+  // Show completion banner but allow navigation for completed drafts
+  const isCompleted = currentDraft.status === 'completed';
 
-  // Active draft interface
+  // Active draft interface (also used for completed drafts with navigation)
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900">
       <DraftHeader />
+      
+      {/* Completion banner for finished drafts */}
+      {isCompleted && isViewingCurrent && (
+        <div className="bg-gradient-to-r from-green-500/20 to-green-600/20 border-b border-green-500/30 p-4">
+          <div className="max-w-4xl mx-auto flex items-center justify-between">
+            <div className="flex items-center gap-3">
+              <div className="text-green-400">
+                <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                </svg>
+              </div>
+              <div>
+                <h3 className="text-lg font-bold text-white">Draft Complete!</h3>
+                <p className="text-sm text-green-300">You drafted {humanDeck.length} cards. Navigate back to review your picks.</p>
+              </div>
+            </div>
+            <button 
+              onClick={() => navigation.navigateToDraftList()}
+              className="bg-green-600 hover:bg-green-500 text-white px-4 py-2 rounded-xl font-medium transition-colors text-sm"
+            >
+              Back to Drafts
+            </button>
+          </div>
+        </div>
+      )}
       
       <div className="flex flex-1 min-h-0">
         <main className="flex-1 p-6">
@@ -256,21 +238,36 @@ function DraftInterfaceContent({ routeData }: { routeData: DraftRouteData }) {
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4"></path>
                   </svg>
                 </div>
-                <p className="text-slate-300 text-lg mb-2">No pack available for this position.</p>
-                {!canPick && humanDeck.length > 0 && (
-                  <p className="text-slate-400 text-sm">
-                    You already picked from this pack. 
-                    {!isViewingCurrent && (
-                      <span className="block mt-2">
-                        <button 
-                          onClick={() => navigation.navigateToPosition(currentDraft.currentRound, currentDraft.currentPick)}
-                          className="text-blue-400 hover:text-blue-300 underline"
-                        >
-                          Go to current pick (P{currentDraft.currentRound}P{currentDraft.currentPick})
-                        </button>
-                      </span>
+                {isCompleted && isViewingCurrent ? (
+                  <>
+                    <p className="text-slate-300 text-lg mb-2">Draft Complete!</p>
+                    <p className="text-slate-400 text-sm">Navigate back through your picks to review the draft.</p>
+                    <button 
+                      onClick={() => navigation.navigateToPosition(1, 1)}
+                      className="mt-4 text-blue-400 hover:text-blue-300 underline"
+                    >
+                      Start from Pick 1
+                    </button>
+                  </>
+                ) : (
+                  <>
+                    <p className="text-slate-300 text-lg mb-2">No pack available for this position.</p>
+                    {!canPick && humanDeck.length > 0 && (
+                      <p className="text-slate-400 text-sm">
+                        You already picked from this pack. 
+                        {!isViewingCurrent && !isCompleted && (
+                          <span className="block mt-2">
+                            <button 
+                              onClick={() => navigation.navigateToPosition(currentDraft.currentRound, currentDraft.currentPick)}
+                              className="text-blue-400 hover:text-blue-300 underline"
+                            >
+                              Go to current pick (P{currentDraft.currentRound}P{currentDraft.currentPick})
+                            </button>
+                          </span>
+                        )}
+                      </p>
                     )}
-                  </p>
+                  </>
                 )}
               </div>
             </div>
