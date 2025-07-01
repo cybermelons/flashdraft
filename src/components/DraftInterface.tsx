@@ -102,8 +102,13 @@ function DraftInterfaceContent({ routeData }: { routeData: DraftRouteData }) {
   
   const navigation = useDraftNavigation();
 
-  // Show skeleton if loading or if we have a draft ID but no draft loaded yet
-  if (isLoading || (routeData.draftId && !currentDraft && !error)) {
+  // Check if we're on a draft route by looking at the URL
+  const isDraftRoute = typeof window !== 'undefined' && 
+    window.location.pathname.startsWith('/draft/') && 
+    window.location.pathname.split('/')[2];
+    
+  // Show skeleton if loading or if we have a draft ID (or are on draft route) but no draft loaded yet
+  if (isLoading || ((routeData.draftId || isDraftRoute) && !currentDraft && !error)) {
     return <DraftSkeleton />;
   }
 
@@ -161,8 +166,9 @@ function DraftInterfaceContent({ routeData }: { routeData: DraftRouteData }) {
     );
   }
 
-  // No draft loaded
-  if (!currentDraft) {
+  // No draft loaded - but only show this if we're not on a draft route
+  // If we're on a draft route, the skeleton should have shown
+  if (!currentDraft && !routeData.draftId && !isDraftRoute) {
     return (
       <div className="min-h-screen bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900 flex items-center justify-center p-6">
         <div className="bg-slate-800/50 backdrop-blur-sm rounded-2xl p-8 border border-slate-700/50 text-center max-w-md">
