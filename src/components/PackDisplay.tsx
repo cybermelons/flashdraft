@@ -202,18 +202,14 @@ export function PackDisplay({ pack, onCardPick, canPick, className = '' }: PackD
         </div>
       </div>
       
-      {/* Pack Cards Grid - Responsive grid that shrinks cards until breakpoint */}
-      <div className="flex justify-center">
+      {/* Pack Cards Grid - Responsive grid with fixed breakpoints */}
+      <div className="w-full">
         <div 
-          className={`${
+          className={`gap-2 ${
             packViewMode === 'list' 
-              ? 'flex flex-col gap-2 max-w-[280px]' 
-              : 'grid gap-2 w-full max-w-[1200px]'
+              ? 'flex flex-col max-w-[280px] mx-auto' 
+              : 'grid grid-cols-3 sm:grid-cols-4 md:grid-cols-5 lg:grid-cols-6 xl:grid-cols-7 2xl:grid-cols-8'
           }`}
-          style={packViewMode !== 'list' ? {
-            gridTemplateColumns: 'repeat(auto-fit, minmax(160px, 1fr))',
-            gridAutoRows: 'auto'
-          } : {}}
         >
         {displayCards.map((card, index) => {
           const isPicked = pickedCardId === card.id;
