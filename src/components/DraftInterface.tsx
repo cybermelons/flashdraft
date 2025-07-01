@@ -84,24 +84,6 @@ function DraftInterfaceContent({ routeData }: { routeData: DraftRouteData }) {
   const isViewingCurrent = useStore($isViewingCurrent);
   const currentPosition = useStore($currentPosition);
   
-  // Parse URL directly to avoid any delays
-  const [hasDraftIdInUrl] = useState(() => {
-    if (typeof window === 'undefined') return false;
-    const urlParts = window.location.pathname.split('/');
-    return urlParts[1] === 'draft' && urlParts[2] && urlParts[2] !== '';
-  });
-  
-  // Track if we've attempted to load (to know when to show "No Draft Loaded")
-  const [hasAttemptedLoad, setHasAttemptedLoad] = useState(false);
-  
-  useEffect(() => {
-    // After component mounts and router has had a chance to load
-    // This ensures we don't show "No Draft Loaded" prematurely
-    const timer = setTimeout(() => {
-      setHasAttemptedLoad(true);
-    }, 100);
-    return () => clearTimeout(timer);
-  }, []);
   
   // Debug logging - only on mount and key state changes
   useEffect(() => {
@@ -120,24 +102,13 @@ function DraftInterfaceContent({ routeData }: { routeData: DraftRouteData }) {
   
   const navigation = useDraftNavigation();
 
-  // DEFAULT TO SKELETON: Show skeleton unless we have specific reasons not to
-  // This prevents any flash of incorrect content
-  const shouldShowSkeleton = 
-    // Still loading
-    isLoading ||
-    // URL has draft ID but no draft loaded yet (and no error)
-    (hasDraftIdInUrl && !currentDraft && !error) ||
-    // Route data has draft ID but no draft loaded yet (and no error)
-    (routeData.draftId && !currentDraft && !error) ||
-    // Haven't attempted load yet
-    !hasAttemptedLoad;
-    
-  if (shouldShowSkeleton) {
+  // Show skeleton if loading or if we have a draft ID but no draft loaded yet
+  if (isLoading || (routeData.draftId && !currentDraft && !error)) {
     return <DraftSkeleton />;
   }
 
-  // Handle route errors (only show after we've tried to load)
-  if (!routeData.isValidRoute && hasAttemptedLoad) {
+  // Handle route errors
+  if (!routeData.isValidRoute) {
     return (
       <div className="min-h-screen bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900 flex items-center justify-center p-6">
         <div className="bg-red-500/10 backdrop-blur-sm rounded-2xl p-8 border border-red-500/20 text-center max-w-md">
@@ -159,8 +130,8 @@ function DraftInterfaceContent({ routeData }: { routeData: DraftRouteData }) {
     );
   }
 
-  // Error state (only show after attempted load)
-  if (error && hasAttemptedLoad) {
+  // Error state
+  if (error) {
     return (
       <div className="min-h-screen bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900 flex items-center justify-center p-6">
         <div className="bg-red-500/10 backdrop-blur-sm rounded-2xl p-8 border border-red-500/20 text-center max-w-md">
@@ -190,8 +161,8 @@ function DraftInterfaceContent({ routeData }: { routeData: DraftRouteData }) {
     );
   }
 
-  // No draft loaded (only show this after we've tried to load and confirmed no draft)
-  if (!currentDraft && !routeData.draftId && !hasDraftIdInUrl && hasAttemptedLoad) {
+  // No draft loaded
+  if (!currentDraft) {
     return (
       <div className="min-h-screen bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900 flex items-center justify-center p-6">
         <div className="bg-slate-800/50 backdrop-blur-sm rounded-2xl p-8 border border-slate-700/50 text-center max-w-md">

@@ -215,9 +215,6 @@ export function PackDisplay({ pack, onCardPick, canPick, className = '' }: PackD
             <div 
               key={card.id} 
               className="relative group flex-shrink-0"
-              style={{
-                width: packViewMode === 'compact' ? '180px' : '220px'
-              }}
             >
               {showPickNumber && (
                 <div className="absolute -top-2 -left-2 w-6 h-6 bg-blue-600 text-white rounded-full flex items-center justify-center text-xs font-bold z-10 shadow-lg">
