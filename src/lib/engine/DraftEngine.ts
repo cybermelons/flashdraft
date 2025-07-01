@@ -360,16 +360,14 @@ export class DraftEngine {
     currentState?: DraftState,
   ): DraftState {
     if (action.type !== "START_DRAFT") throw new Error("Invalid action type");
+    if (!currentState) throw new Error("Draft not found");
 
-    const draft = currentState || this.state.drafts[action.payload.draftId];
-    if (!draft) throw new Error("Draft not found");
-
-    const updatedDraft = { ...draft };
+    const updatedDraft = { ...currentState };
     updatedDraft.status = "active";
-    updatedDraft.actionHistory = [...draft.actionHistory, action];
+    updatedDraft.actionHistory = [...currentState.actionHistory, action];
 
     // Generate initial packs for round 1
-    updatedDraft.packs[1] = this.generatePacksForRound(draft, 1);
+    updatedDraft.packs[1] = this.generatePacksForRound(currentState, 1);
 
     return updatedDraft;
   }
@@ -379,13 +377,11 @@ export class DraftEngine {
     currentState?: DraftState,
   ): DraftState {
     if (action.type !== "HUMAN_PICK") throw new Error("Invalid action type");
-
-    const draft = currentState || this.state.drafts[action.payload.draftId];
-    if (!draft) throw new Error("Draft not found");
+    if (!currentState) throw new Error("Draft not found");
 
     return this.handlePlayerPick(
-      draft,
-      draft.humanPlayerIndex,
+      currentState,
+      currentState.humanPlayerIndex,
       action.payload.cardId,
       action,
     );
@@ -396,12 +392,10 @@ export class DraftEngine {
     currentState?: DraftState,
   ): DraftState {
     if (action.type !== "BOT_PICK") throw new Error("Invalid action type");
-
-    const draft = currentState || this.state.drafts[action.payload.draftId];
-    if (!draft) throw new Error("Draft not found");
+    if (!currentState) throw new Error("Draft not found");
 
     return this.handlePlayerPick(
-      draft,
+      currentState,
       action.payload.playerIndex,
       action.payload.cardId,
       action,
@@ -444,7 +438,7 @@ export class DraftEngine {
     // Auto-advance: Check if all players have made their pick for this position
     const finalDraft = this.autoAdvanceIfReady(updatedDraft);
 
-    this.state.drafts[draft.draftId] = finalDraft;
+    // Don't save to state here - let applyAction handle it
     return finalDraft;
   }
 
@@ -468,7 +462,10 @@ export class DraftEngine {
 
     if (allPlayersHavePicked) {
       // All players have picked - advance to next position
-      console.log('All players have picked, advancing position');
+      console.log('All players have picked, advancing position from:', {
+        round: draft.currentRound,
+        pick: draft.currentPick
+      });
       return this.advanceToNextPosition(draft);
     }
 
@@ -484,10 +481,7 @@ export class DraftEngine {
 
     // Advance pick number
     if (updatedDraft.currentPick < 15) {
-      // Move to next pick in same round
-      updatedDraft.currentPick += 1;
-
-      // Pass packs after each pick
+      // Pass packs BEFORE advancing position
       updatedDraft = this.handlePassPacks(
         {
           type: "PASS_PACKS",
@@ -496,10 +490,21 @@ export class DraftEngine {
         },
         updatedDraft,
       );
+      
+      // THEN move to next pick in same round
+      updatedDraft.currentPick += 1;
+      console.log('Advanced to:', {
+        round: updatedDraft.currentRound,
+        pick: updatedDraft.currentPick
+      });
     } else if (updatedDraft.currentRound < 3) {
       // Move to next round
       updatedDraft.currentRound += 1;
       updatedDraft.currentPick = 1;
+      console.log('Advanced to new round:', {
+        round: updatedDraft.currentRound,
+        pick: updatedDraft.currentPick
+      });
 
       // Start new round (generates new packs)
       updatedDraft = this.handleStartRound(
@@ -545,12 +550,10 @@ export class DraftEngine {
     currentState?: DraftState,
   ): DraftState {
     if (action.type !== "PASS_PACKS") throw new Error("Invalid action type");
+    if (!currentState) throw new Error("Draft not found");
 
-    const draft = currentState || this.state.drafts[action.payload.draftId];
-    if (!draft) throw new Error("Draft not found");
-
-    const updatedDraft = { ...draft };
-    updatedDraft.actionHistory = [...draft.actionHistory, action];
+    const updatedDraft = { ...currentState };
+    updatedDraft.actionHistory = [...currentState.actionHistory, action];
 
     // Pass packs according to current round direction
     const direction = updatedDraft.packPassDirection[updatedDraft.currentRound];
@@ -588,12 +591,10 @@ export class DraftEngine {
   ): DraftState {
     if (action.type !== "ADVANCE_POSITION")
       throw new Error("Invalid action type");
+    if (!currentState) throw new Error("Draft not found");
 
-    const draft = currentState || this.state.drafts[action.payload.draftId];
-    if (!draft) throw new Error("Draft not found");
-
-    const updatedDraft = { ...draft };
-    updatedDraft.actionHistory = [...draft.actionHistory, action];
+    const updatedDraft = { ...currentState };
+    updatedDraft.actionHistory = [...currentState.actionHistory, action];
     updatedDraft.currentRound = action.payload.newRound;
     updatedDraft.currentPick = action.payload.newPick;
 
@@ -605,16 +606,14 @@ export class DraftEngine {
     currentState?: DraftState,
   ): DraftState {
     if (action.type !== "START_ROUND") throw new Error("Invalid action type");
+    if (!currentState) throw new Error("Draft not found");
 
-    const draft = currentState || this.state.drafts[action.payload.draftId];
-    if (!draft) throw new Error("Draft not found");
-
-    const updatedDraft = { ...draft };
-    updatedDraft.actionHistory = [...draft.actionHistory, action];
+    const updatedDraft = { ...currentState };
+    updatedDraft.actionHistory = [...currentState.actionHistory, action];
 
     // Generate packs for the new round
     updatedDraft.packs[action.payload.round] = this.generatePacksForRound(
-      draft,
+      currentState,
       action.payload.round,
     );
 
@@ -627,12 +626,10 @@ export class DraftEngine {
   ): DraftState {
     if (action.type !== "COMPLETE_DRAFT")
       throw new Error("Invalid action type");
+    if (!currentState) throw new Error("Draft not found");
 
-    const draft = currentState || this.state.drafts[action.payload.draftId];
-    if (!draft) throw new Error("Draft not found");
-
-    const updatedDraft = { ...draft };
-    updatedDraft.actionHistory = [...draft.actionHistory, action];
+    const updatedDraft = { ...currentState };
+    updatedDraft.actionHistory = [...currentState.actionHistory, action];
     updatedDraft.status = "completed";
 
     return updatedDraft;
