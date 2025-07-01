@@ -12,6 +12,8 @@ import {
   $currentDraft, 
   $isLoading, 
   $error,
+  $viewingRound,
+  $viewingPick,
   draftActions 
 } from '@/stores/draftStore';
 import { parseDraftURL, type ParsedDraftURL } from '@/utils/navigation';
@@ -87,6 +89,22 @@ export function SimpleDraftRouter({ children }: SimpleDraftRouterProps) {
       window.removeEventListener('popstate', handlePopstate);
     };
   }, [currentDraftId, currentDraft]);
+  
+  // Update URL when viewing position changes
+  const viewingRound = useStore($viewingRound);
+  const viewingPick = useStore($viewingPick);
+  
+  useEffect(() => {
+    if (currentDraftId && viewingRound && viewingPick) {
+      const currentPath = window.location.pathname;
+      const expectedPath = `/draft/${currentDraftId}/p${viewingRound}p${viewingPick}`;
+      
+      // Only update if path doesn't match
+      if (currentPath !== expectedPath) {
+        window.history.replaceState({}, '', expectedPath);
+      }
+    }
+  }, [currentDraftId, viewingRound, viewingPick]);
 
   // Update loading and error state separately to avoid infinite loops
   useEffect(() => {
@@ -130,7 +148,7 @@ export function useDraftNavigation() {
       draftActions.navigateToPosition(round, pick);
       
       // Update URL to reflect new viewing position
-      const url = `/draft/${currentDraftId}/viewing/p${round}p${pick}`;
+      const url = `/draft/${currentDraftId}/p${round}p${pick}`;
       window.history.pushState({}, '', url);
     },
     
@@ -141,14 +159,16 @@ export function useDraftNavigation() {
       if (!currentDraftId) return;
       
       const url = `/draft/${currentDraftId}`;
-      window.history.pushState({}, '', url);
+      // Use actual navigation for Astro SSR
+      window.location.href = url;
     },
     
     /**
      * Navigate to draft list
      */
     navigateToDraftList: () => {
-      window.history.pushState({}, '', '/draft');
+      // Use actual navigation for Astro SSR
+      window.location.href = '/draft';
     },
     
     /**

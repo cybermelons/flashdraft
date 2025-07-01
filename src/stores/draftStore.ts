@@ -96,6 +96,56 @@ export const $humanDeck = computed([$currentDraft], (draft) => {
   return draft.playerDecks[humanPlayerIndex] || [];
 });
 
+// Card lookup infrastructure
+export const $cardLookup = computed([$currentDraft], (draft) => {
+  if (!draft) return null;
+  
+  const setData = draftEngine.getSetData(draft.setCode);
+  if (!setData) return null;
+  
+  // Create ID -> Card map for efficient O(1) lookups
+  const lookup = new Map<string, Card>();
+  for (const card of setData.cards) {
+    lookup.set(card.id, card);
+  }
+  return lookup;
+});
+
+// Get full card data for human player's deck
+export const $humanDeckCards = computed(
+  [$humanDeck, $cardLookup], 
+  (deckIds, lookup) => {
+    if (!deckIds || !lookup) return [];
+    
+    const cards: Card[] = [];
+    for (const id of deckIds) {
+      const card = lookup.get(id);
+      if (card) cards.push(card);
+    }
+    
+    // Sort by rarity (mythic > rare > uncommon > common) then by name
+    const rarityOrder: Record<string, number> = { 
+      mythic: 4, 
+      rare: 3, 
+      uncommon: 2, 
+      common: 1 
+    };
+    
+    cards.sort((a, b) => {
+      const rarityDiff = (rarityOrder[b.rarity] || 0) - (rarityOrder[a.rarity] || 0);
+      return rarityDiff || a.name.localeCompare(b.name);
+    });
+    
+    return cards;
+  }
+);
+
+// Helper function to get a single card by ID
+export function getCardById(cardId: string): Card | null {
+  const lookup = $cardLookup.get();
+  return lookup?.get(cardId) || null;
+}
+
 export const $draftProgress = computed([$currentDraft], (draft) => {
   if (!draft) return null;
   
@@ -147,7 +197,7 @@ export const $currentPosition = computed(
     return {
       round: viewingRound,
       pick: viewingPick,
-      urlPath: `/draft/${draft.draftId}/viewing/p${viewingRound}p${viewingPick}`,
+      urlPath: `/draft/${draft.draftId}/p${viewingRound}p${viewingPick}`,
     };
   }
 );
@@ -180,6 +230,10 @@ export const draftActions = {
       
       $currentDraftId.set(draftId);
       $currentDraft.set(newDraft);
+      
+      // Initialize viewing position
+      $viewingRound.set(1);
+      $viewingPick.set(1);
       
       return draftId;
     } catch (error) {

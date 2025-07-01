@@ -53,13 +53,8 @@ export function parseDraftURL(pathname: string): ParsedDraftURL {
     };
   }
   
-  // Check for viewing mode and position (optional)
-  let positionSegment = segments[2];
-  
-  // Handle new /viewing/ format: /draft/{id}/viewing/p{round}p{pick}
-  if (positionSegment === 'viewing') {
-    positionSegment = segments[3];
-  }
+  // Check for position (optional)
+  const positionSegment = segments[2];
   
   if (!positionSegment) {
     // Just draft ID, no position
@@ -116,13 +111,13 @@ export function parseDraftURL(pathname: string): ParsedDraftURL {
 }
 
 /**
- * Generate draft URL from draft ID and optional position (using new viewing format)
+ * Generate draft URL from draft ID and optional position
  */
 export function generateDraftURL(draftId: string, position?: DraftPosition): string {
   let url = `/draft/${draftId}`;
   
   if (position) {
-    url += `/viewing/p${position.round}p${position.pick}`;
+    url += `/p${position.round}p${position.pick}`;
   }
   
   return url;

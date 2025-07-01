@@ -8,7 +8,7 @@ import React from 'react';
 import { useStore } from '@nanostores/react';
 import { 
   $currentDraft,
-  $humanDeck,
+  $humanDeckCards,
   $selectedCard 
 } from '@/stores/draftStore';
 import { 
@@ -28,7 +28,7 @@ interface DraftSidebarProps {
  */
 export function DraftSidebar({ className = '' }: DraftSidebarProps) {
   const currentDraft = useStore($currentDraft);
-  const humanDeck = useStore($humanDeck);
+  const humanDeckCards = useStore($humanDeckCards);
   const selectedCard = useStore($selectedCard);
   const sidebarOpen = useStore($sidebarOpen);
   const sortBy = useStore($sortBy);
@@ -58,14 +58,63 @@ export function DraftSidebar({ className = '' }: DraftSidebarProps) {
   };
 
   const getColorStats = () => {
-    const stats = { W: 0, U: 0, B: 0, R: 0, G: 0, Colorless: 0 };
+    const stats: Record<string, number> = { W: 0, U: 0, B: 0, R: 0, G: 0, Colorless: 0 };
     
-    // This would need actual card data to calculate properly
-    // For now, just return empty stats
+    humanDeckCards.forEach(card => {
+      if (!card.mana_cost || card.mana_cost === '') {
+        stats.Colorless++;
+      } else {
+        // Count each color symbol in mana cost
+        if (card.mana_cost.includes('W')) stats.W++;
+        if (card.mana_cost.includes('U')) stats.U++;
+        if (card.mana_cost.includes('B')) stats.B++;
+        if (card.mana_cost.includes('R')) stats.R++;
+        if (card.mana_cost.includes('G')) stats.G++;
+      }
+    });
+    
     return stats;
+  };
+  
+  const getCardStats = () => {
+    const stats = {
+      creatures: 0,
+      artifacts: 0,
+      instants: 0,
+      sorceries: 0,
+      enchantments: 0,
+      planeswalkers: 0,
+      lands: 0
+    };
+    
+    humanDeckCards.forEach(card => {
+      const typeLine = card.type_line.toLowerCase();
+      if (typeLine.includes('creature')) stats.creatures++;
+      if (typeLine.includes('artifact')) stats.artifacts++;
+      if (typeLine.includes('instant')) stats.instants++;
+      if (typeLine.includes('sorcery')) stats.sorceries++;
+      if (typeLine.includes('enchantment')) stats.enchantments++;
+      if (typeLine.includes('planeswalker')) stats.planeswalkers++;
+      if (typeLine.includes('land')) stats.lands++;
+    });
+    
+    return stats;
+  };
+  
+  const getManaCurve = () => {
+    const curve: Record<number, number> = {};
+    
+    humanDeckCards.forEach(card => {
+      const cmc = Math.min(card.cmc || 0, 7); // Cap at 7+
+      curve[cmc] = (curve[cmc] || 0) + 1;
+    });
+    
+    return curve;
   };
 
   const colorStats = getColorStats();
+  const cardStats = getCardStats();
+  const manaCurve = getManaCurve();
 
   return (
     <aside className={`${sidebarOpen ? 'w-80' : 'w-12'} transition-all duration-300 bg-slate-800/50 backdrop-blur-sm border-l border-slate-700/50 flex flex-col ${className}`}>
@@ -125,7 +174,7 @@ export function DraftSidebar({ className = '' }: DraftSidebarProps) {
               <svg className="w-5 h-5 text-green-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10"></path>
               </svg>
-              Your Picks ({humanDeck.length})
+              Your Picks ({humanDeckCards.length})
             </h3>
             
             {/* Color distribution */}
@@ -149,7 +198,7 @@ export function DraftSidebar({ className = '' }: DraftSidebarProps) {
 
             {/* Picked cards list */}
             <div className="space-y-2">
-              {humanDeck.length === 0 ? (
+              {humanDeckCards.length === 0 ? (
                 <div className="text-center py-6 text-slate-400">
                   <svg className="w-12 h-12 mx-auto mb-2 opacity-50" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M20 13V6a2 2 0 00-2-2H6a2 2 0 00-2 2v7m16 0v5a2 2 0 01-2 2H6a2 2 0 01-2-2v-5m16 0h-2.586a1 1 0 00-.707.293l-2.414 2.414a1 1 0 01-.707.293h-3.172a1 1 0 01-.707-.293l-2.414-2.414A1 1 0 006.586 13H4"></path>
@@ -157,16 +206,108 @@ export function DraftSidebar({ className = '' }: DraftSidebarProps) {
                   <p className="text-sm">No cards picked yet</p>
                 </div>
               ) : (
-                <div className="grid grid-cols-2 gap-2 max-h-48 overflow-y-auto">
-                  {humanDeck.map(cardId => (
-                    <div key={cardId} className="bg-slate-600/30 rounded-lg p-2 border border-slate-500/30">
-                      <div className="text-xs text-slate-300 font-mono truncate">
-                        {cardId.slice(-8)}
+                <div className="space-y-1 max-h-64 overflow-y-auto">
+                  {humanDeckCards.map(card => (
+                    <div 
+                      key={card.id} 
+                      className={`flex items-center justify-between bg-slate-600/30 rounded-lg px-3 py-2 border border-slate-500/30 hover:bg-slate-600/50 transition-colors ${
+                        card.rarity === 'mythic' ? 'border-orange-500/50' :
+                        card.rarity === 'rare' ? 'border-yellow-500/50' :
+                        card.rarity === 'uncommon' ? 'border-slate-400/50' :
+                        'border-slate-500/30'
+                      }`}
+                    >
+                      <div className="flex-1 min-w-0">
+                        <div className="text-sm text-white font-medium truncate">{card.name}</div>
+                        <div className="text-xs text-slate-400">{card.type_line}</div>
                       </div>
+                      <div className="text-xs text-slate-300 font-mono ml-2">{card.mana_cost || '0'}</div>
                     </div>
                   ))}
                 </div>
               )}
+            </div>
+          </div>
+
+          {/* Deck Statistics */}
+          <div className="bg-slate-700/30 rounded-2xl p-4 border border-slate-600/30">
+            <h3 className="text-lg font-bold text-white mb-3 flex items-center gap-2">
+              <svg className="w-5 h-5 text-cyan-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"></path>
+              </svg>
+              Deck Statistics
+            </h3>
+            
+            {/* Card Type Breakdown */}
+            <div className="mb-4">
+              <div className="text-xs text-slate-400 uppercase tracking-wider mb-2">Card Types</div>
+              <div className="space-y-1 text-sm">
+                {cardStats.creatures > 0 && (
+                  <div className="flex justify-between">
+                    <span className="text-slate-300">Creatures</span>
+                    <span className="text-white font-medium">{cardStats.creatures}</span>
+                  </div>
+                )}
+                {cardStats.instants > 0 && (
+                  <div className="flex justify-between">
+                    <span className="text-slate-300">Instants</span>
+                    <span className="text-white font-medium">{cardStats.instants}</span>
+                  </div>
+                )}
+                {cardStats.sorceries > 0 && (
+                  <div className="flex justify-between">
+                    <span className="text-slate-300">Sorceries</span>
+                    <span className="text-white font-medium">{cardStats.sorceries}</span>
+                  </div>
+                )}
+                {cardStats.artifacts > 0 && (
+                  <div className="flex justify-between">
+                    <span className="text-slate-300">Artifacts</span>
+                    <span className="text-white font-medium">{cardStats.artifacts}</span>
+                  </div>
+                )}
+                {cardStats.enchantments > 0 && (
+                  <div className="flex justify-between">
+                    <span className="text-slate-300">Enchantments</span>
+                    <span className="text-white font-medium">{cardStats.enchantments}</span>
+                  </div>
+                )}
+                {cardStats.planeswalkers > 0 && (
+                  <div className="flex justify-between">
+                    <span className="text-slate-300">Planeswalkers</span>
+                    <span className="text-white font-medium">{cardStats.planeswalkers}</span>
+                  </div>
+                )}
+                {cardStats.lands > 0 && (
+                  <div className="flex justify-between">
+                    <span className="text-slate-300">Lands</span>
+                    <span className="text-white font-medium">{cardStats.lands}</span>
+                  </div>
+                )}
+              </div>
+            </div>
+            
+            {/* Mana Curve */}
+            <div>
+              <div className="text-xs text-slate-400 uppercase tracking-wider mb-2">Mana Curve</div>
+              <div className="flex items-end gap-1 h-16">
+                {[0, 1, 2, 3, 4, 5, 6, 7].map(cmc => {
+                  const count = manaCurve[cmc] || 0;
+                  const maxCount = Math.max(...Object.values(manaCurve), 1);
+                  const height = count > 0 ? (count / maxCount) * 100 : 0;
+                  
+                  return (
+                    <div key={cmc} className="flex-1 flex flex-col items-center">
+                      <div className="w-full bg-slate-600/50 rounded-t" style={{ height: `${height}%` }}>
+                        {count > 0 && (
+                          <div className="text-xs text-white text-center mt-1">{count}</div>
+                        )}
+                      </div>
+                      <div className="text-xs text-slate-400 mt-1">{cmc === 7 ? '7+' : cmc}</div>
+                    </div>
+                  );
+                })}
+              </div>
             </div>
           </div>
 

@@ -136,8 +136,8 @@ import Layout from '../../layouts/Layout.astro';
         // Start the draft (generate packs) - this was missing!
         await draftActions.startDraft();
         
-        // Navigate to the created draft
-        window.location.href = `/draft/${draftId}`;
+        // Navigate to the created draft at p1p1
+        window.location.href = `/draft/${draftId}/p1p1`;
       } catch (error) {
         console.error('Failed to start draft:', error);
         alert('Failed to start draft. Please try again.');

@@ -87,6 +87,13 @@ export class DraftEngine {
   }
 
   /**
+   * Get loaded set data by set code
+   */
+  getSetData(setCode: string): SetData | null {
+    return this.state.setData[setCode] || null;
+  }
+
+  /**
    * Apply an action to update state
    */
   applyAction(action: DraftAction): DraftState {
