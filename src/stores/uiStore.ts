@@ -267,6 +267,22 @@ export const uiActions = {
   toggleQuickPickMode(): void {
     $quickPickMode.set(!$quickPickMode.get());
   },
+  
+  /**
+   * Set animations enabled
+   */
+  setAnimationsEnabled(enabled: boolean): void {
+    $animationsEnabled.set(enabled);
+    this.updatePreferences({ animationsEnabled: enabled });
+  },
+  
+  /**
+   * Set sound enabled
+   */
+  setSoundEnabled(enabled: boolean): void {
+    $soundEnabled.set(enabled);
+    this.updatePreferences({ soundEnabled: enabled });
+  },
 
   /**
    * Set quick pick mode
@@ -310,6 +326,10 @@ export const uiActions = {
     $keyboardShortcutsEnabled.set(true);
   }
 };
+
+// Export individual preference atoms for components
+export const $animationsEnabled = computed([$preferences], (prefs) => prefs.animationsEnabled);
+export const $soundEnabled = computed([$preferences], (prefs) => prefs.soundEnabled);
 
 // Initialize theme detection for system preference
 if (typeof window !== 'undefined') {

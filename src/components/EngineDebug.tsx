@@ -6,7 +6,7 @@
  */
 
 import { useStore } from "@nanostores/react";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import {
   $currentDraft,
   $viewingPosition,
@@ -17,12 +17,21 @@ import {
 
 export function EngineDebug() {
   const [isMinimized, setIsMinimized] = useState(false);
+  const [isEnabled, setIsEnabled] = useState(true);
   const currentDraft = useStore($currentDraft);
   const viewingPosition = useStore($viewingPosition);
   const isViewingCurrent = useStore($isViewingCurrent);
   const canPick = useStore($canPick);
 
-  if (!currentDraft) return null;
+  // Check localStorage for debug setting
+  useEffect(() => {
+    if (typeof window !== 'undefined') {
+      const showDebug = localStorage.getItem('showEngineDebug') !== 'false';
+      setIsEnabled(showDebug);
+    }
+  }, []);
+
+  if (!currentDraft || !isEnabled) return null;
 
   // Get the actual engine state directly from the engine
   // This should always show the true engine position, not viewing position
