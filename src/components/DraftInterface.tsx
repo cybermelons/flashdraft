@@ -29,6 +29,7 @@ import { DraftHeader } from './DraftHeader';
 import { DraftSidebar } from './DraftSidebar';
 import { EngineDebug } from './EngineDebug';
 import { DraftSkeleton } from './DraftSkeleton';
+import { HoverCardPreview } from './HoverCardPreview';
 
 interface DraftInterfaceProps {
   className?: string;
@@ -170,6 +171,7 @@ function DraftInterfaceContent({ routeData }: { routeData: DraftRouteData }) {
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900">
       <DraftHeader />
+      <HoverCardPreview />
       
       {/* Completion banner for finished drafts */}
       {isCompleted && isViewingCurrent && (
