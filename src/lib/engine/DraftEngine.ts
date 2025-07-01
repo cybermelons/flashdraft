@@ -156,12 +156,16 @@ export class DraftEngine {
    * Determine if action should trigger auto-save
    */
   private shouldAutoSave(action: DraftAction): boolean {
-    // Only save on human actions and key state transitions
+    // Save on all meaningful state changes to ensure consistency across page reloads
     return [
       "HUMAN_PICK",
+      "BOT_PICK",
       "CREATE_DRAFT",
       "START_DRAFT",
       "COMPLETE_DRAFT",
+      "ADVANCE_POSITION",
+      "PASS_PACKS",
+      "START_ROUND",
     ].includes(action.type);
   }
 

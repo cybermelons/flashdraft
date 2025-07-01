@@ -18,27 +18,8 @@ import { urlManager } from '@/utils/urlManager';
 const storage = new LocalStorageAdapter();
 const draftEngine = new DraftEngine(storage);
 
-// Synchronously load draft on page load if URL contains draft ID
-if (typeof window !== 'undefined') {
-  const parsed = parseDraftURL(window.location.pathname);
-  if (parsed.draftId) {
-    try {
-      // Try synchronous load from localStorage
-      const draftKey = `draft_${parsed.draftId}`;
-      const serialized = localStorage.getItem(draftKey);
-      if (serialized) {
-        const draft = JSON.parse(serialized);
-        // Store in engine's memory immediately
-        (draftEngine as any).state.drafts[parsed.draftId] = draft;
-        // Set current draft ID
-        $currentDraftId.set(parsed.draftId);
-        $currentDraft.set(draft);
-      }
-    } catch (error) {
-      console.error('Failed to synchronously load draft:', error);
-    }
-  }
-}
+// Remove synchronous loading - let the router handle it properly
+// This was causing the engine position to be incorrectly set based on URL
 
 // Auto-load all available set data into the engine
 try {
@@ -113,8 +94,17 @@ export const $viewingDraftState = computed(
     
     // Use engine's replay functionality to get historical state
     try {
-      return draftEngine.replayToPosition(draft.draftId, viewingRound, viewingPick);
+      console.log(`Replaying to p${viewingRound}p${viewingPick}`);
+      const replayed = draftEngine.replayToPosition(draft.draftId, viewingRound, viewingPick);
+      console.log('Replay result:', {
+        position: `p${viewingRound}p${viewingPick}`,
+        humanDeckSize: replayed.playerDecks[replayed.humanPlayerIndex]?.length || 0,
+        packSize: replayed.packs[viewingRound]?.[replayed.humanPlayerIndex]?.cards.length || 0,
+        firstCardId: replayed.packs[viewingRound]?.[replayed.humanPlayerIndex]?.cards[0]?.id
+      });
+      return replayed;
     } catch (error) {
+      console.error('Replay failed:', error);
       return draft; // Fallback to current state
     }
   }
@@ -155,7 +145,22 @@ export const $currentPack = computed(
     
     const { humanPlayerIndex } = draft;
     const roundPacks = draft.packs[viewingRound];
-    return roundPacks?.[humanPlayerIndex] || null;
+    const pack = roundPacks?.[humanPlayerIndex] || null;
+    
+    // Debug logging to understand pack differences
+    console.log('$currentPack:', {
+      viewingPosition: `p${viewingRound}p${viewingPick}`,
+      enginePosition: `p${currentDraft.currentRound}p${currentDraft.currentPick}`,
+      isAtEnginePosition,
+      usingDraft: isAtEnginePosition ? 'current' : 'replay',
+      packId: pack?.id,
+      packSize: pack?.cards.length,
+      firstCardId: pack?.cards[0]?.id,
+      humanPlayerIndex,
+      roundPacksAvailable: roundPacks ? Object.keys(roundPacks).length : 0
+    });
+    
+    return pack;
   }
 );
 

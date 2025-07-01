@@ -26,6 +26,7 @@ import { SimpleDraftRouter, useDraftNavigation, type DraftRouteData } from './Si
 import { PackDisplay } from './PackDisplay';
 import { DraftHeader } from './DraftHeader';
 import { DraftSidebar } from './DraftSidebar';
+import { EngineDebug } from './EngineDebug';
 
 interface DraftInterfaceProps {
   className?: string;
@@ -278,6 +279,9 @@ function DraftInterfaceContent({ routeData }: { routeData: DraftRouteData }) {
         
         <DraftSidebar />
       </div>
+      
+      {/* Debug component to show engine state */}
+      <EngineDebug />
       
       {draftProgress && (
         <div className="bg-slate-800/50 backdrop-blur-sm border-t border-slate-700/50 p-4">
