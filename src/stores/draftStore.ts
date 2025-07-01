@@ -141,14 +141,15 @@ export const $currentPack = computed(
   (currentDraft, viewingState, viewingRound, viewingPick) => {
     if (!currentDraft) return null;
     
-    // Calculate how many picks have been made
-    const humanDeckSize = currentDraft.playerDecks[currentDraft.humanPlayerIndex]?.length || 0;
-    const viewingPickNumber = (viewingRound - 1) * 15 + (viewingPick - 1);
+    // SIMPLE 1:1 MAPPING:
+    // If we're at the current engine position, use current state
+    // Otherwise, use replayed historical state
     
-    // Use historical state if we're viewing a position where we already picked
-    // Use current state if we're viewing a position where we haven't picked yet
-    const useHistoricalState = viewingPickNumber < humanDeckSize;
-    const draft = useHistoricalState ? viewingState : currentDraft;
+    const isAtEnginePosition = 
+      viewingRound === currentDraft.currentRound && 
+      viewingPick === currentDraft.currentPick;
+    
+    const draft = isAtEnginePosition ? currentDraft : viewingState;
     
     if (!draft) return null;
     
