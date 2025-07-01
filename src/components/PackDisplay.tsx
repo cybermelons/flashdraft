@@ -10,6 +10,7 @@ import { useStore } from '@nanostores/react';
 import { 
   $selectedCard, 
   $hoveredCard,
+  $pickedCardAtPosition,
   uiActions 
 } from '@/stores/draftStore';
 import { 
@@ -34,6 +35,7 @@ interface PackDisplayProps {
 export function PackDisplay({ pack, onCardPick, canPick, className = '' }: PackDisplayProps) {
   const selectedCard = useStore($selectedCard);
   const hoveredCard = useStore($hoveredCard);
+  const pickedCardId = useStore($pickedCardAtPosition);
   const packViewMode = useStore($packViewMode);
   const sortBy = useStore($sortBy);
   const cardDisplaySize = useStore($cardDisplaySize);
@@ -214,32 +216,44 @@ export function PackDisplay({ pack, onCardPick, canPick, className = '' }: PackD
         }`}
         style={packViewMode !== 'list' ? getGridStyle() : undefined}
       >
-        {displayCards.map((card, index) => (
-          <div key={card.id} className="relative group">
-            {index < 9 && (
-              <div className="absolute -top-2 -left-2 w-6 h-6 bg-blue-600 text-white rounded-full flex items-center justify-center text-xs font-bold z-10 shadow-lg">
-                {index + 1}
-              </div>
-            )}
-            <CardComponent
-              card={card}
-              isSelected={selectedCard?.id === card.id}
-              isHovered={hoveredCard?.id === card.id}
-              canInteract={true} // Always allow interaction for selection
-              quickPickNumber={index < 9 ? index + 1 : undefined}
-              onClick={() => handleCardClick(card)}
-              onMouseEnter={() => handleCardHover(card)}
-              onMouseLeave={() => handleCardHover(null)}
-              className={`transition-all duration-200 ${
-                selectedCard?.id === card.id 
-                  ? 'ring-2 ring-blue-500 ring-offset-2 ring-offset-slate-900 scale-105' 
-                  : 'hover:scale-105 hover:shadow-xl'
-              } ${
-                !canPick ? 'opacity-75' : ''
-              }`}
-            />
-          </div>
-        ))}
+        {displayCards.map((card, index) => {
+          const isPicked = pickedCardId === card.id;
+          return (
+            <div key={card.id} className="relative group">
+              {index < 9 && (
+                <div className="absolute -top-2 -left-2 w-6 h-6 bg-blue-600 text-white rounded-full flex items-center justify-center text-xs font-bold z-10 shadow-lg">
+                  {index + 1}
+                </div>
+              )}
+              {isPicked && (
+                <div className="absolute -top-2 -right-2 bg-green-600 text-white rounded-full p-1.5 z-10 shadow-lg" title="You picked this card">
+                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="3" d="M5 13l4 4L19 7"></path>
+                  </svg>
+                </div>
+              )}
+              <CardComponent
+                card={card}
+                isSelected={selectedCard?.id === card.id}
+                isHovered={hoveredCard?.id === card.id}
+                canInteract={true} // Always allow interaction for selection
+                quickPickNumber={index < 9 ? index + 1 : undefined}
+                onClick={() => handleCardClick(card)}
+                onMouseEnter={() => handleCardHover(card)}
+                onMouseLeave={() => handleCardHover(null)}
+                className={`transition-all duration-200 ${
+                  selectedCard?.id === card.id 
+                    ? 'ring-2 ring-blue-500 ring-offset-2 ring-offset-slate-900 scale-105' 
+                    : 'hover:scale-105 hover:shadow-xl'
+                } ${
+                  !canPick ? 'opacity-75' : ''
+                } ${
+                  isPicked ? 'ring-2 ring-green-500 ring-offset-2 ring-offset-slate-900' : ''
+                }`}
+              />
+            </div>
+          );
+        })}
       </div>
       
       {/* Empty State */}

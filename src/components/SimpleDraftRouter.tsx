@@ -58,7 +58,7 @@ export function SimpleDraftRouter({ children }: SimpleDraftRouterProps) {
       draftId: parsed.draftId,
       round: parsed.round,
       pick: parsed.pick,
-      isLoading: false,
+      isLoading: parsed.isValid && parsed.draftId && parsed.draftId !== currentDraftId,
       error: null,
       isValidRoute: parsed.isValid,
       routeError: parsed.error,

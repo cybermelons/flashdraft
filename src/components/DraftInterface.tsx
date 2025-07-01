@@ -80,14 +80,20 @@ function DraftInterfaceContent({ routeData }: { routeData: DraftRouteData }) {
   const isViewingCurrent = useStore($isViewingCurrent);
   const currentPosition = useStore($currentPosition);
   
-  // Debug logging
-  console.log('DraftInterface state:', {
-    canPick,
-    isViewingCurrent,
-    viewingPosition: currentPosition,
-    enginePosition: currentDraft ? { round: currentDraft.currentRound, pick: currentDraft.currentPick } : null,
-    draftStatus: currentDraft?.status
-  });
+  // Debug logging - only on mount and key state changes
+  useEffect(() => {
+    console.log('DraftInterface state:', {
+      canPick,
+      isViewingCurrent,
+      viewingPosition: currentPosition,
+      enginePosition: currentDraft ? { round: currentDraft.currentRound, pick: currentDraft.currentPick } : null,
+      draftStatus: currentDraft?.status,
+      packCards: currentPack?.cards.length || 0,
+      humanDeckSize: humanDeck.length,
+      isLoading,
+      url: window.location.pathname
+    });
+  }, [canPick, currentDraft?.currentRound, currentDraft?.currentPick]);
   
   const navigation = useDraftNavigation();
 

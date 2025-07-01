@@ -63,16 +63,41 @@ export function DraftHeader({ className = '' }: DraftHeaderProps) {
 
   const canGoNext = () => {
     if (!draftProgress) return false;
+    if (!currentDraft) return false;
     
     // Can navigate forward if:
     // 1. We're viewing a position before the current engine position
     // 2. We're not at the absolute end (round 3, pick 15)
     
+    // Debug logging
+    console.log('canGoNext check:', {
+      viewingRound,
+      viewingPick,
+      engineRound: draftProgress.currentRound,
+      enginePick: draftProgress.currentPick,
+      humanDeckSize: currentDraft.playerDecks[currentDraft.humanPlayerIndex]?.length || 0,
+      comparison: {
+        roundLess: viewingRound < draftProgress.currentRound,
+        pickLess: viewingRound === draftProgress.currentRound && viewingPick < draftProgress.currentPick
+      }
+    });
+    
     // Check if we're before the engine position
     if (viewingRound < draftProgress.currentRound) return true;
     if (viewingRound === draftProgress.currentRound && viewingPick < draftProgress.currentPick) return true;
     
-    // If we're at or past engine position, we can't go forward
+    // Special case: If we've made picks, we can navigate through our pick history
+    // even if we're at the current engine position
+    const humanDeckSize = currentDraft.playerDecks[currentDraft.humanPlayerIndex]?.length || 0;
+    const totalPicksMade = (viewingRound - 1) * 15 + viewingPick - 1;
+    
+    // If we're viewing a position where we've already made a pick, we can go forward
+    if (totalPicksMade < humanDeckSize) {
+      console.log('Can go forward based on pick history:', { totalPicksMade, humanDeckSize });
+      return true;
+    }
+    
+    // If we're at or past engine position with no pick history, we can't go forward
     return false;
   };
 

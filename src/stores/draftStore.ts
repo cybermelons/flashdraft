@@ -18,6 +18,28 @@ import { urlManager } from '@/utils/urlManager';
 const storage = new LocalStorageAdapter();
 const draftEngine = new DraftEngine(storage);
 
+// Synchronously load draft on page load if URL contains draft ID
+if (typeof window !== 'undefined') {
+  const parsed = parseDraftURL(window.location.pathname);
+  if (parsed.draftId) {
+    try {
+      // Try synchronous load from localStorage
+      const draftKey = `draft_${parsed.draftId}`;
+      const serialized = localStorage.getItem(draftKey);
+      if (serialized) {
+        const draft = JSON.parse(serialized);
+        // Store in engine's memory immediately
+        (draftEngine as any).state.drafts[parsed.draftId] = draft;
+        // Set current draft ID
+        $currentDraftId.set(parsed.draftId);
+        $currentDraft.set(draft);
+      }
+    } catch (error) {
+      console.error('Failed to synchronously load draft:', error);
+    }
+  }
+}
+
 // Auto-load all available set data into the engine
 try {
   const allSets = loadAllSets();
@@ -98,27 +120,6 @@ export const $viewingDraftState = computed(
   }
 );
 
-// Current pack based on viewing position
-export const $currentPack = computed(
-  [$currentDraft, $viewingDraftState, $viewingRound, $isViewingCurrent], 
-  (currentDraft, viewingState, viewingRound, isViewingCurrent) => {
-    // Use current draft when viewing current position, historical state when viewing past
-    const draft = isViewingCurrent ? currentDraft : viewingState;
-    if (!draft) return null;
-    
-    const { humanPlayerIndex } = draft;
-    const roundPacks = draft.packs[viewingRound];
-    return roundPacks?.[humanPlayerIndex] || null;
-  }
-);
-
-export const $humanDeck = computed([$currentDraft], (draft) => {
-  if (!draft) return [];
-  
-  const { humanPlayerIndex } = draft;
-  return draft.playerDecks[humanPlayerIndex] || [];
-});
-
 // Card lookup infrastructure
 export const $cardLookup = computed([$currentDraft], (draft) => {
   if (!draft) return null;
@@ -132,6 +133,36 @@ export const $cardLookup = computed([$currentDraft], (draft) => {
     lookup.set(card.id, card);
   }
   return lookup;
+});
+
+// Current pack based on viewing position
+export const $currentPack = computed(
+  [$currentDraft, $viewingDraftState, $viewingRound, $viewingPick], 
+  (currentDraft, viewingState, viewingRound, viewingPick) => {
+    if (!currentDraft) return null;
+    
+    // Calculate how many picks have been made
+    const humanDeckSize = currentDraft.playerDecks[currentDraft.humanPlayerIndex]?.length || 0;
+    const viewingPickNumber = (viewingRound - 1) * 15 + (viewingPick - 1);
+    
+    // Use historical state if we're viewing a position where we already picked
+    // Use current state if we're viewing a position where we haven't picked yet
+    const useHistoricalState = viewingPickNumber < humanDeckSize;
+    const draft = useHistoricalState ? viewingState : currentDraft;
+    
+    if (!draft) return null;
+    
+    const { humanPlayerIndex } = draft;
+    const roundPacks = draft.packs[viewingRound];
+    return roundPacks?.[humanPlayerIndex] || null;
+  }
+);
+
+export const $humanDeck = computed([$currentDraft], (draft) => {
+  if (!draft) return [];
+  
+  const { humanPlayerIndex } = draft;
+  return draft.playerDecks[humanPlayerIndex] || [];
 });
 
 // Get human deck based on viewing state
@@ -181,6 +212,29 @@ export function getCardById(cardId: string): Card | null {
   return lookup?.get(cardId) || null;
 }
 
+// Get the card that was picked at the viewing position (if any)
+export const $pickedCardAtPosition = computed(
+  [$currentDraft, $viewingRound, $viewingPick, $viewingDraftState],
+  (draft, viewingRound, viewingPick, viewingState) => {
+    if (!draft) return null;
+    
+    // Calculate which pick position we're viewing (0-based)
+    const viewingPickNumber = (viewingRound - 1) * 15 + (viewingPick - 1);
+    
+    // Get the human player's deck
+    const humanDeck = draft.playerDecks[draft.humanPlayerIndex] || [];
+    
+    // Check if we already picked at this position
+    if (viewingPickNumber < humanDeck.length) {
+      // We already picked here. The picked card is the one in our deck at this position
+      const pickedCardId = humanDeck[viewingPickNumber];
+      return pickedCardId;
+    }
+    
+    return null;
+  }
+);
+
 export const $draftProgress = computed([$currentDraft], (draft) => {
   if (!draft) return null;
   
@@ -199,14 +253,27 @@ export const $draftProgress = computed([$currentDraft], (draft) => {
 
 // Derived state for UI
 export const $canPick = computed(
-  [$currentDraft, $isLoading, $isPickingCard, $isViewingCurrent], 
-  (draft, loading, picking, isViewingCurrent) => {
-    const canPick = draft && 
-           draft.status === 'active' && 
-           !loading && 
-           !picking &&
-           isViewingCurrent; // Can only pick when viewing current engine position
+  [$currentDraft, $isLoading, $isPickingCard, $viewingRound, $viewingPick], 
+  (draft, loading, picking, viewingRound, viewingPick) => {
+    if (!draft || draft.status !== 'active' || loading || picking) {
+      return false;
+    }
     
+    // Calculate how many picks have been made
+    const humanDeckSize = draft.playerDecks[draft.humanPlayerIndex]?.length || 0;
+    
+    // Calculate which pick position we're viewing (0-based)
+    const viewingPickNumber = (viewingRound - 1) * 15 + (viewingPick - 1);
+    
+    // Can pick if:
+    // 1. We're at a position where we haven't picked yet (viewingPickNumber >= humanDeckSize)
+    // 2. AND we're not past the current engine position
+    const enginePickNumber = (draft.currentRound - 1) * 15 + (draft.currentPick - 1);
+    
+    // Special check: are we exactly at the engine's current position?
+    const isAtEnginePosition = viewingRound === draft.currentRound && viewingPick === draft.currentPick;
+    
+    const canPick = isAtEnginePosition || (viewingPickNumber >= humanDeckSize && viewingPickNumber < enginePickNumber);
     
     return canPick;
   }
