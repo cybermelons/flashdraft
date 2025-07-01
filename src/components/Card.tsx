@@ -144,7 +144,7 @@ export function Card({
       )}
       
       {/* Card image or fallback */}
-      <div className="relative w-full h-full bg-gradient-to-br from-slate-100 to-slate-200">
+      <div className="relative w-full h-full bg-slate-900">
         {imageUrl && !imageError ? (
           <img
             src={imageUrl}

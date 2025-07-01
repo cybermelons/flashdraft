@@ -182,12 +182,12 @@ export function PackDisplay({ pack, onCardPick, canPick, className = '' }: PackD
                 <button
                   onClick={() => onCardPick(selectedCard.id)}
                   disabled={!canPick}
-                  className="bg-gradient-to-r from-green-600 to-green-500 hover:from-green-500 hover:to-green-400 disabled:from-slate-600 disabled:to-slate-600 text-white px-6 py-2 rounded-xl font-semibold transition-all duration-200 disabled:cursor-not-allowed"
+                  className="bg-gradient-to-r from-green-600 to-green-500 hover:from-green-500 hover:to-green-400 disabled:from-slate-600 disabled:to-slate-600 text-white px-6 py-2 rounded-xl font-semibold transition-all duration-200 disabled:cursor-not-allowed min-w-[200px]"
                 >
                   <svg className="w-4 h-4 inline mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M5 13l4 4L19 7"></path>
                   </svg>
-                  Pick {selectedCard.name}
+                  <span className="truncate">Pick {selectedCard.name}</span>
                 </button>
               )}
             </div>
