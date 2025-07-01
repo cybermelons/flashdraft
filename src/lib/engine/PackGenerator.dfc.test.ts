@@ -14,7 +14,7 @@ describe('PackGenerator - Dual-Faced Card Handling', () => {
     const generator = new PackGenerator(setData, 'test-dfc-seed');
     
     // Generate multiple packs to increase chance of hitting meld cards
-    const packs = generator.generatePacks(100, 'test-dfc');
+    const packs = generator.generatePacks(300, 'test-dfc');
     
     // Collect all card names from all packs
     const allCardNames = new Set<string>();
