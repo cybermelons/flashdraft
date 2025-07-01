@@ -85,17 +85,7 @@ export const $currentPack = computed(
     
     const { humanPlayerIndex } = draft;
     const roundPacks = draft.packs[viewingRound];
-    const pack = roundPacks?.[humanPlayerIndex] || null;
-    
-    console.log('$currentPack computed:', {
-      isViewingCurrent,
-      viewingRound,
-      currentRound: draft.currentRound,
-      currentPick: draft.currentPick,
-      packCards: pack?.cards.length || 0
-    });
-    
-    return pack;
+    return roundPacks?.[humanPlayerIndex] || null;
   }
 );
 
@@ -273,11 +263,6 @@ export const draftActions = {
       $currentDraft.set(draft);
       
       // Initialize viewing position to current engine progression
-      console.log('Setting viewing position from loadDraft:', {
-        round: draft.currentRound,
-        pick: draft.currentPick,
-        caller: new Error().stack
-      });
       $viewingRound.set(draft.currentRound);
       $viewingPick.set(draft.currentPick);
     } catch (error) {
@@ -368,6 +353,12 @@ export const draftActions = {
     
     if (!draft || !draftId) throw new Error('No current draft');
     
+    // Guard against double processing
+    if (!draft.packs[draft.currentRound]) {
+      console.error('No packs available for current round, skipping bot picks');
+      return;
+    }
+    
     $isLoading.set(true);
     
     try {
@@ -394,11 +385,6 @@ export const draftActions = {
       $currentDraft.set(currentState);
       
       // Update viewing position to match engine
-      console.log('Setting viewing position from processAllPicksAndAdvance:', {
-        round: currentState.currentRound,
-        pick: currentState.currentPick,
-        humanPackCards: currentState.packs[currentState.currentRound]?.[0]?.cards.length
-      });
       $viewingRound.set(currentState.currentRound);
       $viewingPick.set(currentState.currentPick);
       

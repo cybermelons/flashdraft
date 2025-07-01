@@ -105,14 +105,6 @@ export function SimpleDraftRouter({ children }: SimpleDraftRouterProps) {
       const currentPath = window.location.pathname;
       const expectedPath = `/draft/${currentDraftId}/p${viewingRound}p${viewingPick}`;
       
-      console.log('URL update effect:', {
-        viewingRound,
-        viewingPick,
-        currentPath,
-        expectedPath,
-        willUpdate: currentPath !== expectedPath
-      });
-      
       // Only update if path doesn't match
       if (currentPath !== expectedPath) {
         window.history.replaceState({}, '', expectedPath);

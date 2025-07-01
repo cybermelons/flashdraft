@@ -316,17 +316,9 @@ export class LocalStorageAdapter extends BaseDraftStorageAdapter {
   }
 
   private serialize(data: any, compress = false): string {
-    const json = JSON.stringify(data);
-    
-    if (compress) {
-      // Simple compression: remove whitespace and common patterns
-      return json
-        .replace(/\s+/g, '')
-        .replace(/"([^"]+)":/g, '$1:')
-        .replace(/,"/g, ',"');
-    }
-    
-    return json;
+    // Always use standard JSON.stringify
+    // If compression is needed in the future, use a proper compression library
+    return JSON.stringify(data);
   }
 
   private deserialize<T>(serialized: string): T {
