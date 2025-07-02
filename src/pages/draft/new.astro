@@ -6,25 +6,6 @@
  */
 
 import Layout from '../../layouts/Layout.astro';
-import { DraftEngine } from '../../lib/engine/DraftEngine';
-import { LocalStorageAdapter } from '../../lib/engine/storage/LocalStorageAdapter';
-
-// Get URL parameters
-const url = new URL(Astro.request.url);
-const setCode = url.searchParams.get('set');
-const autostart = url.searchParams.get('autostart') === 'true';
-
-// Handle autostart on server side
-if (autostart && setCode) {
-  // Generate a draft ID seed
-  const seed = Date.now().toString();
-  
-  // Create the URL for the new draft
-  const draftUrl = `/draft/create?seed=${seed}&set=${setCode}&autostart=true`;
-  
-  // Redirect to create the draft
-  return Astro.redirect(draftUrl, 302);
-}
 ---
 
 <Layout title="FlashDraft - New Draft">
@@ -79,7 +60,7 @@ if (autostart && setCode) {
           </div>
         </div>
         
-        <!-- Tarkir: Dragonstorm Set -->
+        <!-- Dragons of Tarkir Set -->
         <div class="bg-gradient-to-br from-slate-800/80 to-slate-900/80 backdrop-blur-sm rounded-3xl p-8 border border-slate-700/50 hover:border-slate-600/50 transition-all duration-300 group">
           <div class="text-center">
             <!-- Set Icon/Image placeholder -->
@@ -90,31 +71,31 @@ if (autostart && setCode) {
               </svg>
             </div>
             
-            <h3 class="text-2xl font-bold text-white mb-3">Tarkir: Dragonstorm</h3>
+            <h3 class="text-2xl font-bold text-white mb-3">Dragons of Tarkir</h3>
             <div class="bg-orange-500/20 text-orange-300 px-3 py-1 rounded-full text-sm font-semibold inline-block mb-4 border border-orange-500/30">
-              TDM
+              DTK
             </div>
             <p class="text-slate-300 mb-6 leading-relaxed">
-              An epic return to Tarkir featuring powerful dragons and storm mechanics. Experience the clash between dragon clans in this action-packed set.
+              Classic Magic set featuring powerful dragons and their influence on the plane of Tarkir. Known for aggressive gameplay and iconic dragon lords.
             </p>
             
             <!-- Set Stats -->
             <div class="grid grid-cols-2 gap-4 mb-6 text-sm">
               <div class="bg-slate-700/30 rounded-xl p-3">
                 <div class="text-slate-400">Cards</div>
-                <div class="text-white font-semibold">~426</div>
+                <div class="text-white font-semibold">~250</div>
               </div>
               <div class="bg-slate-700/30 rounded-xl p-3">
                 <div class="text-slate-400">Type</div>
-                <div class="text-white font-semibold">Modern</div>
+                <div class="text-white font-semibold">Classic</div>
               </div>
             </div>
             
             <button 
-              onclick="startDraft('TDM')"
+              onclick="startDraft('DTK')"
               class="w-full bg-gradient-to-r from-orange-600 to-red-600 hover:from-orange-500 hover:to-red-500 text-white px-6 py-4 rounded-xl font-semibold text-lg transition-all duration-200 shadow-lg hover:shadow-xl hover:scale-105"
             >
-              Start TDM Draft
+              Start DTK Draft
             </button>
           </div>
         </div>
@@ -143,16 +124,20 @@ if (autostart && setCode) {
     </div>
   </main>
 
-  <script define:vars={{ autostart, setCode }}>
+  <script>
+    import { draftActions } from '@/stores/draftStore';
+    
     async function startDraft(setCode) {
       try {
-        // Generate a unique seed and draft ID
+        // Create the draft using the draft engine (follows our architecture)
         const seed = Date.now().toString();
-        const draftId = `draft_${setCode}_${seed}`;
+        const draftId = await draftActions.createDraft(seed, setCode);
         
-        // Navigate directly to the draft page with new=true param
-        // The SimpleDraftRouter will create the draft when it sees this param
-        window.location.href = `/draft/${draftId}/p1p1?new=true&seed=${seed}`;
+        // Start the draft (generate packs) - this was missing!
+        await draftActions.startDraft();
+        
+        // Navigate to the created draft at p1p1
+        window.location.href = `/draft/${draftId}/p1p1`;
       } catch (error) {
         console.error('Failed to start draft:', error);
         alert('Failed to start draft. Please try again.');
@@ -161,14 +146,6 @@ if (autostart && setCode) {
     
     // Make function globally accessible for inline onclick handlers
     window.startDraft = startDraft;
-    
-    // Auto-start if requested
-    if (autostart && setCode) {
-      // Start draft immediately when page loads
-      document.addEventListener('DOMContentLoaded', () => {
-        startDraft(setCode);
-      });
-    }
   </script>
 </Layout>
 
