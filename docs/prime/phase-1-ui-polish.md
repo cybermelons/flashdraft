@@ -1,10 +1,15 @@
 # Phase 1: Draft UI Polish & Loading States ✅ COMPLETE
 
+
+<issue>
+  ✅ FIXED: draft header isn't responsive to mobile. it goes off the screen horizontally.
+</issue>
+
 <issue>
   cascade  the card images in decklist. enable sort by... buttons. allow custom reordering. 
   </issue>
 <issue>
-  actually don't use double click method. use the static "confirm pick" button.
+  ✅ FIXED: actually don't use double click method. use the static "confirm pick" button.
   users canenable quickpick
 </issue>
 

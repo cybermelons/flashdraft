@@ -16,6 +16,7 @@ interface CardProps {
   canInteract?: boolean;
   quickPickNumber?: number;
   onClick?: () => void;
+  onDoubleClick?: () => void;
   onMouseEnter?: () => void;
   onMouseLeave?: () => void;
   className?: string;
@@ -34,6 +35,7 @@ export function Card({
   canInteract = true,
   quickPickNumber,
   onClick,
+  onDoubleClick,
   onMouseEnter,
   onMouseLeave,
   className = '',
@@ -48,6 +50,12 @@ export function Card({
   const handleClick = () => {
     if (canInteract && onClick) {
       onClick();
+    }
+  };
+
+  const handleDoubleClick = () => {
+    if (canInteract && onDoubleClick) {
+      onDoubleClick();
     }
   };
 
@@ -121,6 +129,7 @@ export function Card({
         ${className}
       `.trim()}
       onClick={handleClick}
+      onDoubleClick={handleDoubleClick}
       onMouseEnter={onMouseEnter}
       onMouseLeave={onMouseLeave}
       onKeyDown={handleKeyDown}

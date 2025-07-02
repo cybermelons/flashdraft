@@ -11,10 +11,13 @@ import {
   $theme,
   $cardSize,
   $quickPickMode,
+  $doubleClickToPick,
   $animationsEnabled,
   $soundEnabled,
   uiActions
 } from '@/stores/uiStore';
+import { Card } from '@/components/Card';
+import type { Card as CardType } from '@/lib/engine/PackGenerator';
 
 interface SettingsInterfaceProps {
   className?: string;
@@ -24,6 +27,7 @@ export function SettingsInterface({ className = '' }: SettingsInterfaceProps) {
   const theme = useStore($theme);
   const cardSize = useStore($cardSize);
   const quickPickMode = useStore($quickPickMode);
+  const doubleClickToPick = useStore($doubleClickToPick);
   const animationsEnabled = useStore($animationsEnabled);
   const soundEnabled = useStore($soundEnabled);
   
@@ -34,6 +38,32 @@ export function SettingsInterface({ className = '' }: SettingsInterfaceProps) {
     }
     return true;
   });
+
+  // Sample card for preview - using Vivi from FIN set
+  const sampleCard: CardType = {
+    id: 'ecc1027a-8c07-44a0-bdde-fa2844cff694',
+    name: 'Vivi Ornitier',
+    mana_cost: '{1}{U}{R}',
+    type_line: 'Legendary Creature — Wizard',
+    type: 'Legendary Creature — Wizard',
+    oracle_text: '{0}: Add X mana in any combination of {U} and/or {R}, where X is Vivi Ornitier\'s power. Activate only during your turn and only once each turn.\nWhenever you cast a noncreature spell, put a +1/+1 counter on Vivi Ornitier and it deals 1 damage to each opponent.',
+    colors: ['U', 'R'],
+    color_identity: ['U', 'R'],
+    set: 'FIN',
+    collector_number: '248',
+    rarity: 'mythic',
+    cmc: 3,
+    power: '0',
+    toughness: '1',
+    image_uris: {
+      small: 'https://cards.scryfall.io/small/front/e/c/ecc1027a-8c07-44a0-bdde-fa2844cff694.jpg?1748706721',
+      normal: 'https://cards.scryfall.io/normal/front/e/c/ecc1027a-8c07-44a0-bdde-fa2844cff694.jpg?1748706721',
+      large: 'https://cards.scryfall.io/large/front/e/c/ecc1027a-8c07-44a0-bdde-fa2844cff694.jpg?1748706721',
+    }
+  };
+
+  // Determine pick mode
+  const pickMode = quickPickMode ? 'quick' : (doubleClickToPick ? 'double' : 'confirm');
 
   const handleDebugToggle = (enabled: boolean) => {
     setShowEngineDebug(enabled);
@@ -121,10 +151,10 @@ export function SettingsInterface({ className = '' }: SettingsInterfaceProps) {
                 </div>
               </div>
 
-              {/* Card Size */}
+              {/* Card Size with Preview */}
               <div>
                 <h3 className="text-white font-medium mb-2">Card Size</h3>
-                <div className="grid grid-cols-3 gap-2">
+                <div className="grid grid-cols-3 gap-4 mb-4">
                   {(['small', 'medium', 'large'] as const).map((size) => (
                     <button
                       key={size}
@@ -138,6 +168,25 @@ export function SettingsInterface({ className = '' }: SettingsInterfaceProps) {
                       {size.charAt(0).toUpperCase() + size.slice(1)}
                     </button>
                   ))}
+                </div>
+                {/* Card Preview */}
+                <div className="bg-slate-900/50 rounded-xl p-4 flex justify-center">
+                  <div className="relative">
+                    <Card 
+                      card={sampleCard} 
+                      size={cardSize}
+                      canInteract={false}
+                      isSelected={true}
+                    />
+                    {/* Show pick mode overlay */}
+                    <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
+                      <div className="bg-black/60 backdrop-blur-sm rounded-lg px-4 py-2 border-2 border-green-500">
+                        <span className="text-green-400 font-bold text-lg">
+                          {pickMode === 'quick' ? 'Quick Pick' : (pickMode === 'double' ? 'Confirm' : 'Selected')}
+                        </span>
+                      </div>
+                    </div>
+                  </div>
                 </div>
               </div>
 
@@ -171,22 +220,64 @@ export function SettingsInterface({ className = '' }: SettingsInterfaceProps) {
             </h2>
             
             <div className="space-y-4">
-              {/* Quick Pick Mode */}
-              <div className="flex items-center justify-between">
-                <div>
-                  <h3 className="text-white font-medium">Quick Pick Mode</h3>
-                  <p className="text-sm text-slate-400">Click once to immediately pick a card</p>
+              {/* Pick Mode - Radio Buttons */}
+              <div>
+                <h3 className="text-white font-medium mb-3">Pick Mode</h3>
+                <div className="space-y-2">
+                  {/* Confirm Mode */}
+                  <label className="flex items-start gap-3 p-3 rounded-xl bg-slate-700/30 hover:bg-slate-700/50 cursor-pointer transition-colors">
+                    <input
+                      type="radio"
+                      name="pickMode"
+                      checked={!quickPickMode && !doubleClickToPick}
+                      onChange={() => {
+                        uiActions.setQuickPickMode(false);
+                        uiActions.setDoubleClickToPick(false);
+                      }}
+                      className="mt-1 w-4 h-4 text-blue-600"
+                    />
+                    <div className="flex-1">
+                      <div className="text-white font-medium">Confirm Mode</div>
+                      <div className="text-sm text-slate-400">Click to select, then click confirm button</div>
+                    </div>
+                  </label>
+
+                  {/* Quick Pick Mode */}
+                  <label className="flex items-start gap-3 p-3 rounded-xl bg-slate-700/30 hover:bg-slate-700/50 cursor-pointer transition-colors">
+                    <input
+                      type="radio"
+                      name="pickMode"
+                      checked={quickPickMode}
+                      onChange={() => {
+                        uiActions.setQuickPickMode(true);
+                        uiActions.setDoubleClickToPick(false);
+                      }}
+                      className="mt-1 w-4 h-4 text-blue-600"
+                    />
+                    <div className="flex-1">
+                      <div className="text-white font-medium">Quick Pick Mode</div>
+                      <div className="text-sm text-slate-400">Click once to immediately pick a card</div>
+                    </div>
+                  </label>
+
+                  {/* Double-Click Mode */}
+                  <label className="flex items-start gap-3 p-3 rounded-xl bg-slate-700/30 hover:bg-slate-700/50 cursor-pointer transition-colors">
+                    <input
+                      type="radio"
+                      name="pickMode"
+                      checked={!quickPickMode && doubleClickToPick}
+                      onChange={() => {
+                        uiActions.setQuickPickMode(false);
+                        uiActions.setDoubleClickToPick(true);
+                      }}
+                      className="mt-1 w-4 h-4 text-blue-600"
+                    />
+                    <div className="flex-1">
+                      <div className="text-white font-medium">Double-Click Mode</div>
+                      <div className="text-sm text-slate-400">Double-click a card to pick it</div>
+                    </div>
+                  </label>
                 </div>
-                <button
-                  onClick={() => uiActions.toggleQuickPickMode()}
-                  className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors ${
-                    quickPickMode ? 'bg-blue-600' : 'bg-slate-600'
-                  }`}
-                >
-                  <span className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${
-                    quickPickMode ? 'translate-x-6' : 'translate-x-1'
-                  }`} />
-                </button>
               </div>
 
               {/* Sound Effects */}

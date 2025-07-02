@@ -6,6 +6,11 @@
  */
 
 import Layout from '../../layouts/Layout.astro';
+
+// Get URL parameters
+const url = new URL(Astro.request.url);
+const setCode = url.searchParams.get('set');
+const autostart = url.searchParams.get('autostart') === 'true';
 ---
 
 <Layout title="FlashDraft - New Draft">
@@ -60,7 +65,7 @@ import Layout from '../../layouts/Layout.astro';
           </div>
         </div>
         
-        <!-- Dragons of Tarkir Set -->
+        <!-- Tarkir: Dragonstorm Set -->
         <div class="bg-gradient-to-br from-slate-800/80 to-slate-900/80 backdrop-blur-sm rounded-3xl p-8 border border-slate-700/50 hover:border-slate-600/50 transition-all duration-300 group">
           <div class="text-center">
             <!-- Set Icon/Image placeholder -->
@@ -71,31 +76,31 @@ import Layout from '../../layouts/Layout.astro';
               </svg>
             </div>
             
-            <h3 class="text-2xl font-bold text-white mb-3">Dragons of Tarkir</h3>
+            <h3 class="text-2xl font-bold text-white mb-3">Tarkir: Dragonstorm</h3>
             <div class="bg-orange-500/20 text-orange-300 px-3 py-1 rounded-full text-sm font-semibold inline-block mb-4 border border-orange-500/30">
-              DTK
+              TDM
             </div>
             <p class="text-slate-300 mb-6 leading-relaxed">
-              Classic Magic set featuring powerful dragons and their influence on the plane of Tarkir. Known for aggressive gameplay and iconic dragon lords.
+              An epic return to Tarkir featuring powerful dragons and storm mechanics. Experience the clash between dragon clans in this action-packed set.
             </p>
             
             <!-- Set Stats -->
             <div class="grid grid-cols-2 gap-4 mb-6 text-sm">
               <div class="bg-slate-700/30 rounded-xl p-3">
                 <div class="text-slate-400">Cards</div>
-                <div class="text-white font-semibold">~250</div>
+                <div class="text-white font-semibold">~426</div>
               </div>
               <div class="bg-slate-700/30 rounded-xl p-3">
-                <div class="text-slate-400">Type</div>
-                <div class="text-white font-semibold">Classic</div>
+                <div class="text-slate-404">Type</div>
+                <div class="text-white font-semibold">Modern</div>
               </div>
             </div>
             
             <button 
-              onclick="startDraft('DTK')"
+              onclick="startDraft('TDM')"
               class="w-full bg-gradient-to-r from-orange-600 to-red-600 hover:from-orange-500 hover:to-red-500 text-white px-6 py-4 rounded-xl font-semibold text-lg transition-all duration-200 shadow-lg hover:shadow-xl hover:scale-105"
             >
-              Start DTK Draft
+              Start TDM Draft
             </button>
           </div>
         </div>
@@ -124,7 +129,7 @@ import Layout from '../../layouts/Layout.astro';
     </div>
   </main>
 
-  <script>
+  <script define:vars={{ autostart, setCode }}>
     import { draftActions } from '@/stores/draftStore';
     
     async function startDraft(setCode) {
@@ -146,6 +151,14 @@ import Layout from '../../layouts/Layout.astro';
     
     // Make function globally accessible for inline onclick handlers
     window.startDraft = startDraft;
+    
+    // Auto-start if requested
+    if (autostart && setCode) {
+      // Start draft immediately when page loads
+      document.addEventListener('DOMContentLoaded', () => {
+        startDraft(setCode);
+      });
+    }
   </script>
 </Layout>
 

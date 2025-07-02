@@ -1,125 +1,139 @@
 ---
 import Layout from '../layouts/Layout.astro';
-import { DraftDashboard } from '../components/DraftDashboard';
+import { DraftEngine } from '../lib/engine/DraftEngine';
+import { LocalStorageAdapter } from '../lib/engine/storage/LocalStorageAdapter';
+
+// Function to create and start a new draft
+const createDraft = (setCode: string) => {
+  const engine = new DraftEngine(new LocalStorageAdapter());
+  const draft = engine.createDraft(setCode, 8);
+  return draft.draftId;
+};
 ---
 
-<Layout title="FlashDraft - MTG Draft Simulator & Learning Platform">
-  <main class="min-h-screen">
-    <!-- Hero Section -->
-    <section class="relative overflow-hidden">
-      <div class="absolute inset-0 bg-gradient-to-br from-blue-600/20 to-purple-600/20"></div>
-      <div class="relative max-w-7xl mx-auto px-6 py-20 text-center">
-        <h1 class="text-6xl font-bold text-white mb-6 tracking-tight">
-          Master MTG Drafting
-        </h1>
-        <p class="text-xl text-slate-300 mb-10 max-w-3xl mx-auto leading-relaxed">
-          Practice against AI opponents trained on real data. Experience realistic draft dynamics, 
-          immediate playtesting, and accelerated learning for competitive improvement.
-        </p>
-        <div class="flex flex-col sm:flex-row gap-4 justify-center">
-          <a 
-            href="/draft/new" 
-            class="bg-gradient-to-r from-blue-600 to-blue-500 hover:from-blue-500 hover:to-blue-400 text-white px-8 py-4 rounded-xl font-semibold text-lg transition-all duration-200 shadow-lg hover:shadow-xl hover:scale-105"
-          >
-            Start New Draft
-          </a>
-          <a 
-            href="/draft" 
-            class="bg-white/10 hover:bg-white/20 text-white px-8 py-4 rounded-xl font-semibold text-lg transition-all duration-200 backdrop-blur-sm border border-white/20"
-          >
-            View Saved Drafts
-          </a>
-        </div>
+<Layout title="FlashDraft - Start Drafting">
+  <main class="min-h-screen flex items-center justify-center p-6">
+    <div class="max-w-4xl w-full">
+      <!-- Logo/Title -->
+      <div class="text-center mb-12">
+        <h1 class="text-5xl font-bold text-white mb-4">FlashDraft</h1>
+        <p class="text-xl text-slate-300">Choose your draft format</p>
       </div>
-    </section>
 
-    <!-- Features -->
-    <section class="py-20 px-6">
-      <div class="max-w-7xl mx-auto">
-        <h2 class="text-3xl font-bold text-center text-white mb-16">Why FlashDraft?</h2>
-        <div class="grid md:grid-cols-3 gap-8">
-          <div class="bg-slate-800/50 backdrop-blur-sm rounded-2xl p-8 border border-slate-700/50 hover:border-slate-600/50 transition-all duration-200 group">
-            <div class="bg-gradient-to-br from-blue-500 to-blue-600 w-16 h-16 rounded-xl flex items-center justify-center mb-6 group-hover:scale-110 transition-transform duration-200">
-              <svg class="w-8 h-8 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"></path>
-              </svg>
+      <!-- Draft Selection Grid -->
+      <div class="grid md:grid-cols-2 gap-8">
+        <!-- Final Fantasy Draft -->
+        <a 
+          href="/draft/new?set=FIN&autostart=true"
+          class="group relative overflow-hidden rounded-3xl bg-gradient-to-br from-purple-600/20 to-blue-600/20 backdrop-blur-sm border border-purple-500/30 hover:border-purple-400/50 transition-all duration-300 hover:scale-105 hover:shadow-2xl hover:shadow-purple-500/20"
+        >
+          <div class="p-8 lg:p-12">
+            <!-- Fanned out cards -->
+            <div class="relative h-40 mb-6">
+              <!-- Vivi Card (left) -->
+              <div class="absolute left-0 top-0 w-28 h-36 transform -rotate-12 hover:rotate-0 transition-transform duration-300">
+                <img 
+                  src="https://cards.scryfall.io/normal/front/e/c/ecc1027a-8c07-44a0-bdde-fa2844cff694.jpg?1748706721" 
+                  alt="Vivi Ornitier"
+                  class="w-full h-full object-cover rounded-lg shadow-xl"
+                />
+              </div>
+              <!-- Tifa Card (center) -->
+              <div class="absolute left-1/2 top-0 -translate-x-1/2 w-28 h-36 z-10 hover:scale-110 transition-transform duration-300">
+                <img 
+                  src="https://cards.scryfall.io/normal/front/f/b/fb781323-2746-405d-a9b2-e778c037a6e9.jpg?1748706535" 
+                  alt="Tifa Lockhart"
+                  class="w-full h-full object-cover rounded-lg shadow-xl"
+                />
+              </div>
+              <!-- Sephiroth Card (right) -->
+              <div class="absolute right-0 top-0 w-28 h-36 transform rotate-12 hover:rotate-0 transition-transform duration-300">
+                <img 
+                  src="https://cards.scryfall.io/normal/front/8/5/85eaf5e7-77dc-4842-a70c-ce4ac7f724df.jpg?1748707811" 
+                  alt="Sephiroth"
+                  class="w-full h-full object-cover rounded-lg shadow-xl"
+                />
+              </div>
             </div>
-            <h3 class="text-xl font-bold text-white mb-4">Realistic AI Opponents</h3>
-            <p class="text-slate-300 leading-relaxed">
-              Draft against AI trained on real 17lands data with human-like pick patterns, signal reading, and varying skill levels from Bronze to Mythic.
-            </p>
-          </div>
-          <div class="bg-slate-800/50 backdrop-blur-sm rounded-2xl p-8 border border-slate-700/50 hover:border-slate-600/50 transition-all duration-200 group">
-            <div class="bg-gradient-to-br from-green-500 to-green-600 w-16 h-16 rounded-xl flex items-center justify-center mb-6 group-hover:scale-110 transition-transform duration-200">
-              <svg class="w-8 h-8 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"></path>
-              </svg>
-            </div>
-            <h3 class="text-xl font-bold text-white mb-4">Immediate Playtesting</h3>
-            <p class="text-slate-300 leading-relaxed">
-              Test your deck instantly with streamlined goldfishing. No setup time, no rules engine complexity - just pure strategic validation and rapid iteration.
-            </p>
-          </div>
-          <div class="bg-slate-800/50 backdrop-blur-sm rounded-2xl p-8 border border-slate-700/50 hover:border-slate-600/50 transition-all duration-200 group">
-            <div class="bg-gradient-to-br from-purple-500 to-purple-600 w-16 h-16 rounded-xl flex items-center justify-center mb-6 group-hover:scale-110 transition-transform duration-200">
-              <svg class="w-8 h-8 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path>
-              </svg>
-            </div>
-            <h3 class="text-xl font-bold text-white mb-4">Accelerated Learning</h3>
-            <p class="text-slate-300 leading-relaxed">
-              Get visual feedback on picks, mana curves, and synergies. Identify patterns, test hypotheses, and improve faster than traditional drafting methods.
-            </p>
-          </div>
-        </div>
-      </div>
-    </section>
 
-    <!-- Getting Started -->
-    <section class="py-20 px-6">
-      <div class="max-w-7xl mx-auto">
-        <div class="bg-gradient-to-br from-slate-800/80 to-slate-900/80 backdrop-blur-sm rounded-3xl p-12 border border-slate-700/50">
-          <h2 class="text-3xl font-bold text-white mb-12 text-center">How It Works</h2>
-          <div class="grid md:grid-cols-4 gap-8">
-            <div class="text-center group">
-              <div class="bg-gradient-to-br from-blue-500 to-blue-600 rounded-2xl w-20 h-20 flex items-center justify-center mx-auto mb-6 group-hover:scale-110 transition-transform duration-200">
-                <span class="text-white font-bold text-2xl">1</span>
+            <div class="text-center">
+              <h2 class="text-3xl font-bold text-white mb-2">Final Fantasy</h2>
+              <p class="text-purple-300">FIN • Final Fantasy</p>
+              
+              <div class="flex items-center justify-center gap-2 text-white mt-4">
+                <span class="text-lg font-medium">Start Draft</span>
+                <svg class="w-5 h-5 transition-transform group-hover:translate-x-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 7l5 5m0 0l-5 5m5-5H6"></path>
+                </svg>
               </div>
-              <h4 class="font-bold text-white mb-3 text-lg">Choose Set</h4>
-              <p class="text-slate-300 leading-relaxed">Select from current MTG sets with full card data and proper rarity distributions</p>
-            </div>
-            <div class="text-center group">
-              <div class="bg-gradient-to-br from-green-500 to-green-600 rounded-2xl w-20 h-20 flex items-center justify-center mx-auto mb-6 group-hover:scale-110 transition-transform duration-200">
-                <span class="text-white font-bold text-2xl">2</span>
-              </div>
-              <h4 class="font-bold text-white mb-3 text-lg">Draft Packs</h4>
-              <p class="text-slate-300 leading-relaxed">Pick cards against 7 AI opponents through 3 rounds with realistic passing patterns</p>
-            </div>
-            <div class="text-center group">
-              <div class="bg-gradient-to-br from-purple-500 to-purple-600 rounded-2xl w-20 h-20 flex items-center justify-center mx-auto mb-6 group-hover:scale-110 transition-transform duration-200">
-                <span class="text-white font-bold text-2xl">3</span>
-              </div>
-              <h4 class="font-bold text-white mb-3 text-lg">Build Deck</h4>
-              <p class="text-slate-300 leading-relaxed">Construct your 40-card deck with real-time mana curve and synergy feedback</p>
-            </div>
-            <div class="text-center group">
-              <div class="bg-gradient-to-br from-orange-500 to-orange-600 rounded-2xl w-20 h-20 flex items-center justify-center mx-auto mb-6 group-hover:scale-110 transition-transform duration-200">
-                <span class="text-white font-bold text-2xl">4</span>
-              </div>
-              <h4 class="font-bold text-white mb-3 text-lg">Playtest</h4>
-              <p class="text-slate-300 leading-relaxed">Goldfish immediately to validate picks, test curves, and iterate rapidly</p>
             </div>
           </div>
-        </div>
-      </div>
-    </section>
+          
+          <!-- Decorative gradient -->
+          <div class="absolute inset-0 bg-gradient-to-br from-purple-600/0 via-purple-600/0 to-purple-600/20 opacity-0 group-hover:opacity-100 transition-opacity duration-300 pointer-events-none"></div>
+        </a>
 
-    <!-- Draft Dashboard -->
-    <section class="py-20 px-6">
-      <div class="max-w-7xl mx-auto">
-        <h2 class="text-3xl font-bold text-white mb-12 text-center">Your Recent Drafts</h2>
-        <DraftDashboard client:load />
+        <!-- Tarkir: Dragonstorm Draft -->
+        <a 
+          href="/draft/new?set=TDM&autostart=true"
+          class="group relative overflow-hidden rounded-3xl bg-gradient-to-br from-red-600/20 to-orange-600/20 backdrop-blur-sm border border-red-500/30 hover:border-red-400/50 transition-all duration-300 hover:scale-105 hover:shadow-2xl hover:shadow-red-500/20"
+        >
+          <div class="p-8 lg:p-12">
+            <!-- Fanned out cards -->
+            <div class="relative h-40 mb-6">
+              <!-- Ugin Card (left) -->
+              <div class="absolute left-0 top-0 w-28 h-36 transform -rotate-12 hover:rotate-0 transition-transform duration-300">
+                <img 
+                  src="https://cards.scryfall.io/normal/front/6/4/64a5d494-efa1-446b-bebe-2ad36e154376.jpg?1744102946" 
+                  alt="Ugin, Eye of the Storms"
+                  class="w-full h-full object-cover rounded-lg shadow-xl"
+                />
+              </div>
+              <!-- Sarkhan Card (center) -->
+              <div class="absolute left-1/2 top-0 -translate-x-1/2 w-28 h-36 z-10 hover:scale-110 transition-transform duration-300">
+                <img 
+                  src="https://cards.scryfall.io/normal/front/c/2/c2200646-7b7c-489d-bbae-16b03e1d7fb2.jpg?1743204437" 
+                  alt="Sarkhan, Dragon Ascendant"
+                  class="w-full h-full object-cover rounded-lg shadow-xl"
+                />
+              </div>
+              <!-- Dragonstorm Forecaster (right) -->
+              <div class="absolute right-0 top-0 w-28 h-36 transform rotate-12 hover:rotate-0 transition-transform duration-300">
+                <img 
+                  src="https://cards.scryfall.io/normal/front/6/0/6035e2e6-6d77-4bc0-a2fe-d88e1bdd3c70.jpg?1743204252" 
+                  alt="Dragonstorm Forecaster"
+                  class="w-full h-full object-cover rounded-lg shadow-xl"
+                />
+              </div>
+            </div>
+
+            <div class="text-center">
+              <h2 class="text-3xl font-bold text-white mb-2">Tarkir: Dragonstorm</h2>
+              <p class="text-red-300">TDM • Tarkir Block</p>
+              
+              <div class="flex items-center justify-center gap-2 text-white mt-4">
+                <span class="text-lg font-medium">Start Draft</span>
+                <svg class="w-5 h-5 transition-transform group-hover:translate-x-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 7l5 5m0 0l-5 5m5-5H6"></path>
+                </svg>
+              </div>
+            </div>
+          </div>
+          
+          <!-- Decorative gradient -->
+          <div class="absolute inset-0 bg-gradient-to-br from-red-600/0 via-red-600/0 to-red-600/20 opacity-0 group-hover:opacity-100 transition-opacity duration-300 pointer-events-none"></div>
+        </a>
       </div>
-    </section>
+
+      <!-- Secondary Actions -->
+      <div class="mt-12 text-center">
+        <a 
+          href="/draft" 
+          class="text-slate-400 hover:text-white transition-colors"
+        >
+          View saved drafts →
+        </a>
+      </div>
+    </div>
   </main>
 </Layout>
