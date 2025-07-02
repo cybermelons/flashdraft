@@ -11,16 +11,21 @@ import {
   $selectedCard, 
   $hoveredCard,
   $pickedCardAtPosition,
+  $isViewingHistory,
   uiActions 
 } from '@/stores/draftStore';
 import { 
   $packViewMode, 
   $sortBy, 
   $cardDisplaySize,
-  $filterBy 
+  $filterBy,
+  $quickPickMode,
+  $doubleClickToPick,
+  uiActions as uiStoreActions
 } from '@/stores/uiStore';
 import type { BoosterPack, Card } from '@/lib/engine/PackGenerator';
 import { Card as CardComponent } from './Card';
+import { SelectedCardOverlay } from './SelectedCardOverlay';
 
 interface PackDisplayProps {
   pack: BoosterPack;
@@ -36,28 +41,37 @@ export function PackDisplay({ pack, onCardPick, canPick, className = '' }: PackD
   const selectedCard = useStore($selectedCard);
   const hoveredCard = useStore($hoveredCard);
   const pickedCardId = useStore($pickedCardAtPosition);
+  const isViewingHistory = useStore($isViewingHistory);
   const packViewMode = useStore($packViewMode);
   const sortBy = useStore($sortBy);
   const cardDisplaySize = useStore($cardDisplaySize);
   const filterBy = useStore($filterBy);
   
-  const [quickPickMode, setQuickPickMode] = useState(false);
+  const quickPickMode = useStore($quickPickMode);
+  const doubleClickToPick = useStore($doubleClickToPick);
 
   // Sort and filter cards
   const displayCards = sortAndFilterCards(pack.cards, sortBy, filterBy);
 
   const handleCardClick = (card: Card) => {
-    // Always allow selection for highlighting
-    if (selectedCard?.id === card.id && canPick) {
-      // Double-click or second click picks the card (only if canPick)
-      onCardPick(card.id);
-    } else {
-      // Select card for highlighting (works even in history view)
-      uiActions.selectCard(card);
-    }
+    // In history view, do nothing on click
+    if (isViewingHistory) return;
     
-    // Quick pick mode only works when canPick
+    // Select card for highlighting
+    uiActions.selectCard(card);
+    
+    // Quick pick mode immediately picks when canPick
     if (quickPickMode && canPick) {
+      onCardPick(card.id);
+    }
+  };
+
+  const handleCardDoubleClick = (card: Card) => {
+    // In history view or if double-click is disabled, do nothing
+    if (isViewingHistory || !doubleClickToPick) return;
+    
+    // Double-click to pick when enabled and canPick
+    if (canPick) {
       onCardPick(card.id);
     }
   };
@@ -133,99 +147,57 @@ export function PackDisplay({ pack, onCardPick, canPick, className = '' }: PackD
     }
   }, [canPick, selectedCard, displayCards]);
 
-  const getViewModeClass = () => {
-    switch (packViewMode) {
-      case 'spread': return 'pack-spread';
-      case 'compact': return 'pack-compact';
-      case 'list': return 'pack-list';
-      default: return 'pack-spread';
-    }
-  };
-
-  const getGridStyle = () => {
-    const { width } = cardDisplaySize;
-    const gap = 16;
-    const minCardsPerRow = packViewMode === 'list' ? 1 : 3;
-    const maxCardsPerRow = packViewMode === 'list' ? 1 : 6;
-    
-    return {
-      gridTemplateColumns: `repeat(auto-fit, minmax(${width}px, 1fr))`,
-      gap: `${gap}px`,
-    };
-  };
 
   return (
     <div className={`${className}`}>
-      {/* Pack Header */}
-      <div className="bg-slate-800/50 backdrop-blur-sm rounded-2xl p-6 border border-slate-700/50 mb-6">
-        <div className="flex items-center justify-between">
-          <div className="flex items-center gap-4">
-            <div>
-              <h2 className="text-2xl font-bold text-white">Current Pack</h2>
-              <div className="flex items-center gap-3 mt-1">
-                <span className="bg-slate-700/50 text-slate-300 px-3 py-1 rounded-full text-sm font-medium">
-                  {pack.id}
-                </span>
-                <span className="text-slate-400 text-sm">
-                  {displayCards.length} cards remaining
-                </span>
-              </div>
-            </div>
-          </div>
-          
-          <div className="flex items-center gap-3">
-            <button
-              onClick={() => setQuickPickMode(!quickPickMode)}
-              className={`px-4 py-2 rounded-xl font-medium transition-colors ${
-                quickPickMode 
-                  ? 'bg-blue-600 hover:bg-blue-500 text-white' 
-                  : 'bg-slate-700/50 hover:bg-slate-600/50 text-slate-300 hover:text-white'
-              }`}
-              title={quickPickMode ? 'Quick pick: ON - Click to pick immediately' : 'Quick pick: OFF - Click to select, double-click to pick'}
-            >
-              <svg className="w-4 h-4 inline mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M13 10V3L4 14h7v7l9-11h-7z"></path>
-              </svg>
-              Quick Pick
-            </button>
-            
-            {selectedCard && (
-              <button
-                onClick={() => onCardPick(selectedCard.id)}
-                disabled={!canPick}
-                className="bg-gradient-to-r from-green-600 to-green-500 hover:from-green-500 hover:to-green-400 disabled:from-slate-600 disabled:to-slate-600 text-white px-6 py-2 rounded-xl font-semibold transition-all duration-200 disabled:cursor-not-allowed"
-              >
-                <svg className="w-4 h-4 inline mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M5 13l4 4L19 7"></path>
-                </svg>
-                Pick {selectedCard.name}
-              </button>
-            )}
-          </div>
+      {/* Desktop Pick button - Floating at top */}
+      {!isViewingHistory && selectedCard && canPick && (
+        <div className="hidden sm:block fixed top-20 right-4 z-40">
+          <button
+            onClick={() => onCardPick(selectedCard.id)}
+            className="bg-gradient-to-r from-green-600 to-green-500 hover:from-green-500 hover:to-green-400 text-white px-6 py-3 rounded-xl font-semibold shadow-xl transition-all duration-200 flex items-center"
+          >
+            <svg className="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M5 13l4 4L19 7"></path>
+            </svg>
+            <span>Pick {selectedCard.name}</span>
+          </button>
         </div>
-      </div>
+      )}
       
-      {/* Pack Cards Grid */}
-      <div 
-        className={`grid gap-4 ${
-          packViewMode === 'list' 
-            ? 'grid-cols-1' 
-            : packViewMode === 'compact'
-            ? 'grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6'
-            : 'grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5'
-        }`}
-        style={packViewMode !== 'list' ? getGridStyle() : undefined}
-      >
+      {/* Pack Cards Grid - Responsive grid with fixed breakpoints */}
+      <div className="w-full">
+        <div 
+          className={`gap-2 ${
+            packViewMode === 'list' 
+              ? 'flex flex-col max-w-[280px] mx-auto' 
+              : 'grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 2xl:grid-cols-7'
+          }`}
+        >
         {displayCards.map((card, index) => {
           const isPicked = pickedCardId === card.id;
+          const showPickNumber = false; // Numbers disabled per requirement
+          
           return (
-            <div key={card.id} className="relative group">
-              {index < 9 && (
+            <div 
+              key={card.id} 
+              className="relative group w-full"
+            >
+              {showPickNumber && (
                 <div className="absolute -top-2 -left-2 w-6 h-6 bg-blue-600 text-white rounded-full flex items-center justify-center text-xs font-bold z-10 shadow-lg">
                   {index + 1}
                 </div>
               )}
-              {isPicked && (
+              {/* Selected overlay for history view */}
+              <SelectedCardOverlay isSelected={isViewingHistory && isPicked} />
+              {/* Confirm/Selected overlay for selected card in normal view */}
+              <SelectedCardOverlay 
+                isSelected={!isViewingHistory && selectedCard?.id === card.id} 
+                label={doubleClickToPick ? "Confirm" : "Selected"}
+                isHovered={hoveredCard?.id === card.id}
+              />
+              {/* Green checkmark for non-history view */}
+              {!isViewingHistory && isPicked && (
                 <div className="absolute -top-2 -right-2 bg-green-600 text-white rounded-full p-1.5 z-10 shadow-lg" title="You picked this card">
                   <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="3" d="M5 13l4 4L19 7"></path>
@@ -234,26 +206,25 @@ export function PackDisplay({ pack, onCardPick, canPick, className = '' }: PackD
               )}
               <CardComponent
                 card={card}
-                isSelected={selectedCard?.id === card.id}
+                isSelected={!isViewingHistory && selectedCard?.id === card.id}
                 isHovered={hoveredCard?.id === card.id}
-                canInteract={true} // Always allow interaction for selection
-                quickPickNumber={index < 9 ? index + 1 : undefined}
+                canInteract={!isViewingHistory}
+                quickPickNumber={showPickNumber ? index + 1 : undefined}
                 onClick={() => handleCardClick(card)}
+                onDoubleClick={() => handleCardDoubleClick(card)}
                 onMouseEnter={() => handleCardHover(card)}
                 onMouseLeave={() => handleCardHover(null)}
-                className={`transition-all duration-200 ${
-                  selectedCard?.id === card.id 
-                    ? 'ring-2 ring-blue-500 ring-offset-2 ring-offset-slate-900 scale-105' 
-                    : 'hover:scale-105 hover:shadow-xl'
+                responsive={packViewMode !== 'list'}
+                className={`${
+                  isViewingHistory ? 'cursor-default' : ''
                 } ${
-                  !canPick ? 'opacity-75' : ''
-                } ${
-                  isPicked ? 'ring-2 ring-green-500 ring-offset-2 ring-offset-slate-900' : ''
+                  !canPick && !isViewingHistory ? 'opacity-75' : ''
                 }`}
               />
             </div>
           );
         })}
+        </div>
       </div>
       
       {/* Empty State */}
@@ -269,9 +240,9 @@ export function PackDisplay({ pack, onCardPick, canPick, className = '' }: PackD
         </div>
       )}
       
-      {/* Keyboard Hints */}
-      {canPick && displayCards.length > 0 && (
-        <div className="mt-6 bg-blue-500/10 backdrop-blur-sm rounded-xl p-4 border border-blue-500/20">
+      {/* Keyboard Hints - Reserve space to prevent layout shift */}
+      <div className={`mt-6 ${canPick && displayCards.length > 0 && !isViewingHistory ? '' : 'invisible'}`}>
+        <div className="bg-blue-500/10 backdrop-blur-sm rounded-xl p-4 border border-blue-500/20">
           <div className="flex items-start gap-3">
             <div className="text-blue-400 mt-0.5">
               <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -281,13 +252,28 @@ export function PackDisplay({ pack, onCardPick, canPick, className = '' }: PackD
             <div className="text-sm text-blue-300">
               <p className="font-medium mb-1">Keyboard Controls:</p>
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 text-blue-200">
-                <div>• Numbers <span className="bg-blue-500/20 px-1.5 py-0.5 rounded font-mono">1-{Math.min(9, displayCards.length)}</span> for quick pick</div>
+                <div>• Numbers <span className="bg-blue-500/20 px-1.5 py-0.5 rounded font-mono">1-9</span> for quick pick</div>
                 <div>• <span className="bg-blue-500/20 px-1.5 py-0.5 rounded font-mono">Enter</span> to pick selected card</div>
                 <div>• <span className="bg-blue-500/20 px-1.5 py-0.5 rounded font-mono">Arrow keys</span> to navigate</div>
-                <div>• <span className="bg-blue-500/20 px-1.5 py-0.5 rounded font-mono">Double-click</span> to pick directly</div>
+                <div>• <span className="bg-blue-500/20 px-1.5 py-0.5 rounded font-mono">Click</span> to select card</div>
               </div>
             </div>
           </div>
+        </div>
+      </div>
+      
+      {/* Mobile Floating Confirm Button - At top */}
+      {!isViewingHistory && selectedCard && canPick && (
+        <div className="sm:hidden fixed top-24 right-2 z-40">
+          <button
+            onClick={() => onCardPick(selectedCard.id)}
+            className="bg-gradient-to-r from-green-600 to-green-500 hover:from-green-500 hover:to-green-400 text-white px-4 py-2.5 rounded-full font-semibold shadow-xl transition-all duration-200 flex items-center text-sm"
+          >
+            <svg className="w-4 h-4 mr-1.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M5 13l4 4L19 7"></path>
+            </svg>
+            <span>Confirm</span>
+          </button>
         </div>
       )}
     </div>

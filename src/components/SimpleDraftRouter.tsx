@@ -40,17 +40,37 @@ export function SimpleDraftRouter({ children }: SimpleDraftRouterProps) {
   const isLoading = useStore($isLoading);
   const error = useStore($error);
   
-  const [routeData, setRouteData] = useState<DraftRouteData>({
-    draftId: null,
-    round: null,
-    pick: null,
-    isLoading: false,
-    error: null,
-    isValidRoute: false,
+  const [routeData, setRouteData] = useState<DraftRouteData>(() => {
+    // Initialize with parsed URL data (check for window to avoid SSR issues)
+    if (typeof window === 'undefined') {
+      return {
+        draftId: null,
+        round: null,
+        pick: null,
+        isLoading: true, // Show loading during SSR
+        error: null,
+        isValidRoute: true,
+      };
+    }
+    
+    const parsed = parseDraftURL(window.location.pathname);
+    return {
+      draftId: parsed.draftId,
+      round: parsed.round,
+      pick: parsed.pick,
+      // If we have a draft ID in the URL, assume it's loading until proven otherwise
+      isLoading: parsed.isValid && !!parsed.draftId,
+      error: null,
+      isValidRoute: parsed.isValid,
+      routeError: parsed.error,
+    };
   });
 
   // Parse URL and update route data  
   useEffect(() => {
+    // Skip on SSR
+    if (typeof window === 'undefined') return;
+    
     // Parse URL on mount
     const parsed = parseDraftURL(window.location.pathname);
     
@@ -67,6 +87,22 @@ export function SimpleDraftRouter({ children }: SimpleDraftRouterProps) {
     // Load draft if needed
     if (parsed.isValid && parsed.draftId && parsed.draftId !== currentDraftId) {
       handleDraftLoad(parsed.draftId);
+    }
+    
+    // Handle draft overview route (no position specified)
+    if (parsed.isValid && parsed.draftId && !parsed.round && !parsed.pick && currentDraft) {
+      // If draft is complete, stay on overview to show decklist
+      if (currentDraft.status === 'completed') {
+        // Stay on overview page - no navigation needed
+      } else if (currentDraft.draftId === parsed.draftId) {
+        // Only redirect if we're looking at the same draft
+        // Redirect to current position
+        urlManager.navigateToPosition(
+          currentDraft.draftId,
+          currentDraft.currentRound,
+          currentDraft.currentPick
+        );
+      }
     }
     
     // Handle browser navigation (back/forward)
@@ -94,7 +130,7 @@ export function SimpleDraftRouter({ children }: SimpleDraftRouterProps) {
     return () => {
       window.removeEventListener('popstate', handlePopstate);
     };
-  }, [currentDraftId]); // Don't re-run on draft changes, only on draft ID changes
+  }, [currentDraftId, currentDraft?.status, currentDraft?.currentRound, currentDraft?.currentPick]); // Re-run when draft status or position changes
   
   // Don't automatically update URL - let navigation be explicit
   // URL updates should only happen through:
@@ -183,6 +219,9 @@ export function useDraftRoute(): DraftRouteData {
   });
 
   useEffect(() => {
+    // Skip on SSR
+    if (typeof window === 'undefined') return;
+    
     const parsed = parseDraftURL(window.location.pathname);
     
     setRouteData({

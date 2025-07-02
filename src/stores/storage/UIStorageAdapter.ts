@@ -23,6 +23,7 @@ export interface UIState {
     cmcRange: [number, number];
   };
   keyboardShortcutsEnabled: boolean;
+  quickPickMode: boolean;
 }
 
 export interface UIStorageOptions {
