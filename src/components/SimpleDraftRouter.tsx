@@ -151,6 +151,23 @@ export function SimpleDraftRouter({ children }: SimpleDraftRouterProps) {
    */
   const handleDraftLoad = async (draftId: string) => {
     try {
+      // Check if this is a pending draft creation
+      const pendingCreation = sessionStorage.getItem('pendingDraftCreation');
+      if (pendingCreation) {
+        const pending = JSON.parse(pendingCreation);
+        if (pending.draftId === draftId) {
+          // This is a new draft that needs to be created
+          sessionStorage.removeItem('pendingDraftCreation');
+          
+          // Create the draft using the stored parameters
+          await draftActions.createDraft(pending.seed, pending.setCode);
+          // Start the draft to generate packs
+          await draftActions.startDraft();
+          return;
+        }
+      }
+      
+      // Otherwise, load existing draft
       await draftActions.loadDraft(draftId);
       // loadDraft now automatically initializes viewing position to current engine position
     } catch (loadError) {

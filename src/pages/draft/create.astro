@@ -2,26 +2,19 @@
 /**
  * FlashDraft - Create Draft Page
  * 
- * This page creates a new draft and redirects to p1p1.
- * It's designed to work with server-side redirects for instant draft creation.
+ * This page handles draft creation on the client side and redirects to p1p1.
+ * Uses a minimal HTML page with inline script to avoid module loading issues.
  */
-
-import { DraftEngine } from '../../lib/engine/DraftEngine';
-import { LocalStorageAdapter } from '../../lib/engine/storage/LocalStorageAdapter';
 
 // Get URL parameters
 const url = new URL(Astro.request.url);
 const seed = url.searchParams.get('seed') || Date.now().toString();
 const setCode = url.searchParams.get('set');
-const autostart = url.searchParams.get('autostart') === 'true';
 
 // Validate set code
 if (!setCode) {
   return Astro.redirect('/draft/new', 302);
 }
-
-// For SSR, we can't actually create the draft in localStorage here
-// Instead, we'll pass the parameters to the client to create the draft
 ---
 
 <!DOCTYPE html>
@@ -65,51 +58,24 @@ if (!setCode) {
     <p>Creating draft...</p>
   </div>
 
-  <script define:vars={{ seed, setCode, autostart }}>
-    // Create draft directly in client-side code without imports
-    async function createAndStartDraft() {
-      try {
-        // Generate draft ID
-        const draftId = `draft_${setCode}_${seed}`;
-        
-        // Create draft data structure
-        const draft = {
-          draftId,
-          setCode,
-          seed,
-          status: 'active',
-          currentRound: 1,
-          currentPick: 1,
-          playerCount: 8,
-          humanPlayerIndex: 0,
-          playerDecks: Array(8).fill(null).map(() => []),
-          pickHistory: [],
-          packs: [],
-          createdAt: new Date().toISOString(),
-          updatedAt: new Date().toISOString()
-        };
-        
-        // Save to localStorage
-        localStorage.setItem(`flashdraft_draft_${draftId}`, JSON.stringify(draft));
-        
-        // Also save to draft list
-        const draftList = JSON.parse(localStorage.getItem('flashdraft_draftList') || '[]');
-        if (!draftList.includes(draftId)) {
-          draftList.unshift(draftId);
-          localStorage.setItem('flashdraft_draftList', JSON.stringify(draftList));
-        }
-        
-        // Navigate to p1p1 - the DraftInterface will handle pack generation
-        window.location.href = `/draft/${draftId}/p1p1`;
-      } catch (error) {
-        console.error('Failed to create draft:', error);
-        // Fallback to the draft creation page
-        window.location.href = `/draft/new?set=${setCode}`;
-      }
-    }
+  <script define:vars={{ seed, setCode }}>
+    // This is a temporary page that immediately redirects to the draft page
+    // The actual draft creation will happen in the DraftInterface component
+    // when it detects a new draft ID that doesn't exist yet
     
-    // Start the process immediately
-    createAndStartDraft();
+    // Generate draft ID using the same pattern as the engine
+    const draftId = `draft_${seed}_${Date.now()}`;
+    
+    // Store the draft creation parameters temporarily
+    sessionStorage.setItem('pendingDraftCreation', JSON.stringify({
+      draftId,
+      seed,
+      setCode,
+      timestamp: Date.now()
+    }));
+    
+    // Navigate to the draft page - DraftInterface will handle the actual creation
+    window.location.href = `/draft/${draftId}/p1p1`;
   </script>
 </body>
 </html>
