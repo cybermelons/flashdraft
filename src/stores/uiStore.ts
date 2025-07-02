@@ -6,15 +6,25 @@
  */
 
 import { atom, map, computed } from 'nanostores';
+import { persistentMap, persistentAtom } from '@nanostores/persistent';
 
 // Theme and appearance
 export type Theme = 'light' | 'dark' | 'system';
 export type CardSize = 'small' | 'medium' | 'large';
 export type ViewLayout = 'grid' | 'list' | 'fan';
 
-export const $theme = atom<Theme>('system');
-export const $cardSize = atom<CardSize>('medium');
-export const $viewLayout = atom<ViewLayout>('grid');
+export const $theme = persistentAtom<Theme>('theme', 'system', {
+  encode: JSON.stringify,
+  decode: JSON.parse,
+});
+export const $cardSize = persistentAtom<CardSize>('cardSize', 'medium', {
+  encode: JSON.stringify,
+  decode: JSON.parse,
+});
+export const $viewLayout = persistentAtom<ViewLayout>('viewLayout', 'grid', {
+  encode: JSON.stringify,
+  decode: JSON.parse,
+});
 
 // UI preferences
 export interface UIPreferences {
@@ -28,9 +38,10 @@ export interface UIPreferences {
   showManaSymbols: boolean;
   soundEnabled: boolean;
   animationsEnabled: boolean;
+  doubleClickToPick: boolean;
 }
 
-export const $preferences = map<UIPreferences>({
+export const $preferences = persistentMap<UIPreferences>('ui-preferences:', {
   theme: 'system',
   cardSize: 'medium', 
   viewLayout: 'grid',
@@ -41,6 +52,7 @@ export const $preferences = map<UIPreferences>({
   showManaSymbols: true,
   soundEnabled: true,
   animationsEnabled: true,
+  doubleClickToPick: false,
 });
 
 // Loading and status states
@@ -49,22 +61,38 @@ export const $connectionStatus = atom<'online' | 'offline'>('online');
 
 // Modal and overlay states
 export const $activeModal = atom<string | null>(null);
-export const $sidebarOpen = atom<boolean>(false);
-export const $cardDetailsOpen = atom<boolean>(false);
+export const $sidebarOpen = persistentAtom<boolean>('sidebarOpen', false, {
+  encode: JSON.stringify,
+  decode: JSON.parse,
+}); // Default to closed
+export const $cardDetailsOpen = persistentAtom<boolean>('cardDetailsOpen', false, {
+  encode: JSON.stringify,
+  decode: JSON.parse,
+});
 
 // Navigation and routing
 export const $currentRoute = atom<string>('/');
 export const $navigationHistory = atom<string[]>([]);
 
 // Draft-specific UI state
-export const $packViewMode = atom<'spread' | 'compact' | 'list'>('spread');
-export const $sortBy = atom<'cmc' | 'color' | 'rarity' | 'name' | 'type'>('cmc');
-export const $filterBy = atom<{
+export const $packViewMode = persistentAtom<'spread' | 'compact' | 'list'>('packViewMode', 'spread', {
+  encode: JSON.stringify,
+  decode: JSON.parse,
+});
+export const $sortBy = persistentAtom<'cmc' | 'color' | 'rarity' | 'name' | 'type'>('sortBy', 'cmc', {
+  encode: JSON.stringify,
+  decode: JSON.parse,
+});
+export const $quickPickMode = persistentAtom<boolean>('quickPickMode', false, {
+  encode: JSON.stringify,
+  decode: JSON.parse,
+});
+export const $filterBy = persistentMap<{
   colors: string[];
   types: string[];
   rarities: string[];
   cmcRange: [number, number];
-}>({
+}>('filterBy:', {
   colors: [],
   types: [],
   rarities: [],
@@ -72,7 +100,10 @@ export const $filterBy = atom<{
 });
 
 // Keyboard shortcuts state
-export const $keyboardShortcutsEnabled = atom<boolean>(true);
+export const $keyboardShortcutsEnabled = persistentAtom<boolean>('keyboardShortcutsEnabled', true, {
+  encode: JSON.stringify,
+  decode: JSON.parse,
+});
 export const $activeShortcuts = map<Record<string, string>>({
   'p': 'Pick selected card',
   'u': 'Undo last action',
@@ -261,6 +292,44 @@ export const uiActions = {
   },
 
   /**
+   * Toggle quick pick mode
+   */
+  toggleQuickPickMode(): void {
+    $quickPickMode.set(!$quickPickMode.get());
+  },
+  
+  /**
+   * Set animations enabled
+   */
+  setAnimationsEnabled(enabled: boolean): void {
+    $animationsEnabled.set(enabled);
+    this.updatePreferences({ animationsEnabled: enabled });
+  },
+  
+  /**
+   * Set sound enabled
+   */
+  setSoundEnabled(enabled: boolean): void {
+    $soundEnabled.set(enabled);
+    this.updatePreferences({ soundEnabled: enabled });
+  },
+
+  /**
+   * Set quick pick mode
+   */
+  setQuickPickMode(enabled: boolean): void {
+    $quickPickMode.set(enabled);
+  },
+
+  /**
+   * Set double-click to pick
+   */
+  setDoubleClickToPick(enabled: boolean): void {
+    const current = $preferences.get();
+    $preferences.set({ ...current, doubleClickToPick: enabled });
+  },
+
+  /**
    * Reset all UI state to defaults
    */
   resetToDefaults(): void {
@@ -275,6 +344,7 @@ export const uiActions = {
       showManaSymbols: true,
       soundEnabled: true,
       animationsEnabled: true,
+      doubleClickToPick: false,
     });
     
     $theme.set('system');
@@ -290,11 +360,16 @@ export const uiActions = {
     });
     
     $activeModal.set(null);
-    $sidebarOpen.set(false);
+    $sidebarOpen.set(true); // Default to open
     $cardDetailsOpen.set(false);
     $keyboardShortcutsEnabled.set(true);
   }
 };
+
+// Export individual preference atoms for components
+export const $animationsEnabled = computed([$preferences], (prefs) => prefs.animationsEnabled);
+export const $soundEnabled = computed([$preferences], (prefs) => prefs.soundEnabled);
+export const $doubleClickToPick = computed([$preferences], (prefs) => prefs.doubleClickToPick);
 
 // Initialize theme detection for system preference
 if (typeof window !== 'undefined') {

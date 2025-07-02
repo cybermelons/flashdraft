@@ -6,7 +6,7 @@
  */
 
 import { UIStorageAdapter } from './storage/UIStorageAdapter';
-import { $preferences, $sidebarOpen, $cardDetailsOpen, $packViewMode, $sortBy, $filterBy, $keyboardShortcutsEnabled, uiActions } from './uiStore';
+import { $preferences, $sidebarOpen, $cardDetailsOpen, $packViewMode, $sortBy, $filterBy, $keyboardShortcutsEnabled, $quickPickMode, uiActions } from './uiStore';
 
 class StorageIntegration {
   private uiStorage: UIStorageAdapter;
@@ -60,6 +60,7 @@ class StorageIntegration {
       $sortBy.set(uiState.sortBy);
       $filterBy.set(uiState.filterBy);
       $keyboardShortcutsEnabled.set(uiState.keyboardShortcutsEnabled);
+      $quickPickMode.set(uiState.quickPickMode ?? false);
       
     } catch (error) {
       console.warn('Failed to load UI state:', error);
@@ -82,6 +83,7 @@ class StorageIntegration {
         sortBy: $sortBy.get(),
         filterBy: $filterBy.get(),
         keyboardShortcutsEnabled: $keyboardShortcutsEnabled.get(),
+        quickPickMode: $quickPickMode.get(),
       };
 
       await this.uiStorage.saveUIState(currentState);
@@ -134,6 +136,10 @@ class StorageIntegration {
       debouncedSave();
     });
 
+    const unsubscribeQuickPickMode = $quickPickMode.listen(() => {
+      debouncedSave();
+    });
+
     // Store cleanup functions
     this.cleanupFunctions.push(
       unsubscribePreferences,
@@ -143,6 +149,7 @@ class StorageIntegration {
       unsubscribeSortBy,
       unsubscribeFilterBy,
       unsubscribeKeyboardShortcuts,
+      unsubscribeQuickPickMode,
       () => {
         if (saveTimeout) clearTimeout(saveTimeout);
       }
@@ -162,6 +169,7 @@ class StorageIntegration {
       $sortBy.set(newState.sortBy);
       $filterBy.set(newState.filterBy);
       $keyboardShortcutsEnabled.set(newState.keyboardShortcutsEnabled);
+      $quickPickMode.set(newState.quickPickMode ?? false);
     });
 
     this.cleanupFunctions.push(unsubscribeSync);

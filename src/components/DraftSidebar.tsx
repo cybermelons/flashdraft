@@ -4,7 +4,7 @@
  * Shows picked cards, draft statistics, filters, and controls.
  */
 
-import React from 'react';
+import React, { useState } from 'react';
 import { useStore } from '@nanostores/react';
 import { 
   $currentDraft,
@@ -57,8 +57,11 @@ export function DraftSidebar({ className = '' }: DraftSidebarProps) {
   const sidebarOpen = useStore($sidebarOpen);
   const sortBy = useStore($sortBy);
   const filterBy = useStore($filterBy);
+  const [decklistView, setDecklistView] = useState<'list' | 'cascade'>('cascade');
+  const [decklistSort, setDecklistSort] = useState<'cmc' | 'color' | 'type' | 'rarity'>('cmc');
 
-  if (!currentDraft) return null;
+  // Don't render anything if no draft is loaded
+  // But we still need the structure for the toggle to work
 
   const toggleSidebar = () => {
     uiActions.toggleSidebar();
@@ -137,27 +140,84 @@ export function DraftSidebar({ className = '' }: DraftSidebarProps) {
     return curve;
   };
 
-  const colorStats = getColorStats();
-  const cardStats = getCardStats();
-  const manaCurve = getManaCurve();
+  const colorStats = currentDraft ? getColorStats() : {};
+  const cardStats = currentDraft ? getCardStats() : { creatures: 0, instants: 0, sorceries: 0, artifacts: 0, enchantments: 0, planeswalkers: 0, lands: 0 };
+  const manaCurve = currentDraft ? getManaCurve() : {};
+
+  // Sort the deck cards based on selected sort
+  const sortedDeckCards = [...humanDeckCards].sort((a, b) => {
+    switch (decklistSort) {
+      case 'cmc':
+        return calculateCMC(a.manaCost) - calculateCMC(b.manaCost);
+      case 'color':
+        const colorOrder = ['W', 'U', 'B', 'R', 'G'];
+        const aColor = a.colors?.[0] || 'Z';
+        const bColor = b.colors?.[0] || 'Z';
+        return colorOrder.indexOf(aColor) - colorOrder.indexOf(bColor);
+      case 'type':
+        return (a.type_line || '').localeCompare(b.type_line || '');
+      case 'rarity':
+        const rarityOrder = { mythic: 0, rare: 1, uncommon: 2, common: 3 };
+        return (rarityOrder[a.rarity as keyof typeof rarityOrder] || 99) - 
+               (rarityOrder[b.rarity as keyof typeof rarityOrder] || 99);
+      default:
+        return 0;
+    }
+  });
 
   return (
-    <aside className={`${sidebarOpen ? 'w-80' : 'w-12'} transition-all duration-300 bg-slate-800/50 backdrop-blur-sm border-l border-slate-700/50 flex flex-col ${className}`}>
-      {/* Sidebar Toggle */}
+    <>
+      {/* Sidebar toggle button - visible on desktop only */}
       <button
         onClick={toggleSidebar}
-        className="p-3 m-3 bg-slate-700/50 hover:bg-slate-600/50 text-slate-300 hover:text-white rounded-xl transition-colors"
+        className="hidden lg:block fixed top-20 right-4 z-40 p-3 bg-slate-700/90 hover:bg-slate-600/90 text-slate-300 hover:text-white rounded-xl transition-all duration-200 shadow-lg"
         title={sidebarOpen ? 'Close sidebar' : 'Open sidebar'}
       >
         <svg className={`w-5 h-5 transition-transform duration-200 ${sidebarOpen ? '' : 'rotate-180'}`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 5l7 7-7 7"></path>
         </svg>
       </button>
+      
+      {/* Sidebar sheet - full screen on mobile, sidebar on desktop */}
+      <aside className={`fixed top-0 right-0 h-full w-full lg:w-80 bg-slate-800/95 backdrop-blur-sm border-l border-slate-700/50 flex flex-col transition-transform duration-300 z-30 ${
+        sidebarOpen ? 'translate-x-0' : 'translate-x-full'
+      } ${className}`}>
+        {/* Sidebar header */}
+        <div className="p-4 border-b border-slate-700/50">
+          <div className="flex items-center justify-between">
+            <div>
+              <h2 className="text-xl font-bold text-white">Draft Deck</h2>
+              <p className="text-sm text-slate-400 mt-1">{currentDraft ? `${humanDeckCards.length} cards` : 'No draft loaded'}</p>
+            </div>
+            {/* Close button for mobile */}
+            <button
+              onClick={toggleSidebar}
+              className="lg:hidden p-2 bg-slate-700/50 hover:bg-slate-600/50 text-slate-300 hover:text-white rounded-xl transition-colors"
+            >
+              <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M6 18L18 6M6 6l12 12"></path>
+              </svg>
+            </button>
+          </div>
+        </div>
 
-      {sidebarOpen && (
-        <div className="flex-1 px-3 pb-3 space-y-6 overflow-y-auto">
-          {/* Selected Card Detail */}
-          {selectedCard && (
+        <div className="flex-1 p-4 space-y-6 overflow-y-auto">
+          {!currentDraft ? (
+            <div className="flex items-center justify-center h-full">
+              <div className="text-center">
+                <div className="text-slate-400 mb-4">
+                  <svg className="w-16 h-16 mx-auto" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10"></path>
+                  </svg>
+                </div>
+                <p className="text-slate-300 text-lg">No draft in progress</p>
+                <p className="text-slate-400 text-sm mt-2">Start a draft to see your deck here</p>
+              </div>
+            </div>
+          ) : (
+            <>
+              {/* Selected Card Detail */}
+              {selectedCard && (
             <div className="bg-slate-700/30 rounded-2xl p-4 border border-slate-600/30">
               <h3 className="text-lg font-bold text-white mb-3 flex items-center gap-2">
                 <svg className="w-5 h-5 text-blue-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -196,12 +256,64 @@ export function DraftSidebar({ className = '' }: DraftSidebarProps) {
 
           {/* Picked Cards */}
           <div className="bg-slate-700/30 rounded-2xl p-4 border border-slate-600/30">
-            <h3 className="text-lg font-bold text-white mb-3 flex items-center gap-2">
-              <svg className="w-5 h-5 text-green-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10"></path>
-              </svg>
-              Your Picks ({humanDeckCards.length})
-            </h3>
+            <div className="flex items-center justify-between mb-3">
+              <h3 className="text-lg font-bold text-white flex items-center gap-2">
+                <svg className="w-5 h-5 text-green-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10"></path>
+                </svg>
+                Your Picks ({humanDeckCards.length})
+              </h3>
+              
+              {/* View toggle */}
+              <div className="flex items-center gap-1">
+                <button
+                  onClick={() => setDecklistView('cascade')}
+                  className={`p-1 rounded ${decklistView === 'cascade' ? 'bg-slate-600' : 'hover:bg-slate-600/50'}`}
+                  title="Cascade view"
+                >
+                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M4 6h16M4 10h16M4 14h16M4 18h16"></path>
+                  </svg>
+                </button>
+                <button
+                  onClick={() => setDecklistView('list')}
+                  className={`p-1 rounded ${decklistView === 'list' ? 'bg-slate-600' : 'hover:bg-slate-600/50'}`}
+                  title="List view"
+                >
+                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M4 6h16M4 12h16M4 18h16"></path>
+                  </svg>
+                </button>
+              </div>
+            </div>
+            
+            {/* Sort controls */}
+            <div className="flex gap-1 mb-3 text-xs">
+              <button
+                onClick={() => setDecklistSort('cmc')}
+                className={`px-2 py-1 rounded ${decklistSort === 'cmc' ? 'bg-blue-600 text-white' : 'bg-slate-600/50 text-slate-300'}`}
+              >
+                CMC
+              </button>
+              <button
+                onClick={() => setDecklistSort('color')}
+                className={`px-2 py-1 rounded ${decklistSort === 'color' ? 'bg-blue-600 text-white' : 'bg-slate-600/50 text-slate-300'}`}
+              >
+                Color
+              </button>
+              <button
+                onClick={() => setDecklistSort('type')}
+                className={`px-2 py-1 rounded ${decklistSort === 'type' ? 'bg-blue-600 text-white' : 'bg-slate-600/50 text-slate-300'}`}
+              >
+                Type
+              </button>
+              <button
+                onClick={() => setDecklistSort('rarity')}
+                className={`px-2 py-1 rounded ${decklistSort === 'rarity' ? 'bg-blue-600 text-white' : 'bg-slate-600/50 text-slate-300'}`}
+              >
+                Rarity
+              </button>
+            </div>
             
             {/* Color distribution */}
             <div className="mb-4">
@@ -231,9 +343,35 @@ export function DraftSidebar({ className = '' }: DraftSidebarProps) {
                   </svg>
                   <p className="text-sm">No cards picked yet</p>
                 </div>
+              ) : decklistView === 'cascade' ? (
+                <div className="relative h-96 overflow-hidden">
+                  <div className="absolute inset-0 overflow-y-auto">
+                    <div className="relative pb-48">
+                      {sortedDeckCards.map((card, index) => (
+                        <div 
+                          key={card.id}
+                          className="absolute transition-all duration-200 hover:z-50"
+                          style={{
+                            top: `${index * 30}px`,
+                            left: '0',
+                            right: '0',
+                            zIndex: index
+                          }}
+                        >
+                          <Card
+                            card={card}
+                            size="small"
+                            canInteract={false}
+                            className="w-full hover:scale-105 hover:shadow-xl"
+                          />
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                </div>
               ) : (
                 <div className="space-y-1 max-h-64 overflow-y-auto">
-                  {humanDeckCards.map(card => (
+                  {sortedDeckCards.map(card => (
                     <div 
                       key={card.id} 
                       className={`flex items-center justify-between bg-slate-600/30 rounded-lg px-3 py-2 border border-slate-500/30 hover:bg-slate-600/50 transition-colors ${
@@ -436,9 +574,11 @@ export function DraftSidebar({ className = '' }: DraftSidebarProps) {
               </div>
             </div>
           </div>
+            </>
+          )}
         </div>
-      )}
-    </aside>
+      </aside>
+    </>
   );
 }
 

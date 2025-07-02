@@ -7,7 +7,7 @@
 
 // Import set data as static assets
 import finData from '../../data/raw/cards/fin_cards.json';
-import dtkData from '../../data/raw/cards/dtk_cards.json';
+import tdmData from '../../data/raw/cards/tdm_cards.json';
 
 /**
  * TypeScript interfaces for Scryfall API data format
@@ -310,7 +310,7 @@ function convertScryfallSetData(scryfallData: ScryfallSetData): SetData {
  */
 const AVAILABLE_SETS = {
   'FIN': finData as ScryfallSetData,
-  'DTK': dtkData as ScryfallSetData,
+  'TDM': tdmData as ScryfallSetData,
 } as const;
 
 /**

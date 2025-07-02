@@ -1,5 +1,62 @@
-- persist quickpick preference across all drafts
-# Phase 1: Draft UI Polish & Loading States
+# Phase 1: Draft UI Polish & Loading States ✅ COMPLETE
+
+
+<issue>
+  ✅ FIXED: draft header isn't responsive to mobile. it goes off the screen horizontally.
+</issue>
+
+<issue>
+  cascade  the card images in decklist. enable sort by... buttons. allow custom reordering. 
+  </issue>
+<issue>
+  ✅ FIXED: actually don't use double click method. use the static "confirm pick" button.
+  users canenable quickpick
+</issue>
+
+<issue>
+  /draft/ route
+  overview of finished draft should show decklist, otherwise redirect to 
+  current pick.
+</issue>
+
+
+<issue>
+  card image should take up the side the cursor is not on. and card image should take up most of the vertical space. right now there's padding at top and bottom.
+  
+</issue>
+
+<card-hover-issues>
+  <issue>
+    make card hover stay still while mousing over the same card.
+  </issue>
+  <issue>
+    card hover should take whole vertical screen space, 
+  </issue>
+
+  <card>
+    not flash from white -> card image. lighten from black
+  </card>
+</card-hover-issues>
+
+
+<issue>
+  make ui elements consistent sizes, like "pick <cardname>" button.
+    there's still a lot of resizing issues. 
+</issue>
+
+<issue>
+  the overview is viewing p1p1 still, so no cards displayed.
+</issue>
+
+<issue>
+  standardize the layout and component sizing per major layout size breakpoint.
+</issue>
+`
+<issue>
+width: packViewMode === 'compact' ? '180px' : '220px'
+`
+// this should be same as card image width. there's extra padding on the right here.
+</issue>
 
 ## Overview
 Enhance the draft interface with proper loading states, remove jarring UI flashes, clean up visual design, and improve the overall user experience during drafting.
@@ -10,6 +67,7 @@ Enhance the draft interface with proper loading states, remove jarring UI flashe
 - Fix history view to be read-only with clear selected card indication
 - Improve pack layout consistency and spacing
 - Auto-expand decklist when first card is added
+- Persist quickpick preference across all drafts
 
 ## Current Issues to Address
 
@@ -40,31 +98,37 @@ Enhance the draft interface with proper loading states, remove jarring UI flashe
 
 #### Loading Skeleton Design
 
-- assure these  are the same size as t he actual interface
+**Important**: Skeleton dimensions must match actual interface exactly to prevent layout shift.
+
 ```tsx
 // DraftSkeleton.tsx
 export function DraftSkeleton() {
   return (
-    <div className="draft-interface">
-      {/* Header skeleton */}
-      <div className="h-16 bg-gray-800 animate-pulse" />
+    <div className="min-h-screen bg-gray-900 text-white">
+      {/* Header skeleton - match exact DraftHeader height */}
+      <div className="h-[72px] bg-gray-800 border-b border-gray-700 animate-pulse" />
       
-      {/* Pack area skeleton */}
-      <div className="pack-display grid grid-cols-5 gap-2 p-4">
-        {Array.from({ length: 15 }).map((_, i) => (
-          <div key={i} className="card-skeleton">
-            <div className="aspect-[488/680] bg-gray-700 rounded-lg animate-pulse" />
+      <div className="flex">
+        {/* Main content area */}
+        <div className="flex-1 p-8">
+          {/* Pack area skeleton - match PackDisplay layout */}
+          <div className="grid grid-cols-5 gap-2 max-w-[1200px] mx-auto">
+            {Array.from({ length: 15 }).map((_, i) => (
+              <div key={i} className="card-skeleton">
+                <div className="aspect-[488/680] bg-gray-700 rounded-lg animate-pulse" />
+              </div>
+            ))}
           </div>
-        ))}
-      </div>
-      
-      {/* Sidebar skeleton */}
-      <div className="sidebar">
-        <div className="h-8 bg-gray-800 rounded animate-pulse mb-4" />
-        <div className="space-y-2">
-          {Array.from({ length: 5 }).map((_, i) => (
-            <div key={i} className="h-4 bg-gray-700 rounded animate-pulse" />
-          ))}
+        </div>
+        
+        {/* Sidebar skeleton - match DraftSidebar width */}
+        <div className="w-80 bg-gray-800 p-4 border-l border-gray-700">
+          <div className="h-8 bg-gray-700 rounded animate-pulse mb-4" />
+          <div className="space-y-2">
+            {Array.from({ length: 5 }).map((_, i) => (
+              <div key={i} className="h-4 bg-gray-600 rounded animate-pulse" />
+            ))}
+          </div>
         </div>
       </div>
     </div>
@@ -73,7 +137,9 @@ export function DraftSkeleton() {
 ```
 
 #### Loading State Management
-- is it better to use nanostores or usestate here? usestate i think is fine because we're just waiting for draftid to come back
+
+**Decision**: Use `useState` for loading states since this is component-local UI state, not shared application state. Nanostores are better for state that needs to be accessed across multiple components.
+
 ```tsx
 // In DraftInterface.tsx
 const [isLoading, setIsLoading] = useState(true);
@@ -84,7 +150,8 @@ useEffect(() => {
     try {
       setIsLoading(true);
       const data = await fetchDraftData(draftId);
-      // Initialize stores with data
+      // Initialize nanostores with draft data
+      initializeDraftStores(data);
       setIsLoading(false);
     } catch (error) {
       setLoadError('Failed to load draft');
@@ -101,19 +168,20 @@ if (loadError) return <DraftError message={loadError} />;
 ### 2. Clean Up Visual Design
 
 #### Remove Extra Effects
-should these turn into tailwind-css?
 
-```css
-/* Remove in DraftInterface.css */
-.card:hover {
-  /* Remove: box-shadow, transform scale, color overlays */
-  /* Keep: simple opacity change or border highlight */
-}
+**Decision**: Convert to Tailwind CSS for consistency with the rest of the codebase. Use utility classes for maintainability.
 
-.card.selected {
-  /* Remove: glowing effects, multiple shadows */
-  /* Keep: simple border or checkmark overlay */
-}
+```tsx
+// Card component styling with Tailwind
+<div 
+  className={cn(
+    "relative cursor-pointer transition-opacity duration-200",
+    "hover:opacity-90", // Simple hover effect only
+    isSelected && "ring-2 ring-blue-500" // Clean selection indicator
+  )}
+>
+  {/* Remove any rainbow gradients, glowing effects, transform scales */}
+</div>
 ```
 
 #### Disable Number Display
@@ -156,55 +224,40 @@ export function SelectedCardOverlay({ isSelected }: { isSelected: boolean }) {
 
 ### 4. Fix Pack Layout Consistency
 
-#### Consistent Grid Layout
-is it better to use tailwind or just use these
-and use both for card dsplay and skeleton? what is best practice
-```css
-.pack-display {
-  display: grid;
-  grid-template-columns: repeat(5, 1fr);
-  grid-template-rows: repeat(3, 1fr);
-  gap: 0.5rem; /* Minimal spacing */
-  padding: 1rem;
-  height: 100%; /* Fixed height */
-}
+**Clarification**: You want cards to remain tightly packed (no empty slots), but the spacing between cards should stay consistent regardless of how many cards remain in the pack.
 
-.card-slot {
-  /* Fixed position for each slot */
-  aspect-ratio: 488/680;
-  position: relative;
-}
+#### Consistent Spacing Approach
 
-/* Cards always occupy same positions */
-.card-slot:empty {
-  visibility: hidden; /* Maintain layout */
-}
-```
-
-#### JavaScript Grid Management
-i didn't mean fixed positions for the card. like hollowing out cards.
-it shoujld still be an array of cards, no spaces between them just like drafts.
-we're not taking cards out of slots, or it shouldn't show that.
-maybe that can be its own view. but i just want the cards in a row, but i don't
-want the spacing to change depending on number of cards left.
+**Decision**: Use Tailwind for consistency. Apply the same classes to both the actual pack display and skeleton for perfect matching.
 
 ```tsx
-// Ensure cards stay in fixed positions
-const packGrid = Array(15).fill(null);
-pack.cards.forEach((card, index) => {
-  packGrid[index] = card;
-});
-
-return (
-  <div className="pack-display">
-    {packGrid.map((card, index) => (
-      <div key={index} className="card-slot">
-        {card && <Card data={card} />}
+// PackDisplay.tsx - Cards always packed together with fixed spacing
+export function PackDisplay({ pack }: { pack: Pack }) {
+  return (
+    <div className="pack-container">
+      {/* Fixed width container to prevent spreading */}
+      <div className="inline-grid grid-cols-5 gap-2 max-w-[1200px]">
+        {pack.cards.map((card, index) => (
+          <div key={card.id} className="w-[220px]">
+            <Card data={card} />
+          </div>
+        ))}
       </div>
-    ))}
-  </div>
-);
+    </div>
+  );
+}
+
+// Alternative: Use flexbox with fixed gaps
+<div className="flex flex-wrap gap-2 max-w-[1200px]">
+  {pack.cards.map((card) => (
+    <div key={card.id} className="w-[220px] flex-shrink-0">
+      <Card data={card} />
+    </div>
+  ))}
+</div>
 ```
+
+The key is using fixed card widths and gaps rather than letting the grid/flex container stretch to fill space.
 
 ### 5. Auto-Expand Decklist
 
@@ -223,9 +276,34 @@ export function addCardToDeck(card: Card) {
 }
 ```
 
-## Testing Checklist
+### 6. Persist Quickpick Preference
 
-do not run a dev server. i will check manually.
+#### Local Storage Integration
+```tsx
+// In settingsStore.ts
+import { persistentAtom } from '@nanostores/persistent'
+
+// Persist quickpick preference across all drafts
+export const $quickPickEnabled = persistentAtom<boolean>('quickPickEnabled', false, {
+  encode: JSON.stringify,
+  decode: JSON.parse,
+});
+
+// In DraftInterface.tsx
+import { $quickPickEnabled } from '@/stores/settingsStore';
+
+function DraftInterface() {
+  const quickPickEnabled = useStore($quickPickEnabled);
+  
+  const handleQuickPickToggle = () => {
+    $quickPickEnabled.set(!quickPickEnabled);
+  };
+  
+  // Rest of component...
+}
+```
+
+## Testing Checklist
 
 ### Loading States
 - [ ] No "invalid draft url" flash on navigation
@@ -256,6 +334,11 @@ do not run a dev server. i will check manually.
 - [ ] Remembers expansion state during session
 - [ ] Smooth expand/collapse animation
 
+### Quickpick Preference
+- [ ] Toggle state persists across page refreshes
+- [ ] Preference applies to all drafts
+- [ ] Setting survives browser restart
+
 ## Success Metrics
 - Zero UI flashes during navigation
 - Consistent 60fps during all interactions
@@ -269,6 +352,7 @@ do not run a dev server. i will check manually.
 3. Pack layout consistency
 4. Remove visual clutter
 5. Auto-expand decklist
+6. Persist quickpick preference
 
 ## Notes
 - Keep all changes performant - no heavy animations

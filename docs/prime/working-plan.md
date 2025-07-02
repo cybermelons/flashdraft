@@ -1,3 +1,17 @@
+# issues:
+
+pick mode should also be previewed on the card preview.
+use a recent iconic card to preview (use Vivi's card)
+
+for the start draft buttons on the main page, the button should have 3 cards fanned out of the most iconic cards: vivi, tifa, sephiroth
+
+for dragonstorm, choose whatever.
+
+<issue>
+  clicking the start draft from home doesn't take me straight into the draft. it takes me to start new draft page, requiring me to pick the set again. picking from home ssould put me into p1p1
+</issue>
+
+
 # Development Plan: Draft UI Improvements & MTG Goldfishing Mat
 
 ## Overview
@@ -6,21 +20,21 @@ Fix critical draft bugs, enhance the draft interface with better loading states 
 ## Critical Bugs to Fix First
 
 ### Dual-Faced Card Issue
-- [ ] Fix pack generation to only include front faces of dual-faced cards
-- [ ] See detailed plan: [Phase 0 - DFC Fix](./phase-0-dfc-fix.md)
+- [x] Fix pack generation to only include front faces of dual-faced cards
+- [x] See detailed plan: [Phase 0 - DFC Fix](./phase-0-dfc-fix.md)
 
 ## Current Issues to Fix
 
 ### UI/UX Improvements
-- [ ] Add loading skeletons while fetching draft data (fix "invalid draft url" flash)
+- [x] Add loading skeletons while fetching draft data (fix "invalid draft url" flash)
 - [ ] Redesign decklist to show cascaded cards with name/mana pips visible
-- [ ] Reduce spacing between cards in pack display layout. the cards should be consistently in the same spot no matter the number of cards in the pack. there shouldn't be a morphing of layout as cards decrease. minimal spacing between cards.
-- [ ] Add hover effects showing full card image (like 17lands/MTGA)
-- [ ] remove extra color and hilight effects. 
-- [ ] do not allow selecting other cards in history view. only hover card info. no hover effects on card choice. it should look frozen
-- [ ] disable number display
-- [ ] historyview: cover selected card with overlay with 'selected' and checkmark in the center. it should be very obvious that's the selected card. player can still hover card for info.
-- [ ] expand decklist when first card is added
+- [x] Reduce spacing between cards in pack display layout. the cards should be consistently in the same spot no matter the number of cards in the pack. there shouldn't be a morphing of layout as cards decrease. minimal spacing between cards.
+- [x] Add hover effects showing full card image (like 17lands/MTGA)
+- [x] remove extra color and hilight effects. 
+- [x] do not allow selecting other cards in history view. only hover card info. no hover effects on card choice. it should look frozen
+- [x] disable number display
+- [x] historyview: cover selected card with overlay with 'selected' and checkmark in the center. it should be very obvious that's the selected card. player can still hover card for info.
+- [x] expand decklist when first card is added
 
 ### Sideboard Functionality
 - [ ] Add sideboard support to draft engine
@@ -46,16 +60,25 @@ A rules-free testing environment for rapid deck iteration. No mechanics enforcem
 - [x] Fix dual-faced card pack generation
 - [x] Detailed plan: [phase-0-dfc-fix.md](./phase-0-dfc-fix.md)
 
-### Phase 1: Draft UI Polish & Loading States
-- [ ] Fix loading states and remove UI flashes
-- [ ] Clean up visual design and remove clutter
-- [ ] Fix history view interaction and selection display
-- [ ] Detailed plan: [phase-1-ui-polish.md](./phase-1-ui-polish.md)
+### Phase 1: Draft UI Polish & Loading States ✅
+- [x] Fix loading states and remove UI flashes
+- [x] Implement responsive design for mobile/tablet
+  - 2x2 card grid on mobile (grid-cols-2)
+  - Progressive grid columns: 2 → 3 → 4 → 5 → 6 → 7 based on screen size
+  - Full-screen sidebar on mobile with toggle button
+  - Desktop sidebar shifts content (mr-80) when open
+- [x] Remove double-click to pick - single click selects, confirm button picks
+- [x] Quick pick mode remains as instant-pick option
+- [x] Fix layout shifts with fixed dimensions for UI elements
+- [x] Add mobile toggle between pack view and decklist view
+- [x] Clean up visual design and remove clutter
+- [x] Fix history view interaction and selection display
+- [x] Detailed plan: [phase-1-ui-polish.md](./phase-1-ui-polish.md)
 
 ### Phase 2: Enhanced Card Display
 - [ ] Redesign decklist card display (cascade view)
 - [ ] Tighten pack display spacing
-- [ ] Implement hover card preview
+- [x] Implement hover card preview
 
 ### Phase 3: Sideboard Implementation
 - [ ] Engine support for sideboard

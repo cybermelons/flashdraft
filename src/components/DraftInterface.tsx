@@ -22,12 +22,15 @@ import {
   draftActions,
   uiActions 
 } from '@/stores/draftStore';
-import { $isDarkMode } from '@/stores/uiStore';
+import { $isDarkMode, $sidebarOpen, uiActions as uiStoreActions } from '@/stores/uiStore';
 import { SimpleDraftRouter, useDraftNavigation, type DraftRouteData } from './SimpleDraftRouter';
 import { PackDisplay } from './PackDisplay';
 import { DraftHeader } from './DraftHeader';
 import { DraftSidebar } from './DraftSidebar';
 import { EngineDebug } from './EngineDebug';
+import { DraftSkeleton } from './DraftSkeleton';
+import { HoverCardPreview } from './HoverCardPreview';
+import { DecklistOverview } from './DecklistOverview';
 
 interface DraftInterfaceProps {
   className?: string;
@@ -61,6 +64,19 @@ export function DraftInterface({ className = '' }: DraftInterfaceProps) {
     <div 
       className={`draft-interface ${clientTheme} ${className}`}
     >
+      {/* Sidebar at root level - always present */}
+      <DraftSidebar />
+      
+      {/* Mobile FAB for decklist */}
+      <button
+        onClick={() => uiStoreActions.toggleSidebar()}
+        className="lg:hidden fixed bottom-6 right-6 z-40 w-14 h-14 bg-blue-600 hover:bg-blue-500 text-white rounded-full shadow-lg transition-all duration-200 flex items-center justify-center"
+      >
+        <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10"></path>
+        </svg>
+      </button>
+      
       <SimpleDraftRouter>
         {(routeData) => <DraftInterfaceContent routeData={routeData} />}
       </SimpleDraftRouter>
@@ -82,6 +98,8 @@ function DraftInterfaceContent({ routeData }: { routeData: DraftRouteData }) {
   const error = useStore($error);
   const isViewingCurrent = useStore($isViewingCurrent);
   const currentPosition = useStore($currentPosition);
+  const sidebarOpen = useStore($sidebarOpen);
+  
   
   // Debug logging - only on mount and key state changes
   useEffect(() => {
@@ -99,6 +117,11 @@ function DraftInterfaceContent({ routeData }: { routeData: DraftRouteData }) {
   }, [canPick, currentDraft?.currentRound, currentDraft?.currentPick]);
   
   const navigation = useDraftNavigation();
+  
+  // Default to skeleton until we have definitive state
+  if (!currentDraft && !error && !routeData.routeError) {
+    return <DraftSkeleton />;
+  }
 
   // Handle route errors
   if (!routeData.isValidRoute) {
@@ -118,18 +141,6 @@ function DraftInterfaceContent({ routeData }: { routeData: DraftRouteData }) {
           >
             Back to Draft List
           </button>
-        </div>
-      </div>
-    );
-  }
-
-  // Loading state
-  if (isLoading) {
-    return (
-      <div className="min-h-screen bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900 flex items-center justify-center p-6">
-        <div className="text-center">
-          <div className="animate-spin rounded-full h-16 w-16 border-b-2 border-blue-500 mx-auto mb-6"></div>
-          <p className="text-slate-300 text-xl">Loading draft...</p>
         </div>
       </div>
     );
@@ -166,36 +177,16 @@ function DraftInterfaceContent({ routeData }: { routeData: DraftRouteData }) {
     );
   }
 
-  // No draft loaded
-  if (!currentDraft) {
-    return (
-      <div className="min-h-screen bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900 flex items-center justify-center p-6">
-        <div className="bg-slate-800/50 backdrop-blur-sm rounded-2xl p-8 border border-slate-700/50 text-center max-w-md">
-          <div className="text-slate-400 mb-6">
-            <svg className="w-16 h-16 mx-auto" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10"></path>
-            </svg>
-          </div>
-          <h2 className="text-2xl font-bold text-white mb-3">No Draft Loaded</h2>
-          <p className="text-slate-300 mb-6">Select a draft to continue or create a new one.</p>
-          <button 
-            onClick={() => navigation.navigateToDraftList()}
-            className="bg-blue-600 hover:bg-blue-500 text-white px-6 py-3 rounded-xl font-semibold transition-colors"
-          >
-            Browse Drafts
-          </button>
-        </div>
-      </div>
-    );
-  }
+
 
   // Show completion banner but allow navigation for completed drafts
   const isCompleted = currentDraft.status === 'completed';
 
   // Active draft interface (also used for completed drafts with navigation)
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900">
+    <div className="min-h-screen bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900 flex flex-col">
       <DraftHeader />
+      <HoverCardPreview />
       
       {/* Completion banner for finished drafts */}
       {isCompleted && isViewingCurrent && (
@@ -222,9 +213,35 @@ function DraftInterfaceContent({ routeData }: { routeData: DraftRouteData }) {
         </div>
       )}
       
-      <div className="flex flex-1 min-h-0">
-        <main className="flex-1 p-6">
-          {currentPack ? (
+      {/* Main content area */}
+      <div className="flex-1 relative overflow-hidden">
+        {/* Main content - shifts when sidebar is open on desktop, hidden on mobile when sidebar open */}
+        <main className={`h-full p-6 overflow-y-auto transition-all duration-300 ${
+          sidebarOpen ? 'lg:mr-80 hidden lg:block' : ''
+        }`}>
+          {/* Show overview if no position in URL and draft is complete */}
+          {isCompleted && !routeData.round && !routeData.pick ? (
+            <div className="max-w-6xl mx-auto">
+              <div className="mb-6">
+                <h2 className="text-3xl font-bold text-white mb-2">Draft Complete - Final Deck</h2>
+                <div className="flex gap-3">
+                  <button 
+                    onClick={() => navigation.navigateToPosition(1, 1)}
+                    className="bg-blue-600 hover:bg-blue-500 text-white px-4 py-2 rounded-xl font-medium transition-colors"
+                  >
+                    Review Draft Picks
+                  </button>
+                  <button 
+                    onClick={() => navigation.navigateToDraftList()}
+                    className="bg-slate-600 hover:bg-slate-500 text-white px-4 py-2 rounded-xl font-medium transition-colors"
+                  >
+                    Back to Draft List
+                  </button>
+                </div>
+              </div>
+              <DecklistOverview cards={humanDeckCards} draftId={currentDraft.draftId} />
+            </div>
+          ) : currentPack ? (
             <PackDisplay 
               pack={currentPack}
               onCardPick={handleCardPick}
@@ -273,8 +290,6 @@ function DraftInterfaceContent({ routeData }: { routeData: DraftRouteData }) {
             </div>
           )}
         </main>
-        
-        <DraftSidebar />
       </div>
       
       {/* Debug component to show engine state */}

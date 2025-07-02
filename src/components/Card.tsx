@@ -16,11 +16,13 @@ interface CardProps {
   canInteract?: boolean;
   quickPickNumber?: number;
   onClick?: () => void;
+  onDoubleClick?: () => void;
   onMouseEnter?: () => void;
   onMouseLeave?: () => void;
   className?: string;
   size?: 'small' | 'medium' | 'large';
   showBackFace?: boolean; // For dual-sided cards
+  responsive?: boolean; // Make card fill container width
 }
 
 /**
@@ -33,18 +35,27 @@ export function Card({
   canInteract = true,
   quickPickNumber,
   onClick,
+  onDoubleClick,
   onMouseEnter,
   onMouseLeave,
   className = '',
   size = 'medium',
-  showBackFace = false
+  showBackFace = false,
+  responsive = false
 }: CardProps) {
   const [currentFace, setCurrentFace] = useState(0);
   const [imageError, setImageError] = useState(false);
+  const [imageLoaded, setImageLoaded] = useState(false);
 
   const handleClick = () => {
     if (canInteract && onClick) {
       onClick();
+    }
+  };
+
+  const handleDoubleClick = () => {
+    if (canInteract && onDoubleClick) {
+      onDoubleClick();
     }
   };
 
@@ -58,6 +69,11 @@ export function Card({
   const isDualSided = card.card_faces && card.card_faces.length > 0;
   const activeFace = isDualSided && showBackFace ? card.card_faces[currentFace] : null;
   const displayCard = activeFace || card;
+  
+  // Reset image loaded state when card changes
+  React.useEffect(() => {
+    setImageLoaded(false);
+  }, [card.id]);
 
   // Get image URL with fallback logic
   const getImageUrl = (imageUris?: CardImageUris): string | null => {
@@ -68,38 +84,17 @@ export function Card({
   const imageUrl = getImageUrl(displayCard.image_uris);
   
 
-  // Color-based styling
-  const getColorClasses = () => {
-    const colors = displayCard.colors || [];
-    if (colors.length === 0) {
-      return 'border-slate-400';
-    } else if (colors.length === 1) {
-      switch (colors[0]) {
-        case 'W': return 'border-yellow-400';
-        case 'U': return 'border-blue-400';
-        case 'B': return 'border-gray-400';
-        case 'R': return 'border-red-400';
-        case 'G': return 'border-green-400';
-        default: return 'border-slate-400';
-      }
-    } else {
-      return 'border-gradient-to-br from-yellow-400 via-blue-400 to-red-400 border-4 bg-gradient-to-br from-yellow-500/20 via-blue-500/20 to-red-500/20';
-    }
-  };
-
-  // Rarity-based styling
-  const getRarityClasses = () => {
-    switch (card.rarity) {
-      case 'common': return 'shadow-md border-2 border-gray-600/50';
-      case 'uncommon': return 'shadow-lg shadow-green-500/30 border-2 border-green-600/50';
-      case 'rare': return 'shadow-xl shadow-yellow-500/40 border-2 border-yellow-600/50';
-      case 'mythic': return 'shadow-2xl shadow-orange-500/50 border-2 border-orange-600/50 ring-1 ring-orange-400/30';
-      default: return 'shadow-md border-2 border-gray-600/50';
-    }
+  // Simplified border styling - no colors or rarity effects
+  const getBorderClasses = () => {
+    return 'border border-slate-600';
   };
 
   // Size classes
   const getSizeClasses = () => {
+    if (responsive) {
+      // For responsive cards, use full width and aspect ratio
+      return 'w-full aspect-[488/680]';
+    }
     switch (size) {
       case 'small': return 'w-20 h-28';
       case 'large': return 'w-64 h-90';
@@ -107,21 +102,13 @@ export function Card({
     }
   };
 
-  // Format mana cost with proper symbols
+  // Format mana cost - simplified to just show symbols
   const formatManaCost = (manaCost?: string) => {
     if (!manaCost) return null;
     
-    // Replace mana symbols with styled spans
+    // Just show the symbols without fancy styling
     return manaCost.replace(/\{([^}]+)\}/g, (match, symbol) => {
-      const colorClass = symbol === 'W' ? 'bg-yellow-400 text-black' :
-                       symbol === 'U' ? 'bg-blue-400 text-white' :
-                       symbol === 'B' ? 'bg-gray-800 text-white' :
-                       symbol === 'R' ? 'bg-red-400 text-white' :
-                       symbol === 'G' ? 'bg-green-400 text-white' :
-                       /^\d+$/.test(symbol) ? 'bg-slate-400 text-white' :
-                       'bg-slate-500 text-white';
-      
-      return `<span class="inline-flex items-center justify-center w-4 h-4 rounded-full text-xs font-bold ${colorClass} mx-0.5">${symbol}</span>`;
+      return `<span class="inline-block mx-0.5">${symbol}</span>`;
     });
   };
 
@@ -133,17 +120,16 @@ export function Card({
 
   return (
     <div
+      data-card-id={card.id}
       className={`
-        relative rounded-2xl overflow-hidden transition-all duration-200
+        relative rounded-lg overflow-hidden
         ${getSizeClasses()}
-        ${getRarityClasses()}
-        ${getColorClasses()}
-        ${isSelected ? 'ring-4 ring-blue-500 ring-offset-2 ring-offset-slate-900 scale-105 z-10' : ''}
-        ${isHovered ? 'scale-105 shadow-2xl z-20' : ''}
-        ${canInteract ? 'cursor-pointer hover:scale-105' : 'cursor-default opacity-75'}
+        ${getBorderClasses()}
+        ${canInteract ? 'cursor-pointer' : 'cursor-default'}
         ${className}
       `.trim()}
       onClick={handleClick}
+      onDoubleClick={handleDoubleClick}
       onMouseEnter={onMouseEnter}
       onMouseLeave={onMouseLeave}
       onKeyDown={handleKeyDown}
@@ -151,12 +137,6 @@ export function Card({
       role={canInteract ? 'button' : 'img'}
       aria-label={`${displayCard.name} - ${displayCard.type_line || card.type} - ${card.rarity}`}
     >
-      {/* Quick pick number indicator */}
-      {quickPickNumber && (
-        <div className="absolute -top-2 -left-2 w-6 h-6 bg-blue-600 text-white rounded-full flex items-center justify-center text-xs font-bold z-30 shadow-lg border-2 border-white">
-          {quickPickNumber}
-        </div>
-      )}
 
       {/* Dual-sided card flip button */}
       {isDualSided && (
@@ -165,7 +145,7 @@ export function Card({
             e.stopPropagation();
             toggleFace();
           }}
-          className="absolute top-2 right-2 w-6 h-6 bg-slate-800/80 hover:bg-slate-700/80 text-white rounded-full flex items-center justify-center text-xs font-bold z-30 transition-colors"
+          className="absolute top-2 right-2 w-6 h-6 bg-slate-800/80 text-white rounded-full flex items-center justify-center text-xs font-bold z-30"
           title="Flip card"
         >
           <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -174,14 +154,22 @@ export function Card({
         </button>
       )}
 
+      {/* Hover darkening overlay */}
+      {isHovered && (
+        <div className="absolute inset-0 bg-black/20 z-20 pointer-events-none rounded-lg" />
+      )}
+      
       {/* Card image or fallback */}
-      <div className="relative w-full h-full bg-gradient-to-br from-slate-800 to-slate-900">
+      <div className="relative w-full h-full bg-slate-900">
         {imageUrl && !imageError ? (
           <img
             src={imageUrl}
             alt={displayCard.name}
-            loading="lazy"
-            className="w-full h-full object-cover"
+            loading="eager"
+            className={`w-full h-full object-cover transition-opacity duration-150 ${
+              imageLoaded ? 'opacity-100' : 'opacity-0'
+            }`}
+            onLoad={() => setImageLoaded(true)}
             onError={() => setImageError(true)}
           />
         ) : (
@@ -220,44 +208,11 @@ export function Card({
               )}
             </div>
             
-            {/* Rarity indicator */}
-            <div className={`absolute bottom-1 right-1 w-3 h-3 rounded-full ring-2 ring-black/50 ${
-              card.rarity === 'common' ? 'bg-gray-400' :
-              card.rarity === 'uncommon' ? 'bg-green-400' :
-              card.rarity === 'rare' ? 'bg-yellow-400' :
-              card.rarity === 'mythic' ? 'bg-orange-500' :
-              'bg-red-400'
-            }`} title={card.rarity} />
           </div>
         )}
         
-        {/* Card name overlay (always visible) */}
-        <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/80 to-transparent p-2">
-          <div className="text-white text-xs font-semibold truncate">
-            {displayCard.name}
-          </div>
-          {displayCard.mana_cost && size !== 'small' && (
-            <div 
-              className="text-white text-xs flex items-center mt-1"
-              dangerouslySetInnerHTML={{ __html: formatManaCost(displayCard.mana_cost) || '' }}
-            />
-          )}
-        </div>
       </div>
 
-      {/* Selection indicator */}
-      {isSelected && (
-        <div className="absolute inset-0 bg-blue-500/20 border-4 border-blue-500 rounded-2xl">
-          <div className="absolute top-2 left-2 w-6 h-6 bg-blue-500 text-white rounded-full flex items-center justify-center text-xs font-bold">
-            ✓
-          </div>
-        </div>
-      )}
-
-      {/* Hover glow effect */}
-      {isHovered && (
-        <div className="absolute inset-0 bg-white/10 rounded-2xl pointer-events-none" />
-      )}
 
       {/* Face indicator for dual-sided cards */}
       {isDualSided && card.card_faces && (
@@ -309,14 +264,8 @@ export function CardPlaceholder({
   };
 
   return (
-    <div className={`relative rounded-2xl overflow-hidden bg-slate-700/50 ${getSizeClasses()} ${className}`}>
-      <div className="w-full h-full animate-pulse bg-gradient-to-br from-slate-600 to-slate-800">
-        <div className="w-full h-3/4 bg-slate-500/50" />
-        <div className="p-2 space-y-1">
-          <div className="h-2 bg-slate-400/50 rounded" />
-          <div className="h-2 bg-slate-400/30 rounded w-3/4" />
-        </div>
-      </div>
+    <div className={`relative rounded-lg overflow-hidden bg-slate-700/50 border border-slate-600 ${getSizeClasses()} ${className}`}>
+      <div className="w-full h-full animate-pulse bg-slate-700" />
     </div>
   );
 }

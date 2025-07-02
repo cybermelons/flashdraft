@@ -1,125 +1,338 @@
 ---
 import Layout from '../layouts/Layout.astro';
-import { DraftDashboard } from '../components/DraftDashboard';
+import { DraftEngine } from '../lib/engine/DraftEngine';
+import { LocalStorageAdapter } from '../lib/engine/storage/LocalStorageAdapter';
+
+// Function to create and start a new draft
+const createDraft = (setCode: string) => {
+  const engine = new DraftEngine(new LocalStorageAdapter());
+  const draft = engine.createDraft(setCode, 8);
+  return draft.draftId;
+};
 ---
 
-<Layout title="FlashDraft - MTG Draft Simulator & Learning Platform">
-  <main class="min-h-screen">
-    <!-- Hero Section -->
-    <section class="relative overflow-hidden">
-      <div class="absolute inset-0 bg-gradient-to-br from-blue-600/20 to-purple-600/20"></div>
-      <div class="relative max-w-7xl mx-auto px-6 py-20 text-center">
-        <h1 class="text-6xl font-bold text-white mb-6 tracking-tight">
-          Master MTG Drafting
-        </h1>
-        <p class="text-xl text-slate-300 mb-10 max-w-3xl mx-auto leading-relaxed">
-          Practice against AI opponents trained on real data. Experience realistic draft dynamics, 
-          immediate playtesting, and accelerated learning for competitive improvement.
-        </p>
-        <div class="flex flex-col sm:flex-row gap-4 justify-center">
-          <a 
-            href="/draft/new" 
-            class="bg-gradient-to-r from-blue-600 to-blue-500 hover:from-blue-500 hover:to-blue-400 text-white px-8 py-4 rounded-xl font-semibold text-lg transition-all duration-200 shadow-lg hover:shadow-xl hover:scale-105"
-          >
-            Start New Draft
-          </a>
-          <a 
-            href="/draft" 
-            class="bg-white/10 hover:bg-white/20 text-white px-8 py-4 rounded-xl font-semibold text-lg transition-all duration-200 backdrop-blur-sm border border-white/20"
-          >
-            View Saved Drafts
-          </a>
-        </div>
+<Layout title="FlashDraft - Start Drafting">
+  <main class="min-h-screen flex items-center justify-center p-6">
+    <div class="max-w-4xl w-full">
+      <!-- Logo/Title -->
+      <div class="text-center mb-12">
+        <h1 class="text-5xl font-bold text-white mb-4">FlashDraft</h1>
+        <p class="text-xl text-slate-300">Choose your draft format</p>
       </div>
-    </section>
 
-    <!-- Features -->
-    <section class="py-20 px-6">
-      <div class="max-w-7xl mx-auto">
-        <h2 class="text-3xl font-bold text-center text-white mb-16">Why FlashDraft?</h2>
-        <div class="grid md:grid-cols-3 gap-8">
-          <div class="bg-slate-800/50 backdrop-blur-sm rounded-2xl p-8 border border-slate-700/50 hover:border-slate-600/50 transition-all duration-200 group">
-            <div class="bg-gradient-to-br from-blue-500 to-blue-600 w-16 h-16 rounded-xl flex items-center justify-center mb-6 group-hover:scale-110 transition-transform duration-200">
-              <svg class="w-8 h-8 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"></path>
-              </svg>
-            </div>
-            <h3 class="text-xl font-bold text-white mb-4">Realistic AI Opponents</h3>
-            <p class="text-slate-300 leading-relaxed">
-              Draft against AI trained on real 17lands data with human-like pick patterns, signal reading, and varying skill levels from Bronze to Mythic.
-            </p>
+      <!-- Fan Controls (for testing) -->
+      <div class="mb-8 bg-slate-800/50 backdrop-blur-sm rounded-xl p-4 border border-slate-700/50 space-y-4">
+        <div>
+          <label class="text-white text-sm font-medium mb-2 block">Card Fan Radius</label>
+          <input 
+            type="range" 
+            id="fanRadius" 
+            min="40" 
+            max="150" 
+            value="70" 
+            class="w-full h-2 bg-slate-700 rounded-lg appearance-none cursor-pointer"
+          />
+          <div class="flex justify-between text-slate-400 text-xs mt-1">
+            <span>Tight</span>
+            <span id="radiusValue" class="text-white font-medium">70px</span>
+            <span>Wide</span>
           </div>
-          <div class="bg-slate-800/50 backdrop-blur-sm rounded-2xl p-8 border border-slate-700/50 hover:border-slate-600/50 transition-all duration-200 group">
-            <div class="bg-gradient-to-br from-green-500 to-green-600 w-16 h-16 rounded-xl flex items-center justify-center mb-6 group-hover:scale-110 transition-transform duration-200">
-              <svg class="w-8 h-8 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"></path>
-              </svg>
-            </div>
-            <h3 class="text-xl font-bold text-white mb-4">Immediate Playtesting</h3>
-            <p class="text-slate-300 leading-relaxed">
-              Test your deck instantly with streamlined goldfishing. No setup time, no rules engine complexity - just pure strategic validation and rapid iteration.
-            </p>
+        </div>
+        
+        <div>
+          <label class="text-white text-sm font-medium mb-2 block">Card Vertical Position</label>
+          <input 
+            type="range" 
+            id="cardPosition" 
+            min="-20" 
+            max="40" 
+            value="37" 
+            class="w-full h-2 bg-slate-700 rounded-lg appearance-none cursor-pointer"
+          />
+          <div class="flex justify-between text-slate-400 text-xs mt-1">
+            <span>Higher</span>
+            <span id="positionValue" class="text-white font-medium">37px</span>
+            <span>Lower</span>
           </div>
-          <div class="bg-slate-800/50 backdrop-blur-sm rounded-2xl p-8 border border-slate-700/50 hover:border-slate-600/50 transition-all duration-200 group">
-            <div class="bg-gradient-to-br from-purple-500 to-purple-600 w-16 h-16 rounded-xl flex items-center justify-center mb-6 group-hover:scale-110 transition-transform duration-200">
-              <svg class="w-8 h-8 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path>
-              </svg>
-            </div>
-            <h3 class="text-xl font-bold text-white mb-4">Accelerated Learning</h3>
-            <p class="text-slate-300 leading-relaxed">
-              Get visual feedback on picks, mana curves, and synergies. Identify patterns, test hypotheses, and improve faster than traditional drafting methods.
-            </p>
+        </div>
+        
+        <div>
+          <label class="text-white text-sm font-medium mb-2 block">Card Horizontal Position</label>
+          <input 
+            type="range" 
+            id="cardHorizontal" 
+            min="-80" 
+            max="40" 
+            value="-50" 
+            class="w-full h-2 bg-slate-700 rounded-lg appearance-none cursor-pointer"
+          />
+          <div class="flex justify-between text-slate-400 text-xs mt-1">
+            <span>Left</span>
+            <span id="horizontalValue" class="text-white font-medium">-50px</span>
+            <span>Right</span>
           </div>
         </div>
       </div>
-    </section>
 
-    <!-- Getting Started -->
-    <section class="py-20 px-6">
-      <div class="max-w-7xl mx-auto">
-        <div class="bg-gradient-to-br from-slate-800/80 to-slate-900/80 backdrop-blur-sm rounded-3xl p-12 border border-slate-700/50">
-          <h2 class="text-3xl font-bold text-white mb-12 text-center">How It Works</h2>
-          <div class="grid md:grid-cols-4 gap-8">
-            <div class="text-center group">
-              <div class="bg-gradient-to-br from-blue-500 to-blue-600 rounded-2xl w-20 h-20 flex items-center justify-center mx-auto mb-6 group-hover:scale-110 transition-transform duration-200">
-                <span class="text-white font-bold text-2xl">1</span>
+      <!-- Draft Selection Grid -->
+      <div class="grid md:grid-cols-2 gap-8">
+        <!-- Final Fantasy Draft -->
+        <a 
+          href="/draft/new?set=FIN&autostart=true"
+          class="group relative overflow-hidden rounded-3xl bg-gradient-to-br from-purple-600/20 to-blue-600/20 backdrop-blur-sm border border-purple-500/30 hover:border-purple-400/50 transition-all duration-300 hover:scale-105 hover:shadow-2xl hover:shadow-purple-500/20 min-h-[200px]"
+        >
+          <div class="relative p-8 lg:p-12 h-full flex flex-col justify-between">
+            <!-- Fanned out cards (positioned absolutely behind content) -->
+            <div class="absolute inset-0 flex items-center justify-center pointer-events-none">
+              <div class="fin-cards relative" style="width: 120px; height: 32px;">
+                <!-- Tifa Card (left) -->
+                <div class="card-fan absolute bottom-0 left-1/2 -translate-x-1/2 w-24 h-32 transition-all duration-300 opacity-80">
+                  <img 
+                    src="https://cards.scryfall.io/normal/front/f/b/fb781323-2746-405d-a9b2-e778c037a6e9.jpg?1748706535" 
+                    alt="Tifa Lockhart"
+                    class="w-full h-full object-cover rounded-lg shadow-xl"
+                  />
+                </div>
+                <!-- Vivi Card (center) -->
+                <div class="card-fan absolute bottom-0 left-1/2 -translate-x-1/2 w-24 h-32 z-10 transition-all duration-300 opacity-80">
+                  <img 
+                    src="https://cards.scryfall.io/normal/front/e/c/ecc1027a-8c07-44a0-bdde-fa2844cff694.jpg?1748706721" 
+                    alt="Vivi Ornitier"
+                    class="w-full h-full object-cover rounded-lg shadow-xl"
+                  />
+                </div>
+                <!-- Sephiroth Card (right) -->
+                <div class="card-fan absolute bottom-0 left-1/2 -translate-x-1/2 w-24 h-32 transition-all duration-300 opacity-80">
+                  <img 
+                    src="https://cards.scryfall.io/normal/front/8/5/85eaf5e7-77dc-4842-a70c-ce4ac7f724df.jpg?1748707811" 
+                    alt="Sephiroth"
+                    class="w-full h-full object-cover rounded-lg shadow-xl"
+                  />
+                </div>
               </div>
-              <h4 class="font-bold text-white mb-3 text-lg">Choose Set</h4>
-              <p class="text-slate-300 leading-relaxed">Select from current MTG sets with full card data and proper rarity distributions</p>
             </div>
-            <div class="text-center group">
-              <div class="bg-gradient-to-br from-green-500 to-green-600 rounded-2xl w-20 h-20 flex items-center justify-center mx-auto mb-6 group-hover:scale-110 transition-transform duration-200">
-                <span class="text-white font-bold text-2xl">2</span>
+
+            <!-- Content (above cards) -->
+            <div class="relative z-20 text-center mt-auto">
+              <div class="bg-black/50 backdrop-blur-sm rounded-full px-6 py-3 mx-auto inline-flex items-center gap-3">
+                <span class="text-purple-300 text-sm">FIN</span>
+                <h2 class="text-xl font-bold text-white">Final Fantasy</h2>
+                <span class="text-white">→</span>
               </div>
-              <h4 class="font-bold text-white mb-3 text-lg">Draft Packs</h4>
-              <p class="text-slate-300 leading-relaxed">Pick cards against 7 AI opponents through 3 rounds with realistic passing patterns</p>
-            </div>
-            <div class="text-center group">
-              <div class="bg-gradient-to-br from-purple-500 to-purple-600 rounded-2xl w-20 h-20 flex items-center justify-center mx-auto mb-6 group-hover:scale-110 transition-transform duration-200">
-                <span class="text-white font-bold text-2xl">3</span>
-              </div>
-              <h4 class="font-bold text-white mb-3 text-lg">Build Deck</h4>
-              <p class="text-slate-300 leading-relaxed">Construct your 40-card deck with real-time mana curve and synergy feedback</p>
-            </div>
-            <div class="text-center group">
-              <div class="bg-gradient-to-br from-orange-500 to-orange-600 rounded-2xl w-20 h-20 flex items-center justify-center mx-auto mb-6 group-hover:scale-110 transition-transform duration-200">
-                <span class="text-white font-bold text-2xl">4</span>
-              </div>
-              <h4 class="font-bold text-white mb-3 text-lg">Playtest</h4>
-              <p class="text-slate-300 leading-relaxed">Goldfish immediately to validate picks, test curves, and iterate rapidly</p>
             </div>
           </div>
-        </div>
-      </div>
-    </section>
+          
+          <!-- Decorative gradient -->
+          <div class="absolute inset-0 bg-gradient-to-br from-purple-600/0 via-purple-600/0 to-purple-600/20 opacity-0 group-hover:opacity-100 transition-opacity duration-300 pointer-events-none"></div>
+        </a>
 
-    <!-- Draft Dashboard -->
-    <section class="py-20 px-6">
-      <div class="max-w-7xl mx-auto">
-        <h2 class="text-3xl font-bold text-white mb-12 text-center">Your Recent Drafts</h2>
-        <DraftDashboard client:load />
+        <!-- Tarkir: Dragonstorm Draft -->
+        <a 
+          href="/draft/new?set=TDM&autostart=true"
+          class="group relative overflow-hidden rounded-3xl bg-gradient-to-br from-red-600/20 to-orange-600/20 backdrop-blur-sm border border-red-500/30 hover:border-red-400/50 transition-all duration-300 hover:scale-105 hover:shadow-2xl hover:shadow-red-500/20 min-h-[200px]"
+        >
+          <div class="relative p-8 lg:p-12 h-full flex flex-col justify-between">
+            <!-- Fanned out cards (positioned absolutely behind content) -->
+            <div class="absolute inset-0 flex items-center justify-center pointer-events-none">
+              <div class="tdm-cards relative" style="width: 120px; height: 32px;">
+                <!-- Ugin Card (left) -->
+                <div class="card-fan absolute bottom-0 left-1/2 -translate-x-1/2 w-24 h-32 transition-all duration-300 opacity-80">
+                  <img 
+                    src="https://cards.scryfall.io/normal/front/6/4/64a5d494-efa1-446b-bebe-2ad36e154376.jpg?1744102946" 
+                    alt="Ugin, Eye of the Storms"
+                    class="w-full h-full object-cover rounded-lg shadow-xl"
+                  />
+                </div>
+                <!-- Sarkhan Card (center) -->
+                <div class="card-fan absolute bottom-0 left-1/2 -translate-x-1/2 w-24 h-32 z-10 transition-all duration-300 opacity-80">
+                  <img 
+                    src="https://cards.scryfall.io/normal/front/c/2/c2200646-7b7c-489d-bbae-16b03e1d7fb2.jpg?1743204437" 
+                    alt="Sarkhan, Dragon Ascendant"
+                    class="w-full h-full object-cover rounded-lg shadow-xl"
+                  />
+                </div>
+                <!-- Breaching Dragonstorm (right) -->
+                <div class="card-fan absolute bottom-0 left-1/2 -translate-x-1/2 w-24 h-32 transition-all duration-300 opacity-80">
+                  <img 
+                    src="https://cards.scryfall.io/normal/front/e/2/e2c2a069-7553-4879-abfb-b2aa3349e4b8.jpg?1743204368" 
+                    alt="Breaching Dragonstorm"
+                    class="w-full h-full object-cover rounded-lg shadow-xl"
+                  />
+                </div>
+              </div>
+            </div>
+
+            <!-- Content (above cards) -->
+            <div class="relative z-20 text-center mt-auto">
+              <div class="bg-black/50 backdrop-blur-sm rounded-full px-6 py-3 mx-auto inline-flex items-center gap-3">
+                <span class="text-red-300 text-sm">TDM</span>
+                <h2 class="text-xl font-bold text-white">Tarkir: Dragonstorm</h2>
+                <span class="text-white">→</span>
+              </div>
+            </div>
+          </div>
+          
+          <!-- Decorative gradient -->
+          <div class="absolute inset-0 bg-gradient-to-br from-red-600/0 via-red-600/0 to-red-600/20 opacity-0 group-hover:opacity-100 transition-opacity duration-300 pointer-events-none"></div>
+        </a>
       </div>
-    </section>
+
+      <!-- Secondary Actions -->
+      <div class="mt-12 text-center">
+        <a 
+          href="/draft" 
+          class="text-slate-400 hover:text-white transition-colors"
+        >
+          View saved drafts →
+        </a>
+      </div>
+    </div>
   </main>
+
+  <style>
+    /* Card fan positioning */
+    .card-fan {
+      transform-origin: bottom center;
+    }
+
+    /* Default fan positions */
+    .fin-cards .card-fan:nth-child(1),
+    .tdm-cards .card-fan:nth-child(1) {
+      transform: rotate(-15deg) translateX(-30px);
+    }
+
+    .fin-cards .card-fan:nth-child(2),
+    .tdm-cards .card-fan:nth-child(2) {
+      transform: rotate(0deg) translateX(0);
+    }
+
+    .fin-cards .card-fan:nth-child(3),
+    .tdm-cards .card-fan:nth-child(3) {
+      transform: rotate(15deg) translateX(30px);
+    }
+
+    /* Group hover effect - cards flare up slightly */
+    .group:hover .card-fan {
+      transform: rotate(var(--rotate)) translateX(var(--translate-x)) translateY(-8px) scale(1.05);
+      filter: brightness(1.1);
+    }
+
+    .group:hover .fin-cards .card-fan:nth-child(1),
+    .group:hover .tdm-cards .card-fan:nth-child(1) {
+      --rotate: -18deg;
+      --translate-x: -35px;
+    }
+
+    .group:hover .fin-cards .card-fan:nth-child(2),
+    .group:hover .tdm-cards .card-fan:nth-child(2) {
+      --rotate: 0deg;
+      --translate-x: 0;
+    }
+
+    .group:hover .fin-cards .card-fan:nth-child(3),
+    .group:hover .tdm-cards .card-fan:nth-child(3) {
+      --rotate: 18deg;
+      --translate-x: 35px;
+    }
+
+    /* Custom slider styles */
+    input[type="range"]::-webkit-slider-thumb {
+      appearance: none;
+      width: 16px;
+      height: 16px;
+      background: white;
+      cursor: pointer;
+      border-radius: 50%;
+    }
+
+    input[type="range"]::-moz-range-thumb {
+      width: 16px;
+      height: 16px;
+      background: white;
+      cursor: pointer;
+      border-radius: 50%;
+      border: none;
+    }
+  </style>
+
+  <script>
+    // Fan adjustment logic
+    const radiusSlider = document.getElementById('fanRadius') as HTMLInputElement;
+    const radiusValue = document.getElementById('radiusValue') as HTMLSpanElement;
+    const positionSlider = document.getElementById('cardPosition') as HTMLInputElement;
+    const positionValue = document.getElementById('positionValue') as HTMLSpanElement;
+    const horizontalSlider = document.getElementById('cardHorizontal') as HTMLInputElement;
+    const horizontalValue = document.getElementById('horizontalValue') as HTMLSpanElement;
+    const finCards = document.querySelectorAll('.fin-cards .card-fan') as NodeListOf<HTMLElement>;
+    const tdmCards = document.querySelectorAll('.tdm-cards .card-fan') as NodeListOf<HTMLElement>;
+    const finContainer = document.querySelector('.fin-cards') as HTMLElement;
+    const tdmContainer = document.querySelector('.tdm-cards') as HTMLElement;
+
+    function updateFanDisplay(radius: number, verticalOffset: number, horizontalOffset: number) {
+      radiusValue.textContent = `${radius}px`;
+      positionValue.textContent = `${verticalOffset}px`;
+      horizontalValue.textContent = `${horizontalOffset}px`;
+      
+      // Update container position
+      if (finContainer) {
+        finContainer.style.transform = `translate(${horizontalOffset}px, ${verticalOffset}px)`;
+      }
+      if (tdmContainer) {
+        tdmContainer.style.transform = `translate(${horizontalOffset}px, ${verticalOffset}px)`;
+      }
+      
+      // Scale angle based on radius - wider radius = more angle
+      const baseAngleStep = 15; // minimum angle between cards
+      const maxAngleStep = 45; // maximum angle between cards
+      const radiusRatio = (radius - 40) / (150 - 40); // normalize radius to 0-1
+      const angleStep = baseAngleStep + (maxAngleStep - baseAngleStep) * radiusRatio;
+      const baseAngle = -angleStep; // starting angle
+      
+      // Update FIN cards
+      finCards.forEach((card, index) => {
+        const angle = baseAngle + (index * angleStep);
+        const translateX = Math.sin(angle * Math.PI / 180) * radius;
+        const rotate = angle;
+        
+        card.style.setProperty('--rotate', `${rotate}deg`);
+        card.style.setProperty('--translate-x', `${translateX}px`);
+        card.style.transform = `rotate(${rotate}deg) translateX(${translateX}px)`;
+      });
+
+      // Update TDM cards
+      tdmCards.forEach((card, index) => {
+        const angle = baseAngle + (index * angleStep);
+        const translateX = Math.sin(angle * Math.PI / 180) * radius;
+        const rotate = angle;
+        
+        card.style.setProperty('--rotate', `${rotate}deg`);
+        card.style.setProperty('--translate-x', `${translateX}px`);
+        card.style.transform = `rotate(${rotate}deg) translateX(${translateX}px)`;
+      });
+    }
+
+    radiusSlider.addEventListener('input', (e) => {
+      const radius = parseInt((e.target as HTMLInputElement).value);
+      const position = parseInt(positionSlider.value);
+      const horizontal = parseInt(horizontalSlider.value);
+      updateFanDisplay(radius, position, horizontal);
+    });
+
+    positionSlider.addEventListener('input', (e) => {
+      const position = parseInt((e.target as HTMLInputElement).value);
+      const radius = parseInt(radiusSlider.value);
+      const horizontal = parseInt(horizontalSlider.value);
+      updateFanDisplay(radius, position, horizontal);
+    });
+
+    horizontalSlider.addEventListener('input', (e) => {
+      const horizontal = parseInt((e.target as HTMLInputElement).value);
+      const radius = parseInt(radiusSlider.value);
+      const position = parseInt(positionSlider.value);
+      updateFanDisplay(radius, position, horizontal);
+    });
+
+    // Initialize with default values
+    updateFanDisplay(70, 37, -50);
+  </script>
 </Layout>
