@@ -6,11 +6,25 @@
  */
 
 import Layout from '../../layouts/Layout.astro';
+import { DraftEngine } from '../../lib/engine/DraftEngine';
+import { LocalStorageAdapter } from '../../lib/engine/storage/LocalStorageAdapter';
 
 // Get URL parameters
 const url = new URL(Astro.request.url);
 const setCode = url.searchParams.get('set');
 const autostart = url.searchParams.get('autostart') === 'true';
+
+// Handle autostart on server side
+if (autostart && setCode) {
+  // Generate a draft ID seed
+  const seed = Date.now().toString();
+  
+  // Create the URL for the new draft
+  const draftUrl = `/draft/create?seed=${seed}&set=${setCode}&autostart=true`;
+  
+  // Redirect to create the draft
+  return Astro.redirect(draftUrl, 302);
+}
 ---
 
 <Layout title="FlashDraft - New Draft">

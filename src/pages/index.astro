@@ -20,48 +20,105 @@ const createDraft = (setCode: string) => {
         <p class="text-xl text-slate-300">Choose your draft format</p>
       </div>
 
+      <!-- Fan Controls (for testing) -->
+      <div class="mb-8 bg-slate-800/50 backdrop-blur-sm rounded-xl p-4 border border-slate-700/50 space-y-4">
+        <div>
+          <label class="text-white text-sm font-medium mb-2 block">Card Fan Radius</label>
+          <input 
+            type="range" 
+            id="fanRadius" 
+            min="40" 
+            max="150" 
+            value="80" 
+            class="w-full h-2 bg-slate-700 rounded-lg appearance-none cursor-pointer"
+          />
+          <div class="flex justify-between text-slate-400 text-xs mt-1">
+            <span>Tight</span>
+            <span id="radiusValue" class="text-white font-medium">80px</span>
+            <span>Wide</span>
+          </div>
+        </div>
+        
+        <div>
+          <label class="text-white text-sm font-medium mb-2 block">Card Vertical Position</label>
+          <input 
+            type="range" 
+            id="cardPosition" 
+            min="-20" 
+            max="40" 
+            value="0" 
+            class="w-full h-2 bg-slate-700 rounded-lg appearance-none cursor-pointer"
+          />
+          <div class="flex justify-between text-slate-400 text-xs mt-1">
+            <span>Higher</span>
+            <span id="positionValue" class="text-white font-medium">0px</span>
+            <span>Lower</span>
+          </div>
+        </div>
+        
+        <div>
+          <label class="text-white text-sm font-medium mb-2 block">Card Horizontal Position</label>
+          <input 
+            type="range" 
+            id="cardHorizontal" 
+            min="-40" 
+            max="40" 
+            value="-20" 
+            class="w-full h-2 bg-slate-700 rounded-lg appearance-none cursor-pointer"
+          />
+          <div class="flex justify-between text-slate-400 text-xs mt-1">
+            <span>Left</span>
+            <span id="horizontalValue" class="text-white font-medium">-20px</span>
+            <span>Right</span>
+          </div>
+        </div>
+      </div>
+
       <!-- Draft Selection Grid -->
       <div class="grid md:grid-cols-2 gap-8">
         <!-- Final Fantasy Draft -->
         <a 
           href="/draft/new?set=FIN&autostart=true"
-          class="group relative overflow-hidden rounded-3xl bg-gradient-to-br from-purple-600/20 to-blue-600/20 backdrop-blur-sm border border-purple-500/30 hover:border-purple-400/50 transition-all duration-300 hover:scale-105 hover:shadow-2xl hover:shadow-purple-500/20"
+          class="group relative overflow-hidden rounded-3xl bg-gradient-to-br from-purple-600/20 to-blue-600/20 backdrop-blur-sm border border-purple-500/30 hover:border-purple-400/50 transition-all duration-300 hover:scale-105 hover:shadow-2xl hover:shadow-purple-500/20 min-h-[200px]"
         >
-          <div class="p-8 lg:p-12">
-            <!-- Fanned out cards -->
-            <div class="relative h-40 mb-6">
-              <!-- Vivi Card (left) -->
-              <div class="absolute left-0 top-0 w-28 h-36 transform -rotate-12 hover:rotate-0 transition-transform duration-300">
-                <img 
-                  src="https://cards.scryfall.io/normal/front/e/c/ecc1027a-8c07-44a0-bdde-fa2844cff694.jpg?1748706721" 
-                  alt="Vivi Ornitier"
-                  class="w-full h-full object-cover rounded-lg shadow-xl"
-                />
-              </div>
-              <!-- Tifa Card (center) -->
-              <div class="absolute left-1/2 top-0 -translate-x-1/2 w-28 h-36 z-10 hover:scale-110 transition-transform duration-300">
-                <img 
-                  src="https://cards.scryfall.io/normal/front/f/b/fb781323-2746-405d-a9b2-e778c037a6e9.jpg?1748706535" 
-                  alt="Tifa Lockhart"
-                  class="w-full h-full object-cover rounded-lg shadow-xl"
-                />
-              </div>
-              <!-- Sephiroth Card (right) -->
-              <div class="absolute right-0 top-0 w-28 h-36 transform rotate-12 hover:rotate-0 transition-transform duration-300">
-                <img 
-                  src="https://cards.scryfall.io/normal/front/8/5/85eaf5e7-77dc-4842-a70c-ce4ac7f724df.jpg?1748707811" 
-                  alt="Sephiroth"
-                  class="w-full h-full object-cover rounded-lg shadow-xl"
-                />
+          <div class="relative p-8 lg:p-12 h-full flex flex-col justify-between">
+            <!-- Fanned out cards (positioned absolutely behind content) -->
+            <div class="absolute inset-0 flex items-center justify-center pointer-events-none">
+              <div class="fin-cards relative" style="width: 120px; height: 32px;">
+                <!-- Tifa Card (left) -->
+                <div class="card-fan absolute bottom-0 left-1/2 -translate-x-1/2 w-24 h-32 transition-all duration-300 opacity-80">
+                  <img 
+                    src="https://cards.scryfall.io/normal/front/f/b/fb781323-2746-405d-a9b2-e778c037a6e9.jpg?1748706535" 
+                    alt="Tifa Lockhart"
+                    class="w-full h-full object-cover rounded-lg shadow-xl"
+                  />
+                </div>
+                <!-- Vivi Card (center) -->
+                <div class="card-fan absolute bottom-0 left-1/2 -translate-x-1/2 w-24 h-32 z-10 transition-all duration-300 opacity-80">
+                  <img 
+                    src="https://cards.scryfall.io/normal/front/e/c/ecc1027a-8c07-44a0-bdde-fa2844cff694.jpg?1748706721" 
+                    alt="Vivi Ornitier"
+                    class="w-full h-full object-cover rounded-lg shadow-xl"
+                  />
+                </div>
+                <!-- Sephiroth Card (right) -->
+                <div class="card-fan absolute bottom-0 left-1/2 -translate-x-1/2 w-24 h-32 transition-all duration-300 opacity-80">
+                  <img 
+                    src="https://cards.scryfall.io/normal/front/8/5/85eaf5e7-77dc-4842-a70c-ce4ac7f724df.jpg?1748707811" 
+                    alt="Sephiroth"
+                    class="w-full h-full object-cover rounded-lg shadow-xl"
+                  />
+                </div>
               </div>
             </div>
 
-            <div class="text-center">
-              <h2 class="text-3xl font-bold text-white mb-2">Final Fantasy</h2>
-              <p class="text-purple-300">FIN • Final Fantasy</p>
+            <!-- Content (above cards) -->
+            <div class="relative z-20 text-center mt-auto">
+              <h2 class="text-3xl font-bold text-white mb-2 drop-shadow-lg">Final Fantasy</h2>
+              <p class="text-purple-300 drop-shadow-lg">FIN • Final Fantasy</p>
               
               <div class="flex items-center justify-center gap-2 text-white mt-4">
-                <span class="text-lg font-medium">Start Draft</span>
+                <span class="text-lg font-medium drop-shadow-lg">Start Draft</span>
                 <svg class="w-5 h-5 transition-transform group-hover:translate-x-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 7l5 5m0 0l-5 5m5-5H6"></path>
                 </svg>
@@ -76,43 +133,46 @@ const createDraft = (setCode: string) => {
         <!-- Tarkir: Dragonstorm Draft -->
         <a 
           href="/draft/new?set=TDM&autostart=true"
-          class="group relative overflow-hidden rounded-3xl bg-gradient-to-br from-red-600/20 to-orange-600/20 backdrop-blur-sm border border-red-500/30 hover:border-red-400/50 transition-all duration-300 hover:scale-105 hover:shadow-2xl hover:shadow-red-500/20"
+          class="group relative overflow-hidden rounded-3xl bg-gradient-to-br from-red-600/20 to-orange-600/20 backdrop-blur-sm border border-red-500/30 hover:border-red-400/50 transition-all duration-300 hover:scale-105 hover:shadow-2xl hover:shadow-red-500/20 min-h-[200px]"
         >
-          <div class="p-8 lg:p-12">
-            <!-- Fanned out cards -->
-            <div class="relative h-40 mb-6">
-              <!-- Ugin Card (left) -->
-              <div class="absolute left-0 top-0 w-28 h-36 transform -rotate-12 hover:rotate-0 transition-transform duration-300">
-                <img 
-                  src="https://cards.scryfall.io/normal/front/6/4/64a5d494-efa1-446b-bebe-2ad36e154376.jpg?1744102946" 
-                  alt="Ugin, Eye of the Storms"
-                  class="w-full h-full object-cover rounded-lg shadow-xl"
-                />
-              </div>
-              <!-- Sarkhan Card (center) -->
-              <div class="absolute left-1/2 top-0 -translate-x-1/2 w-28 h-36 z-10 hover:scale-110 transition-transform duration-300">
-                <img 
-                  src="https://cards.scryfall.io/normal/front/c/2/c2200646-7b7c-489d-bbae-16b03e1d7fb2.jpg?1743204437" 
-                  alt="Sarkhan, Dragon Ascendant"
-                  class="w-full h-full object-cover rounded-lg shadow-xl"
-                />
-              </div>
-              <!-- Dragonstorm Forecaster (right) -->
-              <div class="absolute right-0 top-0 w-28 h-36 transform rotate-12 hover:rotate-0 transition-transform duration-300">
-                <img 
-                  src="https://cards.scryfall.io/normal/front/6/0/6035e2e6-6d77-4bc0-a2fe-d88e1bdd3c70.jpg?1743204252" 
-                  alt="Dragonstorm Forecaster"
-                  class="w-full h-full object-cover rounded-lg shadow-xl"
-                />
+          <div class="relative p-8 lg:p-12 h-full flex flex-col justify-between">
+            <!-- Fanned out cards (positioned absolutely behind content) -->
+            <div class="absolute inset-0 flex items-center justify-center pointer-events-none">
+              <div class="tdm-cards relative" style="width: 120px; height: 32px;">
+                <!-- Ugin Card (left) -->
+                <div class="card-fan absolute bottom-0 left-1/2 -translate-x-1/2 w-24 h-32 transition-all duration-300 opacity-80">
+                  <img 
+                    src="https://cards.scryfall.io/normal/front/6/4/64a5d494-efa1-446b-bebe-2ad36e154376.jpg?1744102946" 
+                    alt="Ugin, Eye of the Storms"
+                    class="w-full h-full object-cover rounded-lg shadow-xl"
+                  />
+                </div>
+                <!-- Sarkhan Card (center) -->
+                <div class="card-fan absolute bottom-0 left-1/2 -translate-x-1/2 w-24 h-32 z-10 transition-all duration-300 opacity-80">
+                  <img 
+                    src="https://cards.scryfall.io/normal/front/c/2/c2200646-7b7c-489d-bbae-16b03e1d7fb2.jpg?1743204437" 
+                    alt="Sarkhan, Dragon Ascendant"
+                    class="w-full h-full object-cover rounded-lg shadow-xl"
+                  />
+                </div>
+                <!-- Breaching Dragonstorm (right) -->
+                <div class="card-fan absolute bottom-0 left-1/2 -translate-x-1/2 w-24 h-32 transition-all duration-300 opacity-80">
+                  <img 
+                    src="https://cards.scryfall.io/normal/front/e/2/e2c2a069-7553-4879-abfb-b2aa3349e4b8.jpg?1743204368" 
+                    alt="Breaching Dragonstorm"
+                    class="w-full h-full object-cover rounded-lg shadow-xl"
+                  />
+                </div>
               </div>
             </div>
 
-            <div class="text-center">
-              <h2 class="text-3xl font-bold text-white mb-2">Tarkir: Dragonstorm</h2>
-              <p class="text-red-300">TDM • Tarkir Block</p>
+            <!-- Content (above cards) -->
+            <div class="relative z-20 text-center mt-auto">
+              <h2 class="text-3xl font-bold text-white mb-2 drop-shadow-lg">Tarkir: Dragonstorm</h2>
+              <p class="text-red-300 drop-shadow-lg">TDM • Tarkir Block</p>
               
               <div class="flex items-center justify-center gap-2 text-white mt-4">
-                <span class="text-lg font-medium">Start Draft</span>
+                <span class="text-lg font-medium drop-shadow-lg">Start Draft</span>
                 <svg class="w-5 h-5 transition-transform group-hover:translate-x-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 7l5 5m0 0l-5 5m5-5H6"></path>
                 </svg>
@@ -136,4 +196,151 @@ const createDraft = (setCode: string) => {
       </div>
     </div>
   </main>
+
+  <style>
+    /* Card fan positioning */
+    .card-fan {
+      transform-origin: bottom center;
+    }
+
+    /* Default fan positions */
+    .fin-cards .card-fan:nth-child(1),
+    .tdm-cards .card-fan:nth-child(1) {
+      transform: rotate(-15deg) translateX(-30px);
+    }
+
+    .fin-cards .card-fan:nth-child(2),
+    .tdm-cards .card-fan:nth-child(2) {
+      transform: rotate(0deg) translateX(0);
+    }
+
+    .fin-cards .card-fan:nth-child(3),
+    .tdm-cards .card-fan:nth-child(3) {
+      transform: rotate(15deg) translateX(30px);
+    }
+
+    /* Group hover effect - cards flare up slightly */
+    .group:hover .card-fan {
+      transform: rotate(var(--rotate)) translateX(var(--translate-x)) translateY(-8px) scale(1.05);
+      filter: brightness(1.1);
+    }
+
+    .group:hover .fin-cards .card-fan:nth-child(1),
+    .group:hover .tdm-cards .card-fan:nth-child(1) {
+      --rotate: -18deg;
+      --translate-x: -35px;
+    }
+
+    .group:hover .fin-cards .card-fan:nth-child(2),
+    .group:hover .tdm-cards .card-fan:nth-child(2) {
+      --rotate: 0deg;
+      --translate-x: 0;
+    }
+
+    .group:hover .fin-cards .card-fan:nth-child(3),
+    .group:hover .tdm-cards .card-fan:nth-child(3) {
+      --rotate: 18deg;
+      --translate-x: 35px;
+    }
+
+    /* Custom slider styles */
+    input[type="range"]::-webkit-slider-thumb {
+      appearance: none;
+      width: 16px;
+      height: 16px;
+      background: white;
+      cursor: pointer;
+      border-radius: 50%;
+    }
+
+    input[type="range"]::-moz-range-thumb {
+      width: 16px;
+      height: 16px;
+      background: white;
+      cursor: pointer;
+      border-radius: 50%;
+      border: none;
+    }
+  </style>
+
+  <script>
+    // Fan adjustment logic
+    const radiusSlider = document.getElementById('fanRadius') as HTMLInputElement;
+    const radiusValue = document.getElementById('radiusValue') as HTMLSpanElement;
+    const positionSlider = document.getElementById('cardPosition') as HTMLInputElement;
+    const positionValue = document.getElementById('positionValue') as HTMLSpanElement;
+    const horizontalSlider = document.getElementById('cardHorizontal') as HTMLInputElement;
+    const horizontalValue = document.getElementById('horizontalValue') as HTMLSpanElement;
+    const finCards = document.querySelectorAll('.fin-cards .card-fan') as NodeListOf<HTMLElement>;
+    const tdmCards = document.querySelectorAll('.tdm-cards .card-fan') as NodeListOf<HTMLElement>;
+    const finContainer = document.querySelector('.fin-cards') as HTMLElement;
+    const tdmContainer = document.querySelector('.tdm-cards') as HTMLElement;
+
+    function updateFanDisplay(radius: number, verticalOffset: number, horizontalOffset: number) {
+      radiusValue.textContent = `${radius}px`;
+      positionValue.textContent = `${verticalOffset}px`;
+      horizontalValue.textContent = `${horizontalOffset}px`;
+      
+      // Update container position
+      if (finContainer) {
+        finContainer.style.transform = `translate(${horizontalOffset}px, ${verticalOffset}px)`;
+      }
+      if (tdmContainer) {
+        tdmContainer.style.transform = `translate(${horizontalOffset}px, ${verticalOffset}px)`;
+      }
+      
+      // Scale angle based on radius - wider radius = more angle
+      const baseAngleStep = 15; // minimum angle between cards
+      const maxAngleStep = 45; // maximum angle between cards
+      const radiusRatio = (radius - 40) / (150 - 40); // normalize radius to 0-1
+      const angleStep = baseAngleStep + (maxAngleStep - baseAngleStep) * radiusRatio;
+      const baseAngle = -angleStep; // starting angle
+      
+      // Update FIN cards
+      finCards.forEach((card, index) => {
+        const angle = baseAngle + (index * angleStep);
+        const translateX = Math.sin(angle * Math.PI / 180) * radius;
+        const rotate = angle;
+        
+        card.style.setProperty('--rotate', `${rotate}deg`);
+        card.style.setProperty('--translate-x', `${translateX}px`);
+        card.style.transform = `rotate(${rotate}deg) translateX(${translateX}px)`;
+      });
+
+      // Update TDM cards
+      tdmCards.forEach((card, index) => {
+        const angle = baseAngle + (index * angleStep);
+        const translateX = Math.sin(angle * Math.PI / 180) * radius;
+        const rotate = angle;
+        
+        card.style.setProperty('--rotate', `${rotate}deg`);
+        card.style.setProperty('--translate-x', `${translateX}px`);
+        card.style.transform = `rotate(${rotate}deg) translateX(${translateX}px)`;
+      });
+    }
+
+    radiusSlider.addEventListener('input', (e) => {
+      const radius = parseInt((e.target as HTMLInputElement).value);
+      const position = parseInt(positionSlider.value);
+      const horizontal = parseInt(horizontalSlider.value);
+      updateFanDisplay(radius, position, horizontal);
+    });
+
+    positionSlider.addEventListener('input', (e) => {
+      const position = parseInt((e.target as HTMLInputElement).value);
+      const radius = parseInt(radiusSlider.value);
+      const horizontal = parseInt(horizontalSlider.value);
+      updateFanDisplay(radius, position, horizontal);
+    });
+
+    horizontalSlider.addEventListener('input', (e) => {
+      const horizontal = parseInt((e.target as HTMLInputElement).value);
+      const radius = parseInt(radiusSlider.value);
+      const position = parseInt(positionSlider.value);
+      updateFanDisplay(radius, position, horizontal);
+    });
+
+    // Initialize with default values - cards slightly to the left
+    updateFanDisplay(80, 0, -20);
+  </script>
 </Layout>

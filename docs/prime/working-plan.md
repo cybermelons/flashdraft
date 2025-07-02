@@ -7,6 +7,10 @@ for the start draft buttons on the main page, the button should have 3 cards fan
 
 for dragonstorm, choose whatever.
 
+<issue>
+  clicking the start draft from home doesn't take me straight into the draft. it takes me to start new draft page, requiring me to pick the set again. picking from home ssould put me into p1p1
+</issue>
+
 
 # Development Plan: Draft UI Improvements & MTG Goldfishing Mat
 
