@@ -2,10 +2,18 @@
 /**
  * FlashDraft - New Draft Page
  * 
- * Simple page to redirect users to create a new draft.
+ * If a set is provided via URL params, immediately create and redirect.
+ * Otherwise, show set selection UI.
  */
 
 import Layout from '../../layouts/Layout.astro';
+
+// Get URL parameters
+const url = new URL(Astro.request.url);
+const setCode = url.searchParams.get('set');
+
+// If set is provided, we'll auto-create the draft on page load
+const shouldAutoCreate = !!setCode;
 ---
 
 <Layout title="FlashDraft - New Draft">
@@ -124,7 +132,7 @@ import Layout from '../../layouts/Layout.astro';
     </div>
   </main>
 
-  <script>
+  <script define:vars={{ shouldAutoCreate, setCode }}>
     import { draftActions } from '@/stores/draftStore';
     
     async function startDraft(setCode) {
@@ -146,6 +154,12 @@ import Layout from '../../layouts/Layout.astro';
     
     // Make function globally accessible for inline onclick handlers
     window.startDraft = startDraft;
+    
+    // If a set code was provided in URL, auto-create the draft
+    if (shouldAutoCreate && setCode) {
+      // Start draft immediately when page loads
+      startDraft(setCode);
+    }
   </script>
 </Layout>
 
