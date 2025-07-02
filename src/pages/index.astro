@@ -29,12 +29,12 @@ const createDraft = (setCode: string) => {
             id="fanRadius" 
             min="40" 
             max="150" 
-            value="80" 
+            value="70" 
             class="w-full h-2 bg-slate-700 rounded-lg appearance-none cursor-pointer"
           />
           <div class="flex justify-between text-slate-400 text-xs mt-1">
             <span>Tight</span>
-            <span id="radiusValue" class="text-white font-medium">80px</span>
+            <span id="radiusValue" class="text-white font-medium">70px</span>
             <span>Wide</span>
           </div>
         </div>
@@ -46,12 +46,12 @@ const createDraft = (setCode: string) => {
             id="cardPosition" 
             min="-20" 
             max="40" 
-            value="0" 
+            value="37" 
             class="w-full h-2 bg-slate-700 rounded-lg appearance-none cursor-pointer"
           />
           <div class="flex justify-between text-slate-400 text-xs mt-1">
             <span>Higher</span>
-            <span id="positionValue" class="text-white font-medium">0px</span>
+            <span id="positionValue" class="text-white font-medium">37px</span>
             <span>Lower</span>
           </div>
         </div>
@@ -61,14 +61,14 @@ const createDraft = (setCode: string) => {
           <input 
             type="range" 
             id="cardHorizontal" 
-            min="-40" 
+            min="-80" 
             max="40" 
-            value="-20" 
+            value="-50" 
             class="w-full h-2 bg-slate-700 rounded-lg appearance-none cursor-pointer"
           />
           <div class="flex justify-between text-slate-400 text-xs mt-1">
             <span>Left</span>
-            <span id="horizontalValue" class="text-white font-medium">-20px</span>
+            <span id="horizontalValue" class="text-white font-medium">-50px</span>
             <span>Right</span>
           </div>
         </div>
@@ -114,14 +114,10 @@ const createDraft = (setCode: string) => {
 
             <!-- Content (above cards) -->
             <div class="relative z-20 text-center mt-auto">
-              <h2 class="text-3xl font-bold text-white mb-2 drop-shadow-lg">Final Fantasy</h2>
-              <p class="text-purple-300 drop-shadow-lg">FIN • Final Fantasy</p>
-              
-              <div class="flex items-center justify-center gap-2 text-white mt-4">
-                <span class="text-lg font-medium drop-shadow-lg">Start Draft</span>
-                <svg class="w-5 h-5 transition-transform group-hover:translate-x-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 7l5 5m0 0l-5 5m5-5H6"></path>
-                </svg>
+              <div class="bg-black/50 backdrop-blur-sm rounded-full px-6 py-3 mx-auto inline-flex items-center gap-3">
+                <span class="text-purple-300 text-sm">FIN</span>
+                <h2 class="text-xl font-bold text-white">Final Fantasy</h2>
+                <span class="text-white">→</span>
               </div>
             </div>
           </div>
@@ -168,14 +164,10 @@ const createDraft = (setCode: string) => {
 
             <!-- Content (above cards) -->
             <div class="relative z-20 text-center mt-auto">
-              <h2 class="text-3xl font-bold text-white mb-2 drop-shadow-lg">Tarkir: Dragonstorm</h2>
-              <p class="text-red-300 drop-shadow-lg">TDM • Tarkir Block</p>
-              
-              <div class="flex items-center justify-center gap-2 text-white mt-4">
-                <span class="text-lg font-medium drop-shadow-lg">Start Draft</span>
-                <svg class="w-5 h-5 transition-transform group-hover:translate-x-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 7l5 5m0 0l-5 5m5-5H6"></path>
-                </svg>
+              <div class="bg-black/50 backdrop-blur-sm rounded-full px-6 py-3 mx-auto inline-flex items-center gap-3">
+                <span class="text-red-300 text-sm">TDM</span>
+                <h2 class="text-xl font-bold text-white">Tarkir: Dragonstorm</h2>
+                <span class="text-white">→</span>
               </div>
             </div>
           </div>
@@ -340,7 +332,7 @@ const createDraft = (setCode: string) => {
       updateFanDisplay(radius, position, horizontal);
     });
 
-    // Initialize with default values - cards slightly to the left
-    updateFanDisplay(80, 0, -20);
+    // Initialize with default values
+    updateFanDisplay(70, 37, -50);
   </script>
 </Layout>
