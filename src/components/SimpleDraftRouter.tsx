@@ -162,8 +162,8 @@ export function SimpleDraftRouter({ children }: SimpleDraftRouterProps) {
         const setCode = parts[1]; // Assuming format draft_FIN_12345678
         
         if (setCode) {
-          // Create and start the draft
-          await draftActions.createDraft(seed, setCode);
+          // Create and start the draft with the exact draftId from the URL
+          await draftActions.createDraft(seed, setCode, draftId);
           await draftActions.startDraft();
           
           // Clean up URL

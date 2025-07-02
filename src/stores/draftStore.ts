@@ -303,17 +303,18 @@ export const draftActions = {
   /**
    * Create a new draft
    */
-  async createDraft(seed: string, setCode: string): Promise<string> {
+  async createDraft(seed: string, setCode: string, draftId?: string): Promise<string> {
     $isLoading.set(true);
     $error.set(null);
     
     try {
-      const draftId = `draft_${seed}_${Date.now()}`;
+      // Use provided draftId or generate one
+      const finalDraftId = draftId || `draft_${setCode}_${seed}`;
       
       const action: DraftAction = {
         type: 'CREATE_DRAFT',
         payload: {
-          draftId,
+          draftId: finalDraftId,
           seed,
           setCode,
           playerCount: 8,
@@ -324,12 +325,12 @@ export const draftActions = {
       
       const newDraft = draftEngine.applyAction(action);
       
-      $currentDraftId.set(draftId);
+      $currentDraftId.set(finalDraftId);
       $currentDraft.set(newDraft);
       
       // URL will be updated by the router when navigating to the draft
       
-      return draftId;
+      return finalDraftId;
     } catch (error) {
       const message = error instanceof Error ? error.message : 'Failed to create draft';
       $error.set(message);
