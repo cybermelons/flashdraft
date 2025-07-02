@@ -146,11 +146,13 @@ if (autostart && setCode) {
   <script define:vars={{ autostart, setCode }}>
     async function startDraft(setCode) {
       try {
-        // Generate a unique seed
+        // Generate a unique seed and draft ID
         const seed = Date.now().toString();
+        const draftId = `draft_${setCode}_${seed}`;
         
-        // Redirect to the create endpoint with the set and seed
-        window.location.href = `/draft/create?set=${setCode}&seed=${seed}`;
+        // Navigate directly to the draft page with new=true param
+        // The SimpleDraftRouter will create the draft when it sees this param
+        window.location.href = `/draft/${draftId}/p1p1?new=true&seed=${seed}`;
       } catch (error) {
         console.error('Failed to start draft:', error);
         alert('Failed to start draft. Please try again.');
