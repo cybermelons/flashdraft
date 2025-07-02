@@ -12,8 +12,13 @@ import Layout from '../../layouts/Layout.astro';
 const url = new URL(Astro.request.url);
 const setCode = url.searchParams.get('set');
 
-// If set is provided, we'll auto-create the draft on page load
-const shouldAutoCreate = !!setCode;
+// If set is provided, redirect to draft with new parameter
+if (setCode) {
+  const seed = Date.now().toString();
+  const draftId = `draft_${setCode}_${seed}`;
+  // Redirect to the draft URL with new=true so SimpleDraftRouter creates it
+  return Astro.redirect(`/draft/${draftId}/p1p1?new=true&seed=${seed}`, 302);
+}
 ---
 
 <Layout title="FlashDraft - New Draft">
@@ -132,7 +137,7 @@ const shouldAutoCreate = !!setCode;
     </div>
   </main>
 
-  <script define:vars={{ shouldAutoCreate, setCode }}>
+  <script>
     import { draftActions } from '@/stores/draftStore';
     
     async function startDraft(setCode) {
@@ -154,12 +159,6 @@ const shouldAutoCreate = !!setCode;
     
     // Make function globally accessible for inline onclick handlers
     window.startDraft = startDraft;
-    
-    // If a set code was provided in URL, auto-create the draft
-    if (shouldAutoCreate && setCode) {
-      // Start draft immediately when page loads
-      startDraft(setCode);
-    }
   </script>
 </Layout>
 
