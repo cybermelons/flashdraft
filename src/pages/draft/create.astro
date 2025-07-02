@@ -66,17 +66,40 @@ if (!setCode) {
   </div>
 
   <script define:vars={{ seed, setCode, autostart }}>
-    import { draftActions } from '@/stores/draftStore';
-    
+    // Create draft directly in client-side code without imports
     async function createAndStartDraft() {
       try {
-        // Create the draft using the draft engine
-        const draftId = await draftActions.createDraft(seed, setCode);
+        // Generate draft ID
+        const draftId = `draft_${setCode}_${seed}`;
         
-        // Start the draft (generate packs)
-        await draftActions.startDraft();
+        // Create draft data structure
+        const draft = {
+          draftId,
+          setCode,
+          seed,
+          status: 'active',
+          currentRound: 1,
+          currentPick: 1,
+          playerCount: 8,
+          humanPlayerIndex: 0,
+          playerDecks: Array(8).fill(null).map(() => []),
+          pickHistory: [],
+          packs: [],
+          createdAt: new Date().toISOString(),
+          updatedAt: new Date().toISOString()
+        };
         
-        // Navigate to p1p1
+        // Save to localStorage
+        localStorage.setItem(`flashdraft_draft_${draftId}`, JSON.stringify(draft));
+        
+        // Also save to draft list
+        const draftList = JSON.parse(localStorage.getItem('flashdraft_draftList') || '[]');
+        if (!draftList.includes(draftId)) {
+          draftList.unshift(draftId);
+          localStorage.setItem('flashdraft_draftList', JSON.stringify(draftList));
+        }
+        
+        // Navigate to p1p1 - the DraftInterface will handle pack generation
         window.location.href = `/draft/${draftId}/p1p1`;
       } catch (error) {
         console.error('Failed to create draft:', error);
