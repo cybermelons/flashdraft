@@ -151,18 +151,24 @@ export function SimpleDraftRouter({ children }: SimpleDraftRouterProps) {
    */
   const handleDraftLoad = async (draftId: string) => {
     try {
-      // Check if this is a pending draft creation
-      const pendingCreation = sessionStorage.getItem('pendingDraftCreation');
-      if (pendingCreation) {
-        const pending = JSON.parse(pendingCreation);
-        if (pending.draftId === draftId) {
-          // This is a new draft that needs to be created
-          sessionStorage.removeItem('pendingDraftCreation');
-          
-          // Create the draft using the stored parameters
-          await draftActions.createDraft(pending.seed, pending.setCode);
-          // Start the draft to generate packs
+      // Check if this is a new draft from URL params
+      const urlParams = new URLSearchParams(window.location.search);
+      const isNew = urlParams.get('new') === 'true';
+      const seed = urlParams.get('seed');
+      
+      if (isNew && seed) {
+        // Extract set code from draft ID (format: draft_SETCODE_seed)
+        const parts = draftId.split('_');
+        const setCode = parts[1]; // Assuming format draft_FIN_12345678
+        
+        if (setCode) {
+          // Create and start the draft
+          await draftActions.createDraft(seed, setCode);
           await draftActions.startDraft();
+          
+          // Clean up URL
+          const cleanUrl = window.location.pathname;
+          window.history.replaceState({}, '', cleanUrl);
           return;
         }
       }
