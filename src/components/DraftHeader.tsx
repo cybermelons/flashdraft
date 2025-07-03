@@ -323,7 +323,7 @@ export function DraftHeader({ className = '' }: DraftHeaderProps) {
                 </code>
               </div>
             )}
-          </div>
+          </HeaderButtonGroup>
         </div>
       </div>
     </header>
