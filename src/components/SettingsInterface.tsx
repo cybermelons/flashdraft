@@ -20,6 +20,7 @@ import {
 import { Card } from '@/components/Card';
 import { SelectedCardOverlay } from '@/components/SelectedCardOverlay';
 import { LayoutHeader } from '@/components/LayoutHeader';
+import { HeaderButton } from '@/components/HeaderButton';
 import type { Card as CardType } from '@/lib/engine/PackGenerator';
 
 interface SettingsInterfaceProps {
@@ -94,7 +95,19 @@ export function SettingsInterface({ className = '' }: SettingsInterfaceProps) {
 
   return (
     <div className={`min-h-screen bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900 ${className}`}>
-      <LayoutHeader title="Settings" />
+      <LayoutHeader 
+        title="Settings" 
+        backLabel="Home"
+        actions={
+          <HeaderButton 
+            href="/draft" 
+            variant="secondary"
+            className="hidden sm:inline-flex"
+          >
+            View Drafts
+          </HeaderButton>
+        }
+      />
 
       {/* Settings Content */}
       <main className="max-w-4xl mx-auto px-6 py-8">
