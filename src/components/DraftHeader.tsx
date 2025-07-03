@@ -228,9 +228,6 @@ export function DraftHeader({ className = '' }: DraftHeaderProps) {
                   <div className="text-sm sm:text-lg">Round {viewingRound}</div>
                   <div className="text-xs sm:text-sm text-slate-300">
                     Pick {viewingPick}
-                    {!isViewingCurrent && (
-                      <span className="text-yellow-400 text-[10px] sm:text-xs ml-1 hidden sm:inline">(history)</span>
-                    )}
                   </div>
                 </div>
               </div>

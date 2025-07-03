@@ -19,6 +19,7 @@ interface DraftSummary {
   currentPick: number;
   progress: number;
   humanDeckSize: number;
+  colorDistribution?: Record<string, number>;
 }
 
 export function DraftDashboard() {
@@ -52,17 +53,46 @@ export function DraftDashboard() {
 
       const draftSummaries = await storage.listDrafts();
       
-      // Convert to our summary format
-      const formattedDrafts: DraftSummary[] = draftSummaries.map(summary => ({
-        id: summary.draftId,
-        status: summary.status,
-        setCode: summary.setCode || 'Unknown',
-        createdAt: summary.createdAt,
-        currentRound: summary.currentRound,
-        currentPick: summary.currentPick,
-        progress: summary.progress,
-        humanDeckSize: summary.humanDeckSize
-      }));
+      // Load full draft data to get color distribution
+      const formattedDrafts: DraftSummary[] = await Promise.all(
+        draftSummaries.map(async (summary) => {
+          let colorDistribution: Record<string, number> = {};
+          
+          try {
+            // Try to load the full draft to get color info
+            const fullDraft = await storage.loadDraft(summary.draftId);
+            if (fullDraft && fullDraft.playerDecks && fullDraft.humanPlayerIndex !== undefined) {
+              const humanDeck = fullDraft.playerDecks[fullDraft.humanPlayerIndex] || [];
+              
+              // Count colors in the deck
+              humanDeck.forEach(card => {
+                if (card.colors && card.colors.length > 0) {
+                  card.colors.forEach(color => {
+                    colorDistribution[color] = (colorDistribution[color] || 0) + 1;
+                  });
+                } else {
+                  // Colorless
+                  colorDistribution['C'] = (colorDistribution['C'] || 0) + 1;
+                }
+              });
+            }
+          } catch (err) {
+            console.warn(`Failed to load color data for draft ${summary.draftId}:`, err);
+          }
+          
+          return {
+            id: summary.draftId,
+            status: summary.status,
+            setCode: summary.setCode || 'Unknown',
+            createdAt: summary.createdAt,
+            currentRound: summary.currentRound,
+            currentPick: summary.currentPick,
+            progress: summary.progress,
+            humanDeckSize: summary.humanDeckSize,
+            colorDistribution
+          };
+        })
+      );
 
       // Sort by most recent first
       formattedDrafts.sort((a, b) => 
@@ -105,6 +135,46 @@ export function DraftDashboard() {
       default:
         return 'bg-slate-500/20 text-slate-300 border border-slate-500/30';
     }
+  };
+
+  const getColorClass = (color: string) => {
+    switch (color) {
+      case 'W': return 'bg-yellow-100 text-yellow-900';
+      case 'U': return 'bg-blue-500 text-white';
+      case 'B': return 'bg-gray-900 text-gray-100';
+      case 'R': return 'bg-red-500 text-white';
+      case 'G': return 'bg-green-600 text-white';
+      case 'C': return 'bg-gray-400 text-gray-900';
+      default: return 'bg-gray-500 text-white';
+    }
+  };
+
+  const renderColorPips = (colorDistribution?: Record<string, number>) => {
+    if (!colorDistribution || Object.keys(colorDistribution).length === 0) {
+      return null;
+    }
+
+    // Sort colors by WUBRG order
+    const colorOrder = ['W', 'U', 'B', 'R', 'G', 'C'];
+    const sortedColors = Object.entries(colorDistribution)
+      .sort(([a], [b]) => {
+        const aIndex = colorOrder.indexOf(a);
+        const bIndex = colorOrder.indexOf(b);
+        return aIndex - bIndex;
+      });
+
+    return (
+      <div className="flex items-center gap-2">
+        {sortedColors.map(([color, count]) => (
+          <div key={color} className="flex items-center gap-1">
+            <div className={`w-5 h-5 rounded-full flex items-center justify-center text-xs font-bold ${getColorClass(color)}`}>
+              {color}
+            </div>
+            <span className="text-xs text-slate-400">{count}</span>
+          </div>
+        ))}
+      </div>
+    );
   };
 
   const handleResumeDraft = (draftId: string) => {
@@ -192,20 +262,27 @@ export function DraftDashboard() {
             <div className="flex items-center justify-between">
               <div className="flex-1">
                 <div className="flex items-center gap-4 mb-3">
-                  <h3 className="font-bold text-white text-lg">
-                    {draft.setCode} Draft
+                  <h3 className="font-bold text-white text-xl">
+                    {draft.setCode}
                   </h3>
-                  <span className={`px-3 py-1 rounded-full text-xs font-semibold ${getStatusColor(draft.status)}`}>
-                    {draft.status}
-                  </span>
+                  {draft.status !== 'completed' && (
+                    <span className="text-slate-400 text-sm">
+                      Incomplete
+                    </span>
+                  )}
+                  {draft.status === 'completed' && (
+                    <span className="text-green-400 text-sm">
+                      Complete
+                    </span>
+                  )}
                 </div>
                 
-                <div className="flex items-center gap-6 text-sm text-slate-300 mb-4">
+                <div className="flex items-center gap-6 text-sm text-slate-300 mb-3">
                   <span className="flex items-center gap-1">
                     <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 5H7a2 2 0 00-2 2v10a2 2 0 002 2h8a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"></path>
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M7 7h.01M7 3h5c.512 0 1.024.195 1.414.586l7 7a2 2 0 010 2.828l-7 7a2 2 0 01-2.828 0l-7-7A1.994 1.994 0 013 12V7a4 4 0 014-4z"></path>
                     </svg>
-                    Round {draft.currentRound}, Pick {draft.currentPick}
+                    Pack {draft.currentRound}, Pick {draft.currentPick}
                   </span>
                   <span className="flex items-center gap-1">
                     <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -221,18 +298,8 @@ export function DraftDashboard() {
                   </span>
                 </div>
                 
-                {/* Progress Bar */}
-                <div className="flex items-center gap-3">
-                  <div className="flex-1 bg-slate-700/50 rounded-full h-3">
-                    <div 
-                      className="bg-gradient-to-r from-blue-500 to-blue-400 h-3 rounded-full transition-all duration-500"
-                      style={{ width: `${draft.progress * 100}%` }}
-                    />
-                  </div>
-                  <span className="text-sm font-medium text-slate-300 min-w-0">
-                    {Math.round(draft.progress * 100)}%
-                  </span>
-                </div>
+                {/* Color Distribution */}
+                {renderColorPips(draft.colorDistribution)}
               </div>
               
               <div className="flex items-center gap-3 ml-6">
