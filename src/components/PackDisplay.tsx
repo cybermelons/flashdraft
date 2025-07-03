@@ -218,6 +218,8 @@ export function PackDisplay({ pack, onCardPick, canPick, className = '' }: PackD
                 className={`${
                   isViewingHistory ? 'cursor-default' : ''
                 } ${
+                  isViewingHistory && !isPicked ? 'opacity-50' : ''
+                } ${
                   !canPick && !isViewingHistory ? 'opacity-75' : ''
                 }`}
               />
