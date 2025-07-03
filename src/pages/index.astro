@@ -12,48 +12,47 @@ const createDraft = (setCode: string) => {
 ---
 
 <Layout title="FlashDraft - Start Drafting">
-  <main class="min-h-screen flex items-center justify-center p-6">
-    <div class="max-w-4xl w-full">
-      <!-- Logo/Title -->
-      <div class="text-center mb-12">
-        <h1 class="text-5xl font-bold text-white mb-4">FlashDraft</h1>
-        <p class="text-xl text-slate-300">Choose your draft format</p>
-      </div>
+  <main class="min-h-screen flex flex-col p-4 md:p-8">
+    <!-- Header -->
+    <header class="text-center mb-8 md:mb-12">
+      <h1 class="text-4xl md:text-6xl font-bold text-white mb-2">FlashDraft</h1>
+      <p class="text-lg md:text-xl text-slate-300">Choose your draft format</p>
+    </header>
 
-
-      <!-- Draft Selection Grid -->
-      <div class="grid md:grid-cols-2 gap-8">
+    <!-- Draft Selection Grid - Full screen -->
+    <div class="flex-1 flex items-center justify-center">
+      <div class="grid md:grid-cols-2 gap-6 md:gap-8 w-full max-w-7xl">
         <!-- Final Fantasy Draft -->
         <a 
           href="/draft/new?set=FIN"
-          class="group relative overflow-hidden rounded-3xl bg-gradient-to-br from-purple-600/20 to-blue-600/20 backdrop-blur-sm border border-purple-500/30 hover:border-purple-400/50 transition-all duration-300 hover:scale-105 hover:shadow-2xl hover:shadow-purple-500/20 min-h-[200px]"
+          class="group relative overflow-hidden rounded-3xl bg-gradient-to-br from-purple-600/20 to-blue-600/20 backdrop-blur-sm border border-purple-500/30 hover:border-purple-400/50 transition-all duration-300 hover:scale-[1.02] hover:shadow-2xl hover:shadow-purple-500/20 h-full min-h-[300px] md:min-h-[400px]"
         >
-          <div class="relative p-8 lg:p-12 h-full flex flex-col justify-between">
+          <div class="relative p-8 md:p-12 lg:p-16 h-full flex flex-col justify-between">
             <!-- Fanned out cards (positioned absolutely behind content) -->
             <div class="absolute inset-0 flex items-center justify-center pointer-events-none">
               <div class="fin-cards relative" style="width: 120px; height: 32px;">
                 <!-- Tifa Card (left) -->
-                <div class="card-fan absolute bottom-0 left-1/2 -translate-x-1/2 w-24 h-32 transition-all duration-300 opacity-80">
+                <div class="card-fan absolute bottom-0 left-1/2 -translate-x-1/2 w-32 h-44 md:w-40 md:h-56 transition-all duration-300 opacity-90">
                   <img 
                     src="https://cards.scryfall.io/normal/front/f/b/fb781323-2746-405d-a9b2-e778c037a6e9.jpg?1748706535" 
                     alt="Tifa Lockhart"
-                    class="w-full h-full object-cover rounded-lg shadow-xl"
+                    class="w-full h-full object-cover rounded-xl shadow-2xl"
                   />
                 </div>
                 <!-- Vivi Card (center) -->
-                <div class="card-fan absolute bottom-0 left-1/2 -translate-x-1/2 w-24 h-32 z-10 transition-all duration-300 opacity-80">
+                <div class="card-fan absolute bottom-0 left-1/2 -translate-x-1/2 w-32 h-44 md:w-40 md:h-56 z-10 transition-all duration-300 opacity-90">
                   <img 
                     src="https://cards.scryfall.io/normal/front/e/c/ecc1027a-8c07-44a0-bdde-fa2844cff694.jpg?1748706721" 
                     alt="Vivi Ornitier"
-                    class="w-full h-full object-cover rounded-lg shadow-xl"
+                    class="w-full h-full object-cover rounded-xl shadow-2xl"
                   />
                 </div>
                 <!-- Sephiroth Card (right) -->
-                <div class="card-fan absolute bottom-0 left-1/2 -translate-x-1/2 w-24 h-32 transition-all duration-300 opacity-80">
+                <div class="card-fan absolute bottom-0 left-1/2 -translate-x-1/2 w-32 h-44 md:w-40 md:h-56 transition-all duration-300 opacity-90">
                   <img 
                     src="https://cards.scryfall.io/normal/front/8/5/85eaf5e7-77dc-4842-a70c-ce4ac7f724df.jpg?1748707811" 
                     alt="Sephiroth"
-                    class="w-full h-full object-cover rounded-lg shadow-xl"
+                    class="w-full h-full object-cover rounded-xl shadow-2xl"
                   />
                 </div>
               </div>
@@ -61,10 +60,10 @@ const createDraft = (setCode: string) => {
 
             <!-- Content (above cards) -->
             <div class="relative z-20 text-center mt-auto">
-              <div class="bg-black/50 backdrop-blur-sm rounded-full px-6 py-3 mx-auto inline-flex items-center gap-3">
-                <span class="text-purple-300 text-sm">FIN</span>
-                <h2 class="text-xl font-bold text-white">Final Fantasy</h2>
-                <span class="text-white">→</span>
+              <div class="bg-black/60 backdrop-blur-sm rounded-full px-8 py-4 mx-auto inline-flex items-center gap-4">
+                <span class="text-purple-300 text-base md:text-lg font-semibold">FIN</span>
+                <h2 class="text-2xl md:text-3xl font-bold text-white">Final Fantasy</h2>
+                <span class="text-white text-xl">→</span>
               </div>
             </div>
           </div>
@@ -76,34 +75,34 @@ const createDraft = (setCode: string) => {
         <!-- Tarkir: Dragonstorm Draft -->
         <a 
           href="/draft/new?set=TDM"
-          class="group relative overflow-hidden rounded-3xl bg-gradient-to-br from-red-600/20 to-orange-600/20 backdrop-blur-sm border border-red-500/30 hover:border-red-400/50 transition-all duration-300 hover:scale-105 hover:shadow-2xl hover:shadow-red-500/20 min-h-[200px]"
+          class="group relative overflow-hidden rounded-3xl bg-gradient-to-br from-red-600/20 to-orange-600/20 backdrop-blur-sm border border-red-500/30 hover:border-red-400/50 transition-all duration-300 hover:scale-[1.02] hover:shadow-2xl hover:shadow-red-500/20 h-full min-h-[300px] md:min-h-[400px]"
         >
-          <div class="relative p-8 lg:p-12 h-full flex flex-col justify-between">
+          <div class="relative p-8 md:p-12 lg:p-16 h-full flex flex-col justify-between">
             <!-- Fanned out cards (positioned absolutely behind content) -->
             <div class="absolute inset-0 flex items-center justify-center pointer-events-none">
               <div class="tdm-cards relative" style="width: 120px; height: 32px;">
                 <!-- Ugin Card (left) -->
-                <div class="card-fan absolute bottom-0 left-1/2 -translate-x-1/2 w-24 h-32 transition-all duration-300 opacity-80">
+                <div class="card-fan absolute bottom-0 left-1/2 -translate-x-1/2 w-32 h-44 md:w-40 md:h-56 transition-all duration-300 opacity-90">
                   <img 
                     src="https://cards.scryfall.io/normal/front/6/4/64a5d494-efa1-446b-bebe-2ad36e154376.jpg?1744102946" 
                     alt="Ugin, Eye of the Storms"
-                    class="w-full h-full object-cover rounded-lg shadow-xl"
+                    class="w-full h-full object-cover rounded-xl shadow-2xl"
                   />
                 </div>
                 <!-- Sarkhan Card (center) -->
-                <div class="card-fan absolute bottom-0 left-1/2 -translate-x-1/2 w-24 h-32 z-10 transition-all duration-300 opacity-80">
+                <div class="card-fan absolute bottom-0 left-1/2 -translate-x-1/2 w-32 h-44 md:w-40 md:h-56 z-10 transition-all duration-300 opacity-90">
                   <img 
                     src="https://cards.scryfall.io/normal/front/c/2/c2200646-7b7c-489d-bbae-16b03e1d7fb2.jpg?1743204437" 
                     alt="Sarkhan, Dragon Ascendant"
-                    class="w-full h-full object-cover rounded-lg shadow-xl"
+                    class="w-full h-full object-cover rounded-xl shadow-2xl"
                   />
                 </div>
                 <!-- Breaching Dragonstorm (right) -->
-                <div class="card-fan absolute bottom-0 left-1/2 -translate-x-1/2 w-24 h-32 transition-all duration-300 opacity-80">
+                <div class="card-fan absolute bottom-0 left-1/2 -translate-x-1/2 w-32 h-44 md:w-40 md:h-56 transition-all duration-300 opacity-90">
                   <img 
                     src="https://cards.scryfall.io/normal/front/e/2/e2c2a069-7553-4879-abfb-b2aa3349e4b8.jpg?1743204368" 
                     alt="Breaching Dragonstorm"
-                    class="w-full h-full object-cover rounded-lg shadow-xl"
+                    class="w-full h-full object-cover rounded-xl shadow-2xl"
                   />
                 </div>
               </div>
@@ -111,10 +110,10 @@ const createDraft = (setCode: string) => {
 
             <!-- Content (above cards) -->
             <div class="relative z-20 text-center mt-auto">
-              <div class="bg-black/50 backdrop-blur-sm rounded-full px-6 py-3 mx-auto inline-flex items-center gap-3">
-                <span class="text-red-300 text-sm">TDM</span>
-                <h2 class="text-xl font-bold text-white">Tarkir: Dragonstorm</h2>
-                <span class="text-white">→</span>
+              <div class="bg-black/60 backdrop-blur-sm rounded-full px-8 py-4 mx-auto inline-flex items-center gap-4">
+                <span class="text-red-300 text-base md:text-lg font-semibold">TDM</span>
+                <h2 class="text-2xl md:text-3xl font-bold text-white">Tarkir: Dragonstorm</h2>
+                <span class="text-white text-xl">→</span>
               </div>
             </div>
           </div>
@@ -123,17 +122,17 @@ const createDraft = (setCode: string) => {
           <div class="absolute inset-0 bg-gradient-to-br from-red-600/0 via-red-600/0 to-red-600/20 opacity-0 group-hover:opacity-100 transition-opacity duration-300 pointer-events-none"></div>
         </a>
       </div>
-
-      <!-- Secondary Actions -->
-      <div class="mt-12 text-center">
-        <a 
-          href="/draft" 
-          class="text-slate-400 hover:text-white transition-colors"
-        >
-          View saved drafts →
-        </a>
-      </div>
     </div>
+
+    <!-- Footer Actions -->
+    <footer class="text-center mt-8 pb-4">
+      <a 
+        href="/draft" 
+        class="text-slate-400 hover:text-white transition-colors text-sm md:text-base"
+      >
+        View saved drafts →
+      </a>
+    </footer>
   </main>
 
   <style>
@@ -209,11 +208,11 @@ const createDraft = (setCode: string) => {
     const finContainer = document.querySelector('.fin-cards') as HTMLElement;
     const tdmContainer = document.querySelector('.tdm-cards') as HTMLElement;
 
-    // Apply fixed positioning with radius: 70px, h-offset: -50px, v-pos: 37px
-    const radius = 70;
-    const horizontalOffset = -50;
-    const verticalOffset = 37;
-    const angleStep = 30; // 30 degrees between cards
+    // Apply fixed positioning with adjusted scale for larger cards
+    const radius = 100; // Increased for larger cards
+    const horizontalOffset = -70; // Adjusted for larger cards
+    const verticalOffset = 50; // Adjusted for larger cards
+    const angleStep = 25; // Slightly less angle for larger cards
     
     // Update container position
     if (finContainer) {
