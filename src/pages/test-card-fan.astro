@@ -1,70 +1,7 @@
 ---
 // Test page for card fan adjustments - not included in production builds
 // Access at: /test-card-fan
-import { Card } from '@/components/Card';
-import Layout from '@/layouts/Layout.astro'
-
-// Sample cards for testing
-const cards = [
-  {
-    id: '1',
-    name: 'Stormbreath Dragon',
-    mana_cost: '{3}{R}{R}',
-    type_line: 'Creature — Dragon',
-    oracle_text: 'Flying, haste, protection from white',
-    colors: ['R'],
-    color_identity: ['R'],
-    set: 'DTK',
-    collector_number: '143',
-    rarity: 'mythic',
-    cmc: 5,
-    power: '4',
-    toughness: '4',
-    image_uris: {
-      small: 'https://cards.scryfall.io/small/front/1/1/11309ffa-4e33-4053-9ce6-e1d5d6e97fc9.jpg?1562826320',
-      normal: 'https://cards.scryfall.io/normal/front/1/1/11309ffa-4e33-4053-9ce6-e1d5d6e97fc9.jpg?1562826320',
-      large: 'https://cards.scryfall.io/large/front/1/1/11309ffa-4e33-4053-9ce6-e1d5d6e97fc9.jpg?1562826320',
-    }
-  },
-  {
-    id: '2',
-    name: 'Den Protector',
-    mana_cost: '{1}{G}',
-    type_line: 'Creature — Human Warrior',
-    oracle_text: 'Megamorph {1}{G}',
-    colors: ['G'],
-    color_identity: ['G'],
-    set: 'DTK',
-    collector_number: '181',
-    rarity: 'rare',
-    cmc: 2,
-    power: '2',
-    toughness: '1',
-    image_uris: {
-      small: 'https://cards.scryfall.io/small/front/f/2/f22c03e1-acfd-40b8-97ea-c6ec7535a36f.jpg?1562796260',
-      normal: 'https://cards.scryfall.io/normal/front/f/2/f22c03e1-acfd-40b8-97ea-c6ec7535a36f.jpg?1562796260',
-      large: 'https://cards.scryfall.io/large/front/f/2/f22c03e1-acfd-40b8-97ea-c6ec7535a36f.jpg?1562796260',
-    }
-  },
-  {
-    id: '3',
-    name: 'Silumgar\'s Scorn',
-    mana_cost: '{U}{U}',
-    type_line: 'Instant',
-    oracle_text: 'As an additional cost to cast this spell, you may reveal a Dragon card from your hand.',
-    colors: ['U'],
-    color_identity: ['U'],
-    set: 'DTK',
-    collector_number: '78',
-    rarity: 'uncommon',
-    cmc: 2,
-    image_uris: {
-      small: 'https://cards.scryfall.io/small/front/0/7/077bee72-62f6-4d90-8557-ff9cac42ec9a.jpg?1562782102',
-      normal: 'https://cards.scryfall.io/normal/front/0/7/077bee72-62f6-4d90-8557-ff9cac42ec9a.jpg?1562782102',
-      large: 'https://cards.scryfall.io/large/front/0/7/077bee72-62f6-4d90-8557-ff9cac42ec9a.jpg?1562782102',
-    }
-  },
-];
+import Layout from '@/layouts/Layout.astro';
 
 // Test page styles
 const styles = `
@@ -81,22 +18,42 @@ const styles = `
   .card-container {
     position: relative;
     display: inline-block;
+    width: 400px;
+    height: 300px;
   }
   
   .fanned-card {
     position: absolute;
     transition: all 0.3s ease;
     cursor: pointer;
+    width: 120px;
+    height: 167px;
+    left: 50%;
+    bottom: 0;
+    transform-origin: bottom center;
+  }
+  
+  .fanned-card img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    border-radius: 0.5rem;
+    box-shadow: 0 10px 25px rgba(0, 0, 0, 0.5);
   }
   
   .fanned-card:hover {
-    z-index: 10;
-    transform: translateY(-10px) !important;
+    z-index: 20 !important;
+    filter: brightness(1.1);
   }
   
   .center-card {
     position: relative;
     z-index: 5;
+  }
+  
+  /* Homepage button hover effects */
+  .group:hover .card-fan {
+    filter: brightness(1.1);
   }
 `;
 ---
@@ -170,17 +127,6 @@ const styles = `
           
           <div>
             <label class="block text-sm font-medium text-slate-300 mb-2">
-              Card Size
-            </label>
-            <select id="card-size" class="bg-slate-700 text-white rounded px-3 py-2 w-full">
-              <option value="small">Small</option>
-              <option value="medium" selected>Medium</option>
-              <option value="large">Large</option>
-            </select>
-          </div>
-          
-          <div>
-            <label class="block text-sm font-medium text-slate-300 mb-2">
               Number of Cards
             </label>
             <select id="card-count" class="bg-slate-700 text-white rounded px-3 py-2 w-full">
@@ -199,7 +145,7 @@ const styles = `
       </div>
       
       <!-- Card Display Area -->
-      <div class="flex justify-center items-center min-h-[500px]">
+      <div class="flex justify-center items-center min-h-[400px] bg-slate-800/30 rounded-xl">
         <div id="card-display" class="card-container">
           <!-- Cards will be rendered here by JavaScript -->
         </div>
@@ -262,69 +208,11 @@ const styles = `
   </div>
   
   <script>
-    import { Card } from '@/components/Card';
-    import { render } from 'react-dom';
-    import React from 'react';
-    
-    const cards = [
-      {
-        id: '1',
-        name: 'Stormbreath Dragon',
-        mana_cost: '{3}{R}{R}',
-        type_line: 'Creature — Dragon',
-        oracle_text: 'Flying, haste, protection from white',
-        colors: ['R'],
-        color_identity: ['R'],
-        set: 'DTK',
-        collector_number: '143',
-        rarity: 'mythic',
-        cmc: 5,
-        power: '4',
-        toughness: '4',
-        image_uris: {
-          small: 'https://cards.scryfall.io/small/front/1/1/11309ffa-4e33-4053-9ce6-e1d5d6e97fc9.jpg?1562826320',
-          normal: 'https://cards.scryfall.io/normal/front/1/1/11309ffa-4e33-4053-9ce6-e1d5d6e97fc9.jpg?1562826320',
-          large: 'https://cards.scryfall.io/large/front/1/1/11309ffa-4e33-4053-9ce6-e1d5d6e97fc9.jpg?1562826320',
-        }
-      },
-      {
-        id: '2',
-        name: 'Den Protector',
-        mana_cost: '{1}{G}',
-        type_line: 'Creature — Human Warrior',
-        oracle_text: 'Megamorph {1}{G}',
-        colors: ['G'],
-        color_identity: ['G'],
-        set: 'DTK',
-        collector_number: '181',
-        rarity: 'rare',
-        cmc: 2,
-        power: '2',
-        toughness: '1',
-        image_uris: {
-          small: 'https://cards.scryfall.io/small/front/f/2/f22c03e1-acfd-40b8-97ea-c6ec7535a36f.jpg?1562796260',
-          normal: 'https://cards.scryfall.io/normal/front/f/2/f22c03e1-acfd-40b8-97ea-c6ec7535a36f.jpg?1562796260',
-          large: 'https://cards.scryfall.io/large/front/f/2/f22c03e1-acfd-40b8-97ea-c6ec7535a36f.jpg?1562796260',
-        }
-      },
-      {
-        id: '3',
-        name: 'Silumgar\'s Scorn',
-        mana_cost: '{U}{U}',
-        type_line: 'Instant',
-        oracle_text: 'As an additional cost to cast this spell, you may reveal a Dragon card from your hand.',
-        colors: ['U'],
-        color_identity: ['U'],
-        set: 'DTK',
-        collector_number: '78',
-        rarity: 'uncommon',
-        cmc: 2,
-        image_uris: {
-          small: 'https://cards.scryfall.io/small/front/0/7/077bee72-62f6-4d90-8557-ff9cac42ec9a.jpg?1562782102',
-          normal: 'https://cards.scryfall.io/normal/front/0/7/077bee72-62f6-4d90-8557-ff9cac42ec9a.jpg?1562782102',
-          large: 'https://cards.scryfall.io/large/front/0/7/077bee72-62f6-4d90-8557-ff9cac42ec9a.jpg?1562782102',
-        }
-      },
+    // Sample card images
+    const cardImages = [
+      'https://cards.scryfall.io/normal/front/1/1/11309ffa-4e33-4053-9ce6-e1d5d6e97fc9.jpg?1562826320', // Stormbreath Dragon
+      'https://cards.scryfall.io/normal/front/f/2/f22c03e1-acfd-40b8-97ea-c6ec7535a36f.jpg?1562796260', // Den Protector
+      'https://cards.scryfall.io/normal/front/0/7/077bee72-62f6-4d90-8557-ff9cac42ec9a.jpg?1562782102', // Silumgar's Scorn
     ];
     
     const finCards = [
@@ -347,7 +235,6 @@ const styles = `
       const hOffset = parseInt(document.getElementById('h-offset-slider').value);
       const vPos = parseInt(document.getElementById('v-pos-slider').value);
       const rotation = parseInt(document.getElementById('rotation-slider').value);
-      const cardSize = document.getElementById('card-size').value;
       const cardCount = parseInt(document.getElementById('card-count').value);
       
       // Clear containers
@@ -373,32 +260,24 @@ const styles = `
       
       // Render main display cards
       positions.forEach((pos, index) => {
-        const cardIndex = index % cards.length;
-        const card = cards[cardIndex];
+        const cardIndex = index % cardImages.length;
+        const imgUrl = cardImages[cardIndex];
         
         const wrapper = document.createElement('div');
-        wrapper.className = pos.angle === 0 ? 'center-card' : 'fanned-card';
+        wrapper.className = 'fanned-card';
         wrapper.style.zIndex = pos.zIndex;
         
-        if (pos.angle !== 0) {
-          const angleRad = (pos.angle * Math.PI) / 180;
-          const x = Math.sin(angleRad) * radius + hOffset;
-          const y = vPos;
-          wrapper.style.transform = `translate(${x}px, ${y}px) rotate(${pos.angle}deg)`;
-        }
+        const angleRad = (pos.angle * Math.PI) / 180;
+        const x = Math.sin(angleRad) * radius;
+        const totalX = x + hOffset;
+        wrapper.style.transform = `translateX(-50%) rotate(${pos.angle}deg) translateX(${totalX}px) translateY(${vPos}px)`;
         
+        const img = document.createElement('img');
+        img.src = imgUrl;
+        img.alt = `Card ${index + 1}`;
+        
+        wrapper.appendChild(img);
         container.appendChild(wrapper);
-        
-        // Render React component
-        render(
-          React.createElement(Card, {
-            card: card,
-            size: cardSize,
-            responsive: false,
-            canInteract: true
-          }),
-          wrapper
-        );
       });
       
       // Render homepage preview cards
@@ -408,12 +287,12 @@ const styles = `
         tdmPreview.style.transform = `translate(${hOffset}px, ${vPos}px)`;
         
         // Render FIN preview cards
-        for (let i = 0; i < 3; i++) {
+        for (let i = 0; i < 3 && i < positions.length; i++) {
           const pos = positions[i];
           const card = finCards[i];
           
           const wrapper = document.createElement('div');
-          wrapper.className = 'absolute bottom-0 left-1/2 -translate-x-1/2 w-24 h-32 transition-all duration-300 opacity-80';
+          wrapper.className = 'card-fan absolute bottom-0 left-1/2 -translate-x-1/2 w-24 h-32 transition-all duration-300 opacity-80';
           wrapper.style.zIndex = pos.zIndex;
           wrapper.style.transformOrigin = 'bottom center';
           
@@ -431,12 +310,12 @@ const styles = `
         }
         
         // Render TDM preview cards
-        for (let i = 0; i < 3; i++) {
+        for (let i = 0; i < 3 && i < positions.length; i++) {
           const pos = positions[i];
           const card = tdmCards[i];
           
           const wrapper = document.createElement('div');
-          wrapper.className = 'absolute bottom-0 left-1/2 -translate-x-1/2 w-24 h-32 transition-all duration-300 opacity-80';
+          wrapper.className = 'card-fan absolute bottom-0 left-1/2 -translate-x-1/2 w-24 h-32 transition-all duration-300 opacity-80';
           wrapper.style.zIndex = pos.zIndex;
           wrapper.style.transformOrigin = 'bottom center';
           
@@ -467,10 +346,10 @@ const styles = `
     renderCards();
     
     // Add event listeners
-    ['radius-slider', 'h-offset-slider', 'v-pos-slider', 'rotation-slider', 'card-size', 'card-count']
+    ['radius-slider', 'h-offset-slider', 'v-pos-slider', 'rotation-slider', 'card-count']
       .forEach(id => {
         document.getElementById(id).addEventListener('input', renderCards);
         document.getElementById(id).addEventListener('change', renderCards);
       });
   </script>
-</BaseLayout>
+</Layout>
