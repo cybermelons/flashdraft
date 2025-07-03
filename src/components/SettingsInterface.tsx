@@ -38,9 +38,15 @@ export function SettingsInterface({ className = '' }: SettingsInterfaceProps) {
   // Local state for debug settings
   const [showEngineDebug, setShowEngineDebug] = useState(() => {
     if (typeof window !== 'undefined') {
-      return localStorage.getItem('showEngineDebug') !== 'false';
+      // Default to false, check for prod environment
+      const isProd = window.location.hostname !== 'localhost' && !window.location.hostname.includes('127.0.0.1');
+      if (isProd) return false; // Always disabled in production
+      
+      // In dev, check localStorage
+      const stored = localStorage.getItem('showEngineDebug');
+      return stored === 'true'; // Default to false
     }
-    return true;
+    return false;
   });
 
   // Local state for card preview interaction
@@ -86,7 +92,12 @@ export function SettingsInterface({ className = '' }: SettingsInterfaceProps) {
     return 'Click to select, use confirm button';
   };
 
+  const isProd = typeof window !== 'undefined' && 
+    window.location.hostname !== 'localhost' && 
+    !window.location.hostname.includes('127.0.0.1');
+
   const handleDebugToggle = (enabled: boolean) => {
+    if (isProd) return; // Don't allow changes in production
     setShowEngineDebug(enabled);
     if (typeof window !== 'undefined') {
       localStorage.setItem('showEngineDebug', String(enabled));
@@ -102,34 +113,36 @@ export function SettingsInterface({ className = '' }: SettingsInterfaceProps) {
       {/* Settings Content */}
       <main className="max-w-4xl mx-auto px-6 py-8">
         <div className="space-y-6">
-          {/* Developer Settings */}
-          <div className="bg-slate-800/50 backdrop-blur-sm rounded-2xl p-6 border border-slate-700/50">
-            <h2 className="text-xl font-bold text-white mb-4 flex items-center gap-2">
-              <svg className="w-5 h-5 text-purple-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M10 20l4-16m4 4l4 4-4 4M6 16l-4-4 4-4"></path>
-              </svg>
-              Developer Settings
-            </h2>
-            
-            <div className="space-y-4">
-              <div className="flex items-center justify-between">
-                <div>
-                  <h3 className="text-white font-medium">Engine Debug Panel</h3>
-                  <p className="text-sm text-slate-400">Show technical debug information during drafts</p>
+          {/* Developer Settings - Only show in development */}
+          {!isProd && (
+            <div className="bg-slate-800/50 backdrop-blur-sm rounded-2xl p-6 border border-slate-700/50">
+              <h2 className="text-xl font-bold text-white mb-4 flex items-center gap-2">
+                <svg className="w-5 h-5 text-purple-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M10 20l4-16m4 4l4 4-4 4M6 16l-4-4 4-4"></path>
+                </svg>
+                Developer Settings
+              </h2>
+              
+              <div className="space-y-4">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <h3 className="text-white font-medium">Engine Debug Panel</h3>
+                    <p className="text-sm text-slate-400">Show technical debug information during drafts</p>
+                  </div>
+                  <button
+                    onClick={() => handleDebugToggle(!showEngineDebug)}
+                    className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors ${
+                      showEngineDebug ? 'bg-blue-600' : 'bg-slate-600'
+                    }`}
+                  >
+                    <span className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${
+                      showEngineDebug ? 'translate-x-6' : 'translate-x-1'
+                    }`} />
+                  </button>
                 </div>
-                <button
-                  onClick={() => handleDebugToggle(!showEngineDebug)}
-                  className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors ${
-                    showEngineDebug ? 'bg-blue-600' : 'bg-slate-600'
-                  }`}
-                >
-                  <span className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${
-                    showEngineDebug ? 'translate-x-6' : 'translate-x-1'
-                  }`} />
-                </button>
               </div>
             </div>
-          </div>
+          )}
 
           {/* Display Settings */}
           <div className="bg-slate-800/50 backdrop-blur-sm rounded-2xl p-6 border border-slate-700/50">
