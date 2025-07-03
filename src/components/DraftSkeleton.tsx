@@ -42,23 +42,26 @@ export function DraftSkeleton() {
         </div>
       </div>
 
-      <div className="flex flex-1 min-h-0">
-        {/* Main content area */}
-        <main className="flex-1 p-6">
-          {/* Pack area skeleton - 5x3 grid matching PackDisplay */}
-          <div className="max-w-[1320px] mx-auto">
-            <div className="grid grid-cols-5 gap-2">
+      {/* Main content area - full width when sidebar closed */}
+      <div className="flex-1 relative overflow-hidden">
+        <main className="h-full p-6 overflow-y-auto">
+          {/* Pack area skeleton - Exactly matching PackDisplay responsive grid */}
+          <div className="w-full">
+            <div className="gap-2 grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 2xl:grid-cols-7">
               {Array.from({ length: 15 }).map((_, i) => (
-                <div key={i} className="relative">
-                  <div className="aspect-[488/680] bg-slate-700 rounded-lg animate-pulse" />
+                <div key={i} className="relative group w-full">
+                  {/* Exact same structure as PackDisplay cards with responsive aspect ratio */}
+                  <div className="w-full aspect-[488/680] bg-slate-700/50 border border-slate-600 rounded-lg animate-pulse" />
                 </div>
               ))}
             </div>
           </div>
         </main>
+      </div>
 
-        {/* Sidebar skeleton - matches DraftSidebar */}
-        <aside className="w-80 bg-slate-800/50 backdrop-blur-sm border-l border-slate-700/50 p-4 overflow-y-auto">
+      {/* Sidebar skeleton - hidden by default to match real DraftSidebar (translate-x-full = hidden) */}
+      <aside className="fixed top-0 right-0 h-full w-full lg:w-80 bg-slate-800/95 backdrop-blur-sm border-l border-slate-700/50 flex flex-col transition-transform duration-300 z-30 translate-x-full">
+        <div className="p-4">
           {/* Decklist header */}
           <div className="flex items-center justify-between mb-4">
             <div className="h-6 w-24 bg-slate-700 rounded animate-pulse" />
@@ -91,8 +94,8 @@ export function DraftSkeleton() {
               <div key={i} className="h-8 bg-slate-700/50 rounded animate-pulse" />
             ))}
           </div>
-        </aside>
-      </div>
+        </div>
+      </aside>
 
       {/* Progress bar skeleton */}
       <div className="bg-slate-800/50 backdrop-blur-sm border-t border-slate-700/50 p-4">

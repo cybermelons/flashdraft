@@ -248,12 +248,19 @@ export function CardListItem({ card, ...props }: CardProps) {
  */
 export function CardPlaceholder({ 
   className = '', 
-  size = 'medium' 
+  size = 'medium',
+  responsive = false 
 }: { 
   className?: string; 
   size?: 'small' | 'medium' | 'large';
+  responsive?: boolean;
 }) {
+  // Use same size logic as real Card component
   const getSizeClasses = () => {
+    if (responsive) {
+      // For responsive cards, use full width and aspect ratio
+      return 'w-full aspect-[488/680]';
+    }
     switch (size) {
       case 'small': return 'w-20 h-28';
       case 'large': return 'w-64 h-90';
