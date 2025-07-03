@@ -7,20 +7,19 @@
 
 import Layout from '../layouts/Layout.astro';
 import { DraftDashboard } from '../components/DraftDashboard';
+import { LayoutHeader } from '../components/LayoutHeader';
+import { HeaderButton } from '../components/HeaderButton';
 ---
 
-<Layout title="FlashDraft - Draft Overview">
-  <main class="container mx-auto px-4 py-8">
-    <div class="flex items-center justify-between mb-8">
-      <h1 class="text-3xl font-bold text-gray-900">Your Drafts</h1>
-      <a 
-        href="/draft/new" 
-        class="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg font-medium transition-colors"
-      >
-        Start New Draft
-      </a>
-    </div>
+<Layout title="FlashDraft - Your Drafts">
+  <div class="min-h-screen bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900">
+    <LayoutHeader 
+      title="Your Drafts" 
+      subtitle="View and manage your draft history"
+    />
     
-    <DraftDashboard client:load />
-  </main>
+    <main class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+      <DraftDashboard client:load />
+    </main>
+  </div>
 </Layout>

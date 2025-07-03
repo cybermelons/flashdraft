@@ -30,7 +30,7 @@ export const $quickPickMode = persistentAtom<boolean>('quickPickMode', false, {
   encode: JSON.stringify,
   decode: JSON.parse,
 });
-export const $doubleClickToPick = persistentAtom<boolean>('doubleClickToPick', false, {
+export const $doubleClickToPick = persistentAtom<boolean>('doubleClickToPick', true, {
   encode: JSON.stringify,
   decode: JSON.parse,
 });
@@ -55,7 +55,7 @@ export const $preferences = persistentMap<UIPreferences>('ui-preferences:', {
   cardSize: 'medium', 
   viewLayout: 'grid',
   quickPickMode: false,
-  doubleClickToPick: false,
+  doubleClickToPick: true,
   showCardDetails: true,
   autoAdvanceAfterPick: true,
   showPackStats: true,
@@ -340,7 +340,7 @@ export const uiActions = {
       cardSize: 'medium',
       viewLayout: 'grid',
       quickPickMode: false,
-      doubleClickToPick: false,
+      doubleClickToPick: true,
       showCardDetails: true,
       autoAdvanceAfterPick: true,
       showPackStats: true,
