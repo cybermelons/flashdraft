@@ -22,20 +22,20 @@ export function DraftSkeleton() {
                 <div className="h-5 w-12 bg-slate-700/50 rounded-full animate-pulse" />
               </div>
               {/* Settings button skeleton */}
-              <div className="w-7 h-7 rounded-xl bg-slate-700/50 animate-pulse" />
+              <div className="w-9 h-9 rounded-xl bg-slate-700/50 animate-pulse" />
             </div>
             
             {/* Bottom Row - Navigation skeleton */}
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-1">
-                <div className="w-8 h-8 rounded-xl bg-slate-700/50 animate-pulse" />
+                <div className="w-9 h-9 rounded-xl bg-slate-700/50 animate-pulse" />
                 <div className="text-center min-w-0 px-2">
                   <div className="h-4 w-12 bg-slate-700 rounded animate-pulse mb-1" />
                   <div className="h-3 w-10 bg-slate-700/50 rounded animate-pulse" />
                 </div>
-                <div className="w-8 h-8 rounded-xl bg-slate-700/50 animate-pulse" />
+                <div className="w-9 h-9 rounded-xl bg-slate-700/50 animate-pulse" />
               </div>
-              <div className="h-7 w-12 bg-slate-700/50 rounded-xl animate-pulse" />
+              <div className="h-9 w-16 bg-slate-700/50 rounded-xl animate-pulse" />
             </div>
           </div>
 
@@ -56,12 +56,12 @@ export function DraftSkeleton() {
 
               {/* Navigation skeleton */}
               <div className="flex items-center gap-1 sm:gap-3">
-                <div className="w-8 h-8 sm:w-10 sm:h-10 rounded-xl bg-slate-700/50 animate-pulse" />
+                <div className="w-9 h-9 sm:w-10 sm:h-10 rounded-xl bg-slate-700/50 animate-pulse" />
                 <div className="text-center min-w-0">
                   <div className="h-4 sm:h-5 w-16 bg-slate-700 rounded animate-pulse mb-1" />
                   <div className="h-3 sm:h-4 w-12 bg-slate-700/50 rounded animate-pulse" />
                 </div>
-                <div className="w-8 h-8 sm:w-10 sm:h-10 rounded-xl bg-slate-700/50 animate-pulse" />
+                <div className="w-9 h-9 sm:w-10 sm:h-10 rounded-xl bg-slate-700/50 animate-pulse" />
               </div>
             </div>
 
@@ -76,15 +76,15 @@ export function DraftSkeleton() {
             </div>
 
             {/* Right side controls skeleton */}
-            <div className="flex items-center gap-1 sm:gap-3">
+            <div className="flex items-center gap-1 sm:gap-2">
               {/* Quick pick button skeleton */}
-              <div className="h-7 sm:h-9 lg:h-10 w-20 lg:w-28 bg-slate-700/50 rounded-xl animate-pulse" />
+              <div className="h-9 sm:h-10 w-20 lg:w-28 bg-slate-700/50 rounded-xl animate-pulse" />
               {/* Overview button skeleton - hidden on mobile */}
-              <div className="hidden sm:block h-7 sm:h-9 lg:h-10 w-20 bg-slate-700/50 rounded-xl animate-pulse" />
+              <div className="hidden sm:block h-9 sm:h-10 w-20 bg-slate-700/50 rounded-xl animate-pulse" />
               {/* All Drafts button skeleton */}
-              <div className="h-7 sm:h-9 lg:h-10 w-16 sm:w-24 bg-slate-700/50 rounded-xl animate-pulse" />
+              <div className="h-9 sm:h-10 w-16 sm:w-24 bg-slate-700/50 rounded-xl animate-pulse" />
               {/* Settings button skeleton */}
-              <div className="w-7 h-7 sm:w-9 sm:h-9 rounded-xl bg-slate-700/50 animate-pulse" />
+              <div className="w-9 h-9 sm:w-10 sm:h-10 rounded-xl bg-slate-700/50 animate-pulse" />
             </div>
           </div>
         </div>

@@ -19,6 +19,7 @@ import {
 } from '@/stores/uiStore';
 import { Card } from '@/components/Card';
 import { SelectedCardOverlay } from '@/components/SelectedCardOverlay';
+import { LayoutHeader } from '@/components/LayoutHeader';
 import type { Card as CardType } from '@/lib/engine/PackGenerator';
 
 interface SettingsInterfaceProps {
@@ -93,20 +94,7 @@ export function SettingsInterface({ className = '' }: SettingsInterfaceProps) {
 
   return (
     <div className={`min-h-screen bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900 ${className}`}>
-      {/* Header */}
-      <header className="bg-slate-800/50 backdrop-blur-sm border-b border-slate-700/50">
-        <div className="max-w-4xl mx-auto px-6 py-4">
-          <div className="flex items-center justify-between">
-            <h1 className="text-2xl font-bold text-white">Settings</h1>
-            <a
-              href="/"
-              className="bg-slate-700/50 hover:bg-slate-600/50 text-slate-300 hover:text-white px-4 py-2 rounded-xl font-medium transition-colors"
-            >
-              Back to Home
-            </a>
-          </div>
-        </div>
-      </header>
+      <LayoutHeader title="Settings" />
 
       {/* Settings Content */}
       <main className="max-w-4xl mx-auto px-6 py-8">
