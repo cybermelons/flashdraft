@@ -350,19 +350,20 @@ export function DraftSidebar({ className = '' }: DraftSidebarProps) {
                       {sortedDeckCards.map((card, index) => (
                         <div 
                           key={card.id}
-                          className="absolute transition-all duration-200 hover:z-50"
+                          className="absolute transition-all duration-200 hover:z-50 overflow-hidden rounded-t-lg"
                           style={{
-                            top: `${index * 30}px`,
+                            top: `${index * 24}px`,
                             left: '0',
                             right: '0',
-                            zIndex: index
+                            zIndex: index,
+                            height: '50px' // Show just enough for name and mana cost
                           }}
                         >
                           <Card
                             card={card}
                             size="small"
                             canInteract={false}
-                            className="w-full hover:scale-105 hover:shadow-xl"
+                            className="w-full hover:scale-105 hover:shadow-xl [&_img]:object-top"
                           />
                         </div>
                       ))}
