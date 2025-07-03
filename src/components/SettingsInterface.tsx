@@ -44,6 +44,8 @@ export function SettingsInterface({ className = '' }: SettingsInterfaceProps) {
   // Local state for card preview interaction
   const [previewSelectedCard, setPreviewSelectedCard] = useState<CardType | null>(null);
   const [previewHoveredCard, setPreviewHoveredCard] = useState<CardType | null>(null);
+  const [showQuickPickFlash, setShowQuickPickFlash] = useState(false);
+  const [isMouseDown, setIsMouseDown] = useState(false);
   
   // Auto-select card initially to show the overlay by default
   React.useEffect(() => {
@@ -75,8 +77,12 @@ export function SettingsInterface({ className = '' }: SettingsInterfaceProps) {
     }
   };
 
-  // Determine pick mode
-  const pickMode = quickPickMode ? 'quick' : (doubleClickToPick ? 'double' : 'confirm');
+  // Determine pick mode description
+  const getPickModeDescription = () => {
+    if (quickPickMode) return 'Click to pick immediately';
+    if (doubleClickToPick) return 'Double-click to confirm';
+    return 'Click to select, use confirm button';
+  };
 
   const handleDebugToggle = (enabled: boolean) => {
     setShowEngineDebug(enabled);
@@ -184,48 +190,59 @@ export function SettingsInterface({ className = '' }: SettingsInterfaceProps) {
                 </div>
                 {/* Card Preview - Using exact PackDisplay structure */}
                 <div className="bg-slate-900/50 rounded-xl p-4 flex justify-center">
-                  <div className="relative w-fit">
-                    {/* Real PackDisplay-style card with overlay */}
-                    <div className="relative group">
-                      {/* Real SelectedCardOverlay component */}
-                      <SelectedCardOverlay 
-                        isSelected={previewSelectedCard?.id === sampleCard.id} 
-                        label={doubleClickToPick ? "Confirm" : "Selected"}
-                        isHovered={previewHoveredCard?.id === sampleCard.id}
-                      />
+                  <div className="w-fit">
+                    {/* Real PackDisplay-style card with overlay - exactly like in PackDisplay */}
+                    <div className="relative inline-block">
+                      {/* SelectedCardOverlay as sibling to Card, not wrapping it */}
+                      {(!quickPickMode || showQuickPickFlash || isMouseDown) && (
+                        <SelectedCardOverlay 
+                          isSelected={previewSelectedCard?.id === sampleCard.id || showQuickPickFlash || (quickPickMode && isMouseDown)} 
+                          label={
+                            quickPickMode 
+                              ? (isMouseDown ? "Confirm" : "Picked!") 
+                              : (doubleClickToPick ? "Confirm" : "Selected")
+                          }
+                          isHovered={previewHoveredCard?.id === sampleCard.id}
+                          size={cardSize}
+                        />
+                      )}
                       {/* Real Card component with exact same props as PackDisplay */}
-                      <Card
-                        card={sampleCard}
-                        isSelected={previewSelectedCard?.id === sampleCard.id}
-                        isHovered={previewHoveredCard?.id === sampleCard.id}
-                        canInteract={true}
-                        onClick={() => {
-                          if (quickPickMode) {
-                            // In quick pick mode, simulate immediate pick
-                            setPreviewSelectedCard(null);
-                            setTimeout(() => setPreviewSelectedCard(sampleCard), 100);
-                          } else {
-                            // In normal mode, toggle selection
-                            setPreviewSelectedCard(previewSelectedCard?.id === sampleCard.id ? null : sampleCard);
-                          }
-                        }}
-                        onDoubleClick={() => {
-                          if (doubleClickToPick) {
-                            setPreviewSelectedCard(null);
-                            // Simulate pick in preview
-                          }
-                        }}
-                        onMouseEnter={() => setPreviewHoveredCard(sampleCard)}
-                        onMouseLeave={() => setPreviewHoveredCard(null)}
-                        size={cardSize}
-                        responsive={false}
-                      />
+                      <div
+                        onMouseDown={() => quickPickMode && setIsMouseDown(true)}
+                        onMouseUp={() => setIsMouseDown(false)}
+                        onMouseLeave={() => setIsMouseDown(false)}
+                      >
+                        <Card
+                          card={sampleCard}
+                          isSelected={previewSelectedCard?.id === sampleCard.id}
+                          isHovered={previewHoveredCard?.id === sampleCard.id}
+                          canInteract={true}
+                          onClick={() => {
+                            if (quickPickMode) {
+                              // In quick pick mode, flash the confirmation
+                              setShowQuickPickFlash(true);
+                              setTimeout(() => setShowQuickPickFlash(false), 300);
+                            } else {
+                              // In normal mode, toggle selection
+                              setPreviewSelectedCard(previewSelectedCard?.id === sampleCard.id ? null : sampleCard);
+                            }
+                          }}
+                          onDoubleClick={() => {
+                            if (doubleClickToPick) {
+                              setPreviewSelectedCard(null);
+                              // Simulate pick in preview
+                            }
+                          }}
+                          onMouseEnter={() => setPreviewHoveredCard(sampleCard)}
+                          onMouseLeave={() => setPreviewHoveredCard(null)}
+                          size={cardSize}
+                          responsive={false}
+                        />
+                      </div>
                     </div>
                     {/* Show the pick mode description below */}
                     <div className="mt-2 text-center text-sm text-slate-400">
-                      {pickMode === 'quick' ? 'Click to pick immediately' : 
-                       pickMode === 'double' ? 'Click to select, double-click to confirm' : 
-                       'Click to select, use confirm button'}
+                      {getPickModeDescription()}
                     </div>
                   </div>
                 </div>
@@ -261,63 +278,56 @@ export function SettingsInterface({ className = '' }: SettingsInterfaceProps) {
             </h2>
             
             <div className="space-y-4">
-              {/* Pick Mode - Radio Buttons */}
+              {/* Pick Mode Settings */}
               <div>
                 <h3 className="text-white font-medium mb-3">Pick Mode</h3>
-                <div className="space-y-2">
-                  {/* Confirm Mode */}
-                  <label className="flex items-start gap-3 p-3 rounded-xl bg-slate-700/30 hover:bg-slate-700/50 cursor-pointer transition-colors">
-                    <input
-                      type="radio"
-                      name="pickMode"
-                      checked={!quickPickMode && !doubleClickToPick}
-                      onChange={() => {
-                        uiActions.setQuickPickMode(false);
-                        uiActions.setDoubleClickToPick(false);
-                      }}
-                      className="mt-1 w-4 h-4 text-blue-600"
-                    />
-                    <div className="flex-1">
-                      <div className="text-white font-medium">Confirm Mode</div>
-                      <div className="text-sm text-slate-400">Click to select, then click confirm button</div>
-                    </div>
-                  </label>
-
-                  {/* Quick Pick Mode */}
-                  <label className="flex items-start gap-3 p-3 rounded-xl bg-slate-700/30 hover:bg-slate-700/50 cursor-pointer transition-colors">
-                    <input
-                      type="radio"
-                      name="pickMode"
-                      checked={quickPickMode}
-                      onChange={() => {
-                        uiActions.setQuickPickMode(true);
-                        uiActions.setDoubleClickToPick(false);
-                      }}
-                      className="mt-1 w-4 h-4 text-blue-600"
-                    />
-                    <div className="flex-1">
+                <div className="space-y-4">
+                  {/* Quick Pick Toggle */}
+                  <div className="flex items-center justify-between p-3 rounded-xl bg-slate-700/30">
+                    <div>
                       <div className="text-white font-medium">Quick Pick Mode</div>
                       <div className="text-sm text-slate-400">Click once to immediately pick a card</div>
                     </div>
-                  </label>
+                    <button
+                      onClick={() => uiActions.setQuickPickMode(!quickPickMode)}
+                      className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors ${
+                        quickPickMode ? 'bg-blue-600' : 'bg-slate-600'
+                      }`}
+                    >
+                      <span className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${
+                        quickPickMode ? 'translate-x-6' : 'translate-x-1'
+                      }`} />
+                    </button>
+                  </div>
 
-                  {/* Double-Click Mode */}
-                  <label className="flex items-start gap-3 p-3 rounded-xl bg-slate-700/30 hover:bg-slate-700/50 cursor-pointer transition-colors">
-                    <input
-                      type="radio"
-                      name="pickMode"
-                      checked={!quickPickMode && doubleClickToPick}
-                      onChange={() => {
-                        uiActions.setQuickPickMode(false);
-                        uiActions.setDoubleClickToPick(true);
-                      }}
-                      className="mt-1 w-4 h-4 text-blue-600"
-                    />
-                    <div className="flex-1">
-                      <div className="text-white font-medium">Double-Click Mode</div>
-                      <div className="text-sm text-slate-400">Double-click a card to pick it</div>
+                  {/* Double-Click option - always visible but disabled when quick pick is on */}
+                  <div className={`flex items-center justify-between p-3 rounded-xl transition-all ${
+                    quickPickMode ? 'bg-slate-700/20 opacity-50' : 'bg-slate-700/30'
+                  }`}>
+                    <div>
+                      <div className={`font-medium ${quickPickMode ? 'text-slate-400' : 'text-white'}`}>
+                        Double-Click to Confirm
+                      </div>
+                      <div className="text-sm text-slate-400">
+                        {quickPickMode 
+                          ? 'Not available in quick pick mode' 
+                          : 'Double-click to pick, otherwise use confirm button'}
+                      </div>
                     </div>
-                  </label>
+                    <button
+                      onClick={() => !quickPickMode && uiActions.setDoubleClickToPick(!doubleClickToPick)}
+                      disabled={quickPickMode}
+                      className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors ${
+                        quickPickMode 
+                          ? 'bg-slate-700 cursor-not-allowed' 
+                          : (doubleClickToPick ? 'bg-blue-600' : 'bg-slate-600')
+                      }`}
+                    >
+                      <span className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${
+                        doubleClickToPick && !quickPickMode ? 'translate-x-6' : 'translate-x-1'
+                      }`} />
+                    </button>
+                  </div>
                 </div>
               </div>
 

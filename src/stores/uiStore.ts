@@ -12,6 +12,7 @@ import { persistentMap, persistentAtom } from '@nanostores/persistent';
 export type Theme = 'light' | 'dark' | 'system';
 export type CardSize = 'small' | 'medium' | 'large';
 export type ViewLayout = 'grid' | 'list' | 'fan';
+// Remove this - we'll use separate settings
 
 export const $theme = persistentAtom<Theme>('theme', 'system', {
   encode: JSON.stringify,
@@ -25,34 +26,42 @@ export const $viewLayout = persistentAtom<ViewLayout>('viewLayout', 'grid', {
   encode: JSON.stringify,
   decode: JSON.parse,
 });
+export const $quickPickMode = persistentAtom<boolean>('quickPickMode', false, {
+  encode: JSON.stringify,
+  decode: JSON.parse,
+});
+export const $doubleClickToPick = persistentAtom<boolean>('doubleClickToPick', false, {
+  encode: JSON.stringify,
+  decode: JSON.parse,
+});
 
 // UI preferences
 export interface UIPreferences {
   theme: Theme;
   cardSize: CardSize;
   viewLayout: ViewLayout;
+  quickPickMode: boolean;
+  doubleClickToPick: boolean;
   showCardDetails: boolean;
   autoAdvanceAfterPick: boolean;
-  confirmPicks: boolean;
   showPackStats: boolean;
   showManaSymbols: boolean;
   soundEnabled: boolean;
   animationsEnabled: boolean;
-  doubleClickToPick: boolean;
 }
 
 export const $preferences = persistentMap<UIPreferences>('ui-preferences:', {
   theme: 'system',
   cardSize: 'medium', 
   viewLayout: 'grid',
+  quickPickMode: false,
+  doubleClickToPick: false,
   showCardDetails: true,
   autoAdvanceAfterPick: true,
-  confirmPicks: false,
   showPackStats: true,
   showManaSymbols: true,
   soundEnabled: true,
   animationsEnabled: true,
-  doubleClickToPick: false,
 });
 
 // Loading and status states
@@ -80,10 +89,6 @@ export const $packViewMode = persistentAtom<'spread' | 'compact' | 'list'>('pack
   decode: JSON.parse,
 });
 export const $sortBy = persistentAtom<'cmc' | 'color' | 'rarity' | 'name' | 'type'>('sortBy', 'cmc', {
-  encode: JSON.stringify,
-  decode: JSON.parse,
-});
-export const $quickPickMode = persistentAtom<boolean>('quickPickMode', false, {
   encode: JSON.stringify,
   decode: JSON.parse,
 });
@@ -160,6 +165,8 @@ export const uiActions = {
     if (updates.theme) $theme.set(updates.theme);
     if (updates.cardSize) $cardSize.set(updates.cardSize);
     if (updates.viewLayout) $viewLayout.set(updates.viewLayout);
+    if (updates.quickPickMode !== undefined) $quickPickMode.set(updates.quickPickMode);
+    if (updates.doubleClickToPick !== undefined) $doubleClickToPick.set(updates.doubleClickToPick);
   },
 
   /**
@@ -292,10 +299,19 @@ export const uiActions = {
   },
 
   /**
-   * Toggle quick pick mode
+   * Set quick pick mode
    */
-  toggleQuickPickMode(): void {
-    $quickPickMode.set(!$quickPickMode.get());
+  setQuickPickMode(enabled: boolean): void {
+    $quickPickMode.set(enabled);
+    this.updatePreferences({ quickPickMode: enabled });
+  },
+
+  /**
+   * Set double-click to pick
+   */
+  setDoubleClickToPick(enabled: boolean): void {
+    $doubleClickToPick.set(enabled);
+    this.updatePreferences({ doubleClickToPick: enabled });
   },
   
   /**
@@ -314,20 +330,6 @@ export const uiActions = {
     this.updatePreferences({ soundEnabled: enabled });
   },
 
-  /**
-   * Set quick pick mode
-   */
-  setQuickPickMode(enabled: boolean): void {
-    $quickPickMode.set(enabled);
-  },
-
-  /**
-   * Set double-click to pick
-   */
-  setDoubleClickToPick(enabled: boolean): void {
-    const current = $preferences.get();
-    $preferences.set({ ...current, doubleClickToPick: enabled });
-  },
 
   /**
    * Reset all UI state to defaults
@@ -337,14 +339,14 @@ export const uiActions = {
       theme: 'system',
       cardSize: 'medium',
       viewLayout: 'grid',
+      quickPickMode: false,
+      doubleClickToPick: false,
       showCardDetails: true,
       autoAdvanceAfterPick: true,
-      confirmPicks: false,
       showPackStats: true,
       showManaSymbols: true,
       soundEnabled: true,
       animationsEnabled: true,
-      doubleClickToPick: false,
     });
     
     $theme.set('system');
@@ -369,7 +371,6 @@ export const uiActions = {
 // Export individual preference atoms for components
 export const $animationsEnabled = computed([$preferences], (prefs) => prefs.animationsEnabled);
 export const $soundEnabled = computed([$preferences], (prefs) => prefs.soundEnabled);
-export const $doubleClickToPick = computed([$preferences], (prefs) => prefs.doubleClickToPick);
 
 // Initialize theme detection for system preference
 if (typeof window !== 'undefined') {
