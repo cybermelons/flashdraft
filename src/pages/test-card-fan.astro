@@ -15,42 +15,6 @@ const styles = `
     border: 1px solid rgba(71, 85, 105, 0.5);
   }
   
-  .card-container {
-    position: relative;
-    display: inline-block;
-    width: 400px;
-    height: 300px;
-  }
-  
-  .fanned-card {
-    position: absolute;
-    transition: all 0.3s ease;
-    cursor: pointer;
-    width: 120px;
-    height: 167px;
-    left: 50%;
-    bottom: 0;
-    transform-origin: bottom center;
-  }
-  
-  .fanned-card img {
-    width: 100%;
-    height: 100%;
-    object-fit: cover;
-    border-radius: 0.5rem;
-    box-shadow: 0 10px 25px rgba(0, 0, 0, 0.5);
-  }
-  
-  .fanned-card:hover {
-    z-index: 20 !important;
-    filter: brightness(1.1);
-  }
-  
-  .center-card {
-    position: relative;
-    z-index: 5;
-  }
-  
   /* Homepage button hover effects */
   .group:hover .card-fan {
     filter: brightness(1.1);
@@ -63,7 +27,7 @@ const styles = `
   
   <div class="min-h-screen p-8">
     <div class="max-w-7xl mx-auto">
-      <h1 class="text-3xl font-bold text-white mb-8">Card Fan Layout Test</h1>
+      <h1 class="text-3xl font-bold text-white mb-8">Homepage Card Fan Test</h1>
       
       <!-- Controls -->
       <div class="control-panel rounded-2xl p-6 mb-8">
@@ -144,13 +108,6 @@ const styles = `
         </div>
       </div>
       
-      <!-- Card Display Area -->
-      <div class="flex justify-center items-center min-h-[400px] bg-slate-800/30 rounded-xl">
-        <div id="card-display" class="card-container">
-          <!-- Cards will be rendered here by JavaScript -->
-        </div>
-      </div>
-      
       <!-- Homepage Button Preview -->
       <div class="mt-12">
         <h2 class="text-2xl font-bold text-white mb-6">Homepage Button Preview</h2>
@@ -208,13 +165,6 @@ const styles = `
   </div>
   
   <script>
-    // Sample card images
-    const cardImages = [
-      'https://cards.scryfall.io/normal/front/1/1/11309ffa-4e33-4053-9ce6-e1d5d6e97fc9.jpg?1562826320', // Stormbreath Dragon
-      'https://cards.scryfall.io/normal/front/f/2/f22c03e1-acfd-40b8-97ea-c6ec7535a36f.jpg?1562796260', // Den Protector
-      'https://cards.scryfall.io/normal/front/0/7/077bee72-62f6-4d90-8557-ff9cac42ec9a.jpg?1562782102', // Silumgar's Scorn
-    ];
-    
     const finCards = [
       { url: 'https://cards.scryfall.io/normal/front/f/b/fb781323-2746-405d-a9b2-e778c037a6e9.jpg?1748706535', name: 'Tifa Lockhart' },
       { url: 'https://cards.scryfall.io/normal/front/e/c/ecc1027a-8c07-44a0-bdde-fa2844cff694.jpg?1748706721', name: 'Vivi Ornitier' },
@@ -228,7 +178,6 @@ const styles = `
     ];
     
     function renderCards() {
-      const container = document.getElementById('card-display');
       const finPreview = document.getElementById('fin-preview');
       const tdmPreview = document.getElementById('tdm-preview');
       const radius = parseInt(document.getElementById('radius-slider').value);
@@ -238,7 +187,6 @@ const styles = `
       const cardCount = parseInt(document.getElementById('card-count').value);
       
       // Clear containers
-      container.innerHTML = '';
       finPreview.innerHTML = '';
       tdmPreview.innerHTML = '';
       
@@ -260,24 +208,6 @@ const styles = `
       
       // Render main display cards
       positions.forEach((pos, index) => {
-        const cardIndex = index % cardImages.length;
-        const imgUrl = cardImages[cardIndex];
-        
-        const wrapper = document.createElement('div');
-        wrapper.className = 'fanned-card';
-        wrapper.style.zIndex = pos.zIndex;
-        
-        const angleRad = (pos.angle * Math.PI) / 180;
-        const x = Math.sin(angleRad) * radius;
-        const totalX = x + hOffset;
-        wrapper.style.transform = `translateX(-50%) rotate(${pos.angle}deg) translateX(${totalX}px) translateY(${vPos}px)`;
-        
-        const img = document.createElement('img');
-        img.src = imgUrl;
-        img.alt = `Card ${index + 1}`;
-        
-        wrapper.appendChild(img);
-        container.appendChild(wrapper);
       });
       
       // Render homepage preview cards
