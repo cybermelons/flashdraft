@@ -3,6 +3,16 @@
 <issue>
   cascading cards in decklist:
   the middle of the card is displayed, not the top. it snhould be object-top or something., the top X% of the card should be shown, which is the pip. use the right math to determine the height at hwich to cutoff to get the pip info.
+  FIXED: Updated cascade view to show only top 50px of cards with proper styling
+</issue>
+
+<issue>
+  SSG Deployment:
+  Need to convert from SSR to SSG for Cloudflare Pages deployment
+  - Changed output to "static" in astro.config.mjs
+  - Removed @astrojs/node adapter
+  - Need to update routing to be fully client-side
+  - Consider using hash-based routing for draft paths
 </issue>
 
 pick mode should also be previewed on the card preview.

@@ -1,20 +1,17 @@
 ---
 /**
- * FlashDraft - Dynamic Draft Routes
+ * FlashDraft - Draft Interface Page
  * 
- * Handles:
- * - /draft/[draftId] -> Specific draft interface
- * - /draft/[draftId]/p[round]p[pick] -> Specific position in draft
+ * Single page that handles all draft routing client-side
+ * Compatible with SSG deployment
  */
 
 import Layout from '../../layouts/Layout.astro';
 import { DraftInterface } from '../../components/DraftInterface';
-
-export const prerender = false;
 ---
 
 <Layout title="FlashDraft - Draft Interface">
-  <DraftInterface client:load />
+  <DraftInterface client:only="react" />
 </Layout>
 
 <style>

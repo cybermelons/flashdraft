@@ -2,25 +2,34 @@
 /**
  * FlashDraft - New Draft Page
  * 
- * If a set is provided via URL params, immediately create and redirect.
- * Otherwise, show set selection UI.
+ * Client-side redirect for creating new drafts
+ * Compatible with SSG
  */
 
 import Layout from '../../layouts/Layout.astro';
-
-// Get URL parameters
-const url = new URL(Astro.request.url);
-const setCode = url.searchParams.get('set');
-
-// If set is provided, redirect to draft with new parameter
-if (setCode) {
-  const seed = Date.now().toString();
-  const draftId = `draft_${setCode}_${seed}`;
-  // Redirect to the draft URL with new=true so SimpleDraftRouter creates it
-  return Astro.redirect(`/draft/${draftId}/p1p1?new=true&seed=${seed}`, 302);
-}
-else {
-  return Astro.redirect(`/`, 302);
-}
 ---
+
+<Layout title="Creating draft...">
+  <div class="min-h-screen bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900 flex items-center justify-center">
+    <div class="text-center">
+      <div class="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-500 mx-auto mb-4"></div>
+      <p class="text-slate-300">Creating draft...</p>
+    </div>
+  </div>
+</Layout>
+
+<script>
+  // Handle client-side redirect
+  const urlParams = new URLSearchParams(window.location.search);
+  const setCode = urlParams.get('set');
+  
+  if (setCode) {
+    const seed = Date.now().toString();
+    const draftId = `draft_${setCode}_${seed}`;
+    // Redirect to the draft URL with new=true so SimpleDraftRouter creates it
+    window.location.href = `/draft#${draftId}/p1p1?new=true&seed=${seed}`;
+  } else {
+    window.location.href = '/';
+  }
+</script>
 
