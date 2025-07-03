@@ -96,17 +96,7 @@ export function SettingsInterface({ className = '' }: SettingsInterfaceProps) {
   return (
     <div className={`min-h-screen bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900 ${className}`}>
       <LayoutHeader 
-        title="Settings" 
-        backLabel="Home"
-        actions={
-          <HeaderButton 
-            href="/draft" 
-            variant="secondary"
-            className="hidden sm:inline-flex"
-          >
-            View Drafts
-          </HeaderButton>
-        }
+        title="Settings"
       />
 
       {/* Settings Content */}
