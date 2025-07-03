@@ -21,6 +21,8 @@ import {
   uiActions as uiStoreActions
 } from '@/stores/uiStore';
 import { useDraftNavigation } from './SimpleDraftRouter';
+import { HeaderButton, HeaderButtonGroup } from './HeaderButton';
+import { NavigationButton } from './NavigationButton';
 
 interface DraftHeaderProps {
   className?: string;
@@ -129,58 +131,44 @@ export function DraftHeader({ className = '' }: DraftHeaderProps) {
               </div>
             </div>
             
-            <div className="flex items-center gap-1">
+            <HeaderButtonGroup>
               {/* Quick Pick Toggle */}
               {isViewingCurrent && currentDraft.status === 'active' && (
-                <button
+                <HeaderButton
                   onClick={() => uiStoreActions.toggleQuickPickMode()}
-                  className={`p-1.5 rounded-xl transition-colors ${
-                    quickPickMode 
-                      ? 'bg-blue-600 hover:bg-blue-500 text-white' 
-                      : 'bg-slate-700/50 hover:bg-slate-600/50 text-slate-300 hover:text-white'
-                  }`}
+                  variant="icon"
+                  active={quickPickMode}
                   title={quickPickMode ? 'Quick pick ON' : 'Quick pick OFF'}
                 >
                   <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M13 10V3L4 14h7v7l9-11h-7z"></path>
                   </svg>
-                </button>
+                </HeaderButton>
               )}
               
               {/* Settings button */}
-              <a
+              <HeaderButton
                 href="/settings"
-                className="bg-slate-700/50 hover:bg-slate-600/50 text-slate-300 hover:text-white p-1.5 rounded-xl transition-colors"
+                variant="icon"
                 title="Settings"
               >
                 <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"></path>
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"></path>
                 </svg>
-              </a>
-            </div>
+              </HeaderButton>
+            </HeaderButtonGroup>
           </div>
           
           {/* Bottom Row - Navigation */}
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-1">
-              {canGoPrevious() ? (
-                <a
-                  href={`/draft/${currentDraft.draftId}/p${getPreviousPosition().round}p${getPreviousPosition().pick}`}
-                  className="w-8 h-8 rounded-xl bg-slate-700/50 hover:bg-slate-600/50 text-white font-bold transition-colors flex items-center justify-center"
-                  title="Previous pick"
-                >
-                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15 19l-7-7 7-7"></path>
-                  </svg>
-                </a>
-              ) : (
-                <span className="w-8 h-8 rounded-xl bg-slate-800/50 text-slate-500 font-bold flex items-center justify-center cursor-not-allowed">
-                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15 19l-7-7 7-7"></path>
-                  </svg>
-                </span>
-              )}
+              <NavigationButton
+                href={canGoPrevious() ? `/draft/${currentDraft.draftId}/p${getPreviousPosition().round}p${getPreviousPosition().pick}` : undefined}
+                disabled={!canGoPrevious()}
+                direction="prev"
+                title="Previous pick"
+              />
               
               <div className="text-center min-w-0 px-2">
                 <div className="text-white font-semibold">
@@ -191,31 +179,20 @@ export function DraftHeader({ className = '' }: DraftHeaderProps) {
                 </div>
               </div>
               
-              {canGoNext() ? (
-                <a
-                  href={`/draft/${currentDraft.draftId}/p${getNextPosition().round}p${getNextPosition().pick}`}
-                  className="w-8 h-8 rounded-xl bg-slate-700/50 hover:bg-slate-600/50 text-white font-bold transition-colors flex items-center justify-center"
-                  title="Next pick"
-                >
-                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 5l7 7-7 7"></path>
-                  </svg>
-                </a>
-              ) : (
-                <span className="w-8 h-8 rounded-xl bg-slate-800/50 text-slate-500 font-bold flex items-center justify-center cursor-not-allowed">
-                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 5l7 7-7 7"></path>
-                  </svg>
-                </span>
-              )}
+              <NavigationButton
+                href={canGoNext() ? `/draft/${currentDraft.draftId}/p${getNextPosition().round}p${getNextPosition().pick}` : undefined}
+                disabled={!canGoNext()}
+                direction="next"
+                title="Next pick"
+              />
             </div>
             
-            <button
+            <HeaderButton
               onClick={() => navigation.navigateToDraftList()}
-              className="bg-slate-700/50 hover:bg-slate-600/50 text-slate-300 hover:text-white px-2 py-1.5 rounded-xl font-medium transition-colors text-sm"
+              variant="secondary"
             >
               Drafts
-            </button>
+            </HeaderButton>
           </div>
         </div>
 
@@ -250,23 +227,12 @@ export function DraftHeader({ className = '' }: DraftHeaderProps) {
 
             {/* Position Navigation - Always visible but smaller on mobile */}
             <div className="flex items-center gap-1 sm:gap-3">
-              {canGoPrevious() ? (
-                <a
-                  href={`/draft/${currentDraft.draftId}/p${getPreviousPosition().round}p${getPreviousPosition().pick}`}
-                  className="w-8 h-8 sm:w-10 sm:h-10 rounded-xl bg-slate-700/50 hover:bg-slate-600/50 text-white font-bold transition-colors flex items-center justify-center"
-                  title="Previous pick"
-                >
-                  <svg className="w-4 h-4 sm:w-5 sm:h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15 19l-7-7 7-7"></path>
-                  </svg>
-                </a>
-              ) : (
-                <span className="w-8 h-8 sm:w-10 sm:h-10 rounded-xl bg-slate-800/50 text-slate-500 font-bold flex items-center justify-center cursor-not-allowed">
-                  <svg className="w-4 h-4 sm:w-5 sm:h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15 19l-7-7 7-7"></path>
-                  </svg>
-                </span>
-              )}
+              <NavigationButton
+                href={canGoPrevious() ? `/draft/${currentDraft.draftId}/p${getPreviousPosition().round}p${getPreviousPosition().pick}` : undefined}
+                disabled={!canGoPrevious()}
+                direction="prev"
+                title="Previous pick"
+              />
               
               <div className="text-center min-w-0">
                 <div className="text-white font-semibold">
@@ -280,23 +246,12 @@ export function DraftHeader({ className = '' }: DraftHeaderProps) {
                 </div>
               </div>
               
-              {canGoNext() ? (
-                <a
-                  href={`/draft/${currentDraft.draftId}/p${getNextPosition().round}p${getNextPosition().pick}`}
-                  className="w-8 h-8 sm:w-10 sm:h-10 rounded-xl bg-slate-700/50 hover:bg-slate-600/50 text-white font-bold transition-colors flex items-center justify-center"
-                  title="Next pick"
-                >
-                  <svg className="w-4 h-4 sm:w-5 sm:h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 5l7 7-7 7"></path>
-                  </svg>
-                </a>
-              ) : (
-                <span className="w-8 h-8 sm:w-10 sm:h-10 rounded-xl bg-slate-800/50 text-slate-500 font-bold flex items-center justify-center cursor-not-allowed">
-                  <svg className="w-4 h-4 sm:w-5 sm:h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 5l7 7-7 7"></path>
-                  </svg>
-                </span>
-              )}
+              <NavigationButton
+                href={canGoNext() ? `/draft/${currentDraft.draftId}/p${getNextPosition().round}p${getNextPosition().pick}` : undefined}
+                disabled={!canGoNext()}
+                direction="next"
+                title="Next pick"
+              />
             </div>
           </div>
 
@@ -318,50 +273,48 @@ export function DraftHeader({ className = '' }: DraftHeaderProps) {
           )}
 
           {/* Action Buttons - Responsive */}
-          <div className="flex items-center gap-1 sm:gap-3">
+          <HeaderButtonGroup>
             {/* Quick Pick Toggle - Desktop */}
             {isViewingCurrent && currentDraft.status === 'active' && (
-              <button
+              <HeaderButton
                 onClick={() => uiStoreActions.toggleQuickPickMode()}
-                className={`px-3 lg:px-4 py-1.5 lg:py-2 rounded-xl font-medium transition-colors flex items-center text-sm lg:text-base ${
-                  quickPickMode 
-                    ? 'bg-blue-600 hover:bg-blue-500 text-white' 
-                    : 'bg-slate-700/50 hover:bg-slate-600/50 text-slate-300 hover:text-white'
-                }`}
+                variant={quickPickMode ? 'primary' : 'secondary'}
+                active={quickPickMode}
                 title={quickPickMode ? 'Quick pick: ON - Click to pick immediately' : 'Quick pick: OFF - Click to select, then confirm'}
               >
-                <svg className="w-4 h-4 mr-1.5 sm:mr-2 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <svg className="w-4 h-4 mr-1.5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M13 10V3L4 14h7v7l9-11h-7z"></path>
                 </svg>
                 <span className="hidden lg:inline">Quick Pick</span>
-              </button>
+              </HeaderButton>
             )}
             
-            <button
+            <HeaderButton
               onClick={() => navigation.navigateToOverview()}
-              className="hidden sm:block bg-slate-700/50 hover:bg-slate-600/50 text-slate-300 hover:text-white px-3 lg:px-4 py-1.5 lg:py-2 rounded-xl font-medium transition-colors text-sm lg:text-base"
+              variant="secondary"
+              className="hidden sm:inline-flex"
             >
               Overview
-            </button>
+            </HeaderButton>
             
-            <button
+            <HeaderButton
               onClick={() => navigation.navigateToDraftList()}
-              className="bg-slate-700/50 hover:bg-slate-600/50 text-slate-300 hover:text-white px-2 sm:px-3 lg:px-4 py-1.5 lg:py-2 rounded-xl font-medium transition-colors text-sm lg:text-base"
+              variant="secondary"
             >
               <span className="hidden sm:inline">All Drafts</span>
               <span className="sm:hidden">Drafts</span>
-            </button>
+            </HeaderButton>
             
-            <a
+            <HeaderButton
               href="/settings"
-              className="bg-slate-700/50 hover:bg-slate-600/50 text-slate-300 hover:text-white p-1.5 sm:p-2 rounded-xl transition-colors"
+              variant="icon"
               title="Settings"
             >
               <svg className="w-4 h-4 sm:w-5 sm:h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"></path>
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"></path>
               </svg>
-            </a>
+            </HeaderButton>
             
             {currentPosition && (
               <div className="hidden 2xl:block">
@@ -370,7 +323,7 @@ export function DraftHeader({ className = '' }: DraftHeaderProps) {
                 </code>
               </div>
             )}
-          </div>
+          </HeaderButtonGroup>
         </div>
       </div>
     </header>

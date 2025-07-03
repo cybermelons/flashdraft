@@ -1,0 +1,285 @@
+---
+// Test page for card fan adjustments - not included in production builds
+// Access at: /test-card-fan
+import Layout from '@/layouts/Layout.astro';
+
+// Test page styles
+const styles = `
+  body {
+    background: linear-gradient(to bottom right, #0f172a, #1e293b, #0f172a);
+  }
+  
+  .control-panel {
+    background: rgba(30, 41, 59, 0.5);
+    backdrop-filter: blur(8px);
+    border: 1px solid rgba(71, 85, 105, 0.5);
+  }
+  
+  /* Homepage button hover effects */
+  .group:hover .card-fan {
+    filter: brightness(1.1);
+  }
+`;
+---
+
+<Layout title="Card Fan Test">
+  <style set:html>{styles}</style>
+  
+  <div class="min-h-screen p-8">
+    <div class="max-w-7xl mx-auto">
+      <h1 class="text-3xl font-bold text-white mb-8">Homepage Card Fan Test</h1>
+      
+      <!-- Controls -->
+      <div class="control-panel rounded-2xl p-6 mb-8">
+        <h2 class="text-xl font-semibold text-white mb-4">Adjust Fan Parameters</h2>
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+          <div>
+            <label class="block text-sm font-medium text-slate-300 mb-2">
+              Radius: <span id="radius-value">70</span>px
+            </label>
+            <input 
+              type="range" 
+              id="radius-slider" 
+              min="30" 
+              max="150" 
+              value="70"
+              class="w-full"
+            />
+          </div>
+          
+          <div>
+            <label class="block text-sm font-medium text-slate-300 mb-2">
+              Horizontal Offset: <span id="h-offset-value">-50</span>px
+            </label>
+            <input 
+              type="range" 
+              id="h-offset-slider" 
+              min="-100" 
+              max="0" 
+              value="-50"
+              class="w-full"
+            />
+          </div>
+          
+          <div>
+            <label class="block text-sm font-medium text-slate-300 mb-2">
+              Vertical Position: <span id="v-pos-value">37</span>px
+            </label>
+            <input 
+              type="range" 
+              id="v-pos-slider" 
+              min="0" 
+              max="60" 
+              value="37"
+              class="w-full"
+            />
+          </div>
+          
+          <div>
+            <label class="block text-sm font-medium text-slate-300 mb-2">
+              Rotation Range: <span id="rotation-value">30</span>°
+            </label>
+            <input 
+              type="range" 
+              id="rotation-slider" 
+              min="10" 
+              max="60" 
+              value="30"
+              class="w-full"
+            />
+          </div>
+          
+          <div>
+            <label class="block text-sm font-medium text-slate-300 mb-2">
+              Number of Cards
+            </label>
+            <select id="card-count" class="bg-slate-700 text-white rounded px-3 py-2 w-full">
+              <option value="1">1 (Center only)</option>
+              <option value="3" selected>3 (Center + 2)</option>
+              <option value="5">5 (Center + 4)</option>
+            </select>
+          </div>
+        </div>
+        
+        <div class="mt-6 p-4 bg-slate-900/50 rounded-lg">
+          <p class="text-sm text-slate-400 font-mono" id="current-settings">
+            Radius: 70px, H-Offset: -50px, V-Position: 37px, Rotation: 30°
+          </p>
+        </div>
+      </div>
+      
+      <!-- Homepage Button Preview -->
+      <div class="mt-12">
+        <h2 class="text-2xl font-bold text-white mb-6">Homepage Button Preview</h2>
+        <div class="grid md:grid-cols-2 gap-8">
+          <!-- Final Fantasy Preview -->
+          <div class="group relative overflow-hidden rounded-3xl bg-gradient-to-br from-purple-600/20 to-blue-600/20 backdrop-blur-sm border border-purple-500/30 hover:border-purple-400/50 transition-all duration-300 hover:scale-105 hover:shadow-2xl hover:shadow-purple-500/20 min-h-[200px]">
+            <div class="relative p-8 lg:p-12 h-full flex flex-col justify-between">
+              <!-- Fanned out cards preview -->
+              <div class="absolute inset-0 flex items-center justify-center pointer-events-none">
+                <div id="fin-preview" class="relative" style="width: 120px; height: 32px;">
+                  <!-- Cards will be rendered here by JavaScript -->
+                </div>
+              </div>
+              <!-- Content -->
+              <div class="relative z-20 text-center mt-auto">
+                <div class="bg-black/50 backdrop-blur-sm rounded-full px-6 py-3 mx-auto inline-flex items-center gap-3">
+                  <span class="text-purple-300 text-sm">FIN</span>
+                  <h2 class="text-xl font-bold text-white">Final Fantasy</h2>
+                  <span class="text-white">→</span>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Tarkir Preview -->
+          <div class="group relative overflow-hidden rounded-3xl bg-gradient-to-br from-red-600/20 to-orange-600/20 backdrop-blur-sm border border-red-500/30 hover:border-red-400/50 transition-all duration-300 hover:scale-105 hover:shadow-2xl hover:shadow-red-500/20 min-h-[200px]">
+            <div class="relative p-8 lg:p-12 h-full flex flex-col justify-between">
+              <!-- Fanned out cards preview -->
+              <div class="absolute inset-0 flex items-center justify-center pointer-events-none">
+                <div id="tdm-preview" class="relative" style="width: 120px; height: 32px;">
+                  <!-- Cards will be rendered here by JavaScript -->
+                </div>
+              </div>
+              <!-- Content -->
+              <div class="relative z-20 text-center mt-auto">
+                <div class="bg-black/50 backdrop-blur-sm rounded-full px-6 py-3 mx-auto inline-flex items-center gap-3">
+                  <span class="text-red-300 text-sm">TDM</span>
+                  <h2 class="text-xl font-bold text-white">Tarkir: Dragonstorm</h2>
+                  <span class="text-white">→</span>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Info -->
+      <div class="mt-8 p-4 bg-blue-500/10 rounded-lg border border-blue-500/20">
+        <p class="text-sm text-blue-300">
+          This is a test page for adjusting card fan layout parameters. 
+          Changes here won't affect the production build.
+        </p>
+      </div>
+    </div>
+  </div>
+  
+  <script>
+    const finCards = [
+      { url: 'https://cards.scryfall.io/normal/front/f/b/fb781323-2746-405d-a9b2-e778c037a6e9.jpg?1748706535', name: 'Tifa Lockhart' },
+      { url: 'https://cards.scryfall.io/normal/front/e/c/ecc1027a-8c07-44a0-bdde-fa2844cff694.jpg?1748706721', name: 'Vivi Ornitier' },
+      { url: 'https://cards.scryfall.io/normal/front/8/5/85eaf5e7-77dc-4842-a70c-ce4ac7f724df.jpg?1748707811', name: 'Sephiroth' },
+    ];
+    
+    const tdmCards = [
+      { url: 'https://cards.scryfall.io/normal/front/6/4/64a5d494-efa1-446b-bebe-2ad36e154376.jpg?1744102946', name: 'Ugin, Eye of the Storms' },
+      { url: 'https://cards.scryfall.io/normal/front/c/2/c2200646-7b7c-489d-bbae-16b03e1d7fb2.jpg?1743204437', name: 'Sarkhan, Dragon Ascendant' },
+      { url: 'https://cards.scryfall.io/normal/front/e/2/e2c2a069-7553-4879-abfb-b2aa3349e4b8.jpg?1743204368', name: 'Breaching Dragonstorm' },
+    ];
+    
+    function renderCards() {
+      const finPreview = document.getElementById('fin-preview');
+      const tdmPreview = document.getElementById('tdm-preview');
+      const radius = parseInt(document.getElementById('radius-slider').value);
+      const hOffset = parseInt(document.getElementById('h-offset-slider').value);
+      const vPos = parseInt(document.getElementById('v-pos-slider').value);
+      const rotation = parseInt(document.getElementById('rotation-slider').value);
+      const cardCount = parseInt(document.getElementById('card-count').value);
+      
+      // Clear containers
+      finPreview.innerHTML = '';
+      tdmPreview.innerHTML = '';
+      
+      // Calculate positions based on card count
+      const positions = [];
+      if (cardCount === 1) {
+        positions.push({ angle: 0, zIndex: 5 });
+      } else if (cardCount === 3) {
+        positions.push({ angle: -rotation, zIndex: 1 });
+        positions.push({ angle: 0, zIndex: 5 });
+        positions.push({ angle: rotation, zIndex: 1 });
+      } else if (cardCount === 5) {
+        positions.push({ angle: -rotation * 1.5, zIndex: 0 });
+        positions.push({ angle: -rotation * 0.5, zIndex: 1 });
+        positions.push({ angle: 0, zIndex: 5 });
+        positions.push({ angle: rotation * 0.5, zIndex: 1 });
+        positions.push({ angle: rotation * 1.5, zIndex: 0 });
+      }
+      
+      // Render main display cards
+      positions.forEach((pos, index) => {
+      });
+      
+      // Render homepage preview cards
+      if (cardCount >= 3) {
+        // Apply transformation to preview containers
+        finPreview.style.transform = `translate(${hOffset}px, ${vPos}px)`;
+        tdmPreview.style.transform = `translate(${hOffset}px, ${vPos}px)`;
+        
+        // Render FIN preview cards
+        for (let i = 0; i < 3 && i < positions.length; i++) {
+          const pos = positions[i];
+          const card = finCards[i];
+          
+          const wrapper = document.createElement('div');
+          wrapper.className = 'card-fan absolute bottom-0 left-1/2 -translate-x-1/2 w-24 h-32 transition-all duration-300 opacity-80';
+          wrapper.style.zIndex = pos.zIndex;
+          wrapper.style.transformOrigin = 'bottom center';
+          
+          const angleRad = (pos.angle * Math.PI) / 180;
+          const x = Math.sin(angleRad) * radius;
+          wrapper.style.transform = `translateX(-50%) rotate(${pos.angle}deg) translateX(${x}px)`;
+          
+          const img = document.createElement('img');
+          img.src = card.url;
+          img.alt = card.name;
+          img.className = 'w-full h-full object-cover rounded-lg shadow-xl';
+          
+          wrapper.appendChild(img);
+          finPreview.appendChild(wrapper);
+        }
+        
+        // Render TDM preview cards
+        for (let i = 0; i < 3 && i < positions.length; i++) {
+          const pos = positions[i];
+          const card = tdmCards[i];
+          
+          const wrapper = document.createElement('div');
+          wrapper.className = 'card-fan absolute bottom-0 left-1/2 -translate-x-1/2 w-24 h-32 transition-all duration-300 opacity-80';
+          wrapper.style.zIndex = pos.zIndex;
+          wrapper.style.transformOrigin = 'bottom center';
+          
+          const angleRad = (pos.angle * Math.PI) / 180;
+          const x = Math.sin(angleRad) * radius;
+          wrapper.style.transform = `translateX(-50%) rotate(${pos.angle}deg) translateX(${x}px)`;
+          
+          const img = document.createElement('img');
+          img.src = card.url;
+          img.alt = card.name;
+          img.className = 'w-full h-full object-cover rounded-lg shadow-xl';
+          
+          wrapper.appendChild(img);
+          tdmPreview.appendChild(wrapper);
+        }
+      }
+      
+      // Update display
+      document.getElementById('radius-value').textContent = radius;
+      document.getElementById('h-offset-value').textContent = hOffset;
+      document.getElementById('v-pos-value').textContent = vPos;
+      document.getElementById('rotation-value').textContent = rotation;
+      document.getElementById('current-settings').textContent = 
+        `Radius: ${radius}px, H-Offset: ${hOffset}px, V-Position: ${vPos}px, Rotation: ${rotation}°`;
+    }
+    
+    // Initial render
+    renderCards();
+    
+    // Add event listeners
+    ['radius-slider', 'h-offset-slider', 'v-pos-slider', 'rotation-slider', 'card-count']
+      .forEach(id => {
+        document.getElementById(id).addEventListener('input', renderCards);
+        document.getElementById(id).addEventListener('change', renderCards);
+      });
+  </script>
+</Layout>
