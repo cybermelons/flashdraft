@@ -7,6 +7,7 @@
 
 import { useStore } from '@nanostores/react';
 import { useState } from 'react';
+import React from 'react';
 import { 
   $theme,
   $cardSize,
@@ -17,6 +18,7 @@ import {
   uiActions
 } from '@/stores/uiStore';
 import { Card } from '@/components/Card';
+import { SelectedCardOverlay } from '@/components/SelectedCardOverlay';
 import type { Card as CardType } from '@/lib/engine/PackGenerator';
 
 interface SettingsInterfaceProps {
@@ -38,6 +40,17 @@ export function SettingsInterface({ className = '' }: SettingsInterfaceProps) {
     }
     return true;
   });
+
+  // Local state for card preview interaction
+  const [previewSelectedCard, setPreviewSelectedCard] = useState<CardType | null>(null);
+  const [previewHoveredCard, setPreviewHoveredCard] = useState<CardType | null>(null);
+  
+  // Auto-select card initially to show the overlay by default
+  React.useEffect(() => {
+    if (!quickPickMode && !previewSelectedCard) {
+      setPreviewSelectedCard(sampleCard);
+    }
+  }, [quickPickMode]);
 
   // Sample card for preview - using Vivi from FIN set
   const sampleCard: CardType = {
@@ -169,22 +182,50 @@ export function SettingsInterface({ className = '' }: SettingsInterfaceProps) {
                     </button>
                   ))}
                 </div>
-                {/* Card Preview */}
+                {/* Card Preview - Using exact PackDisplay structure */}
                 <div className="bg-slate-900/50 rounded-xl p-4 flex justify-center">
-                  <div className="relative">
-                    <Card 
-                      card={sampleCard} 
-                      size={cardSize}
-                      canInteract={false}
-                      isSelected={true}
-                    />
-                    {/* Show pick mode overlay */}
-                    <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
-                      <div className="bg-black/60 backdrop-blur-sm rounded-lg px-4 py-2 border-2 border-green-500">
-                        <span className="text-green-400 font-bold text-lg">
-                          {pickMode === 'quick' ? 'Quick Pick' : (pickMode === 'double' ? 'Confirm' : 'Selected')}
-                        </span>
-                      </div>
+                  <div className="relative w-fit">
+                    {/* Real PackDisplay-style card with overlay */}
+                    <div className="relative group">
+                      {/* Real SelectedCardOverlay component */}
+                      <SelectedCardOverlay 
+                        isSelected={previewSelectedCard?.id === sampleCard.id} 
+                        label={doubleClickToPick ? "Confirm" : "Selected"}
+                        isHovered={previewHoveredCard?.id === sampleCard.id}
+                      />
+                      {/* Real Card component with exact same props as PackDisplay */}
+                      <Card
+                        card={sampleCard}
+                        isSelected={previewSelectedCard?.id === sampleCard.id}
+                        isHovered={previewHoveredCard?.id === sampleCard.id}
+                        canInteract={true}
+                        onClick={() => {
+                          if (quickPickMode) {
+                            // In quick pick mode, simulate immediate pick
+                            setPreviewSelectedCard(null);
+                            setTimeout(() => setPreviewSelectedCard(sampleCard), 100);
+                          } else {
+                            // In normal mode, toggle selection
+                            setPreviewSelectedCard(previewSelectedCard?.id === sampleCard.id ? null : sampleCard);
+                          }
+                        }}
+                        onDoubleClick={() => {
+                          if (doubleClickToPick) {
+                            setPreviewSelectedCard(null);
+                            // Simulate pick in preview
+                          }
+                        }}
+                        onMouseEnter={() => setPreviewHoveredCard(sampleCard)}
+                        onMouseLeave={() => setPreviewHoveredCard(null)}
+                        size={cardSize}
+                        responsive={false}
+                      />
+                    </div>
+                    {/* Show the pick mode description below */}
+                    <div className="mt-2 text-center text-sm text-slate-400">
+                      {pickMode === 'quick' ? 'Click to pick immediately' : 
+                       pickMode === 'double' ? 'Click to select, double-click to confirm' : 
+                       'Click to select, use confirm button'}
                     </div>
                   </div>
                 </div>

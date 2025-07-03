@@ -166,9 +166,7 @@ export function Card({
             src={imageUrl}
             alt={displayCard.name}
             loading="eager"
-            className={`w-full h-full object-cover transition-opacity duration-150 ${
-              imageLoaded ? 'opacity-100' : 'opacity-0'
-            }`}
+            className="w-full h-full object-cover"
             onLoad={() => setImageLoaded(true)}
             onError={() => setImageError(true)}
           />
