@@ -20,59 +20,6 @@ const createDraft = (setCode: string) => {
         <p class="text-xl text-slate-300">Choose your draft format</p>
       </div>
 
-      <!-- Fan Controls (for testing) -->
-      <div class="mb-8 bg-slate-800/50 backdrop-blur-sm rounded-xl p-4 border border-slate-700/50 space-y-4">
-        <div>
-          <label class="text-white text-sm font-medium mb-2 block">Card Fan Radius</label>
-          <input 
-            type="range" 
-            id="fanRadius" 
-            min="40" 
-            max="150" 
-            value="70" 
-            class="w-full h-2 bg-slate-700 rounded-lg appearance-none cursor-pointer"
-          />
-          <div class="flex justify-between text-slate-400 text-xs mt-1">
-            <span>Tight</span>
-            <span id="radiusValue" class="text-white font-medium">70px</span>
-            <span>Wide</span>
-          </div>
-        </div>
-        
-        <div>
-          <label class="text-white text-sm font-medium mb-2 block">Card Vertical Position</label>
-          <input 
-            type="range" 
-            id="cardPosition" 
-            min="-20" 
-            max="40" 
-            value="37" 
-            class="w-full h-2 bg-slate-700 rounded-lg appearance-none cursor-pointer"
-          />
-          <div class="flex justify-between text-slate-400 text-xs mt-1">
-            <span>Higher</span>
-            <span id="positionValue" class="text-white font-medium">37px</span>
-            <span>Lower</span>
-          </div>
-        </div>
-        
-        <div>
-          <label class="text-white text-sm font-medium mb-2 block">Card Horizontal Position</label>
-          <input 
-            type="range" 
-            id="cardHorizontal" 
-            min="-80" 
-            max="40" 
-            value="-50" 
-            class="w-full h-2 bg-slate-700 rounded-lg appearance-none cursor-pointer"
-          />
-          <div class="flex justify-between text-slate-400 text-xs mt-1">
-            <span>Left</span>
-            <span id="horizontalValue" class="text-white font-medium">-50px</span>
-            <span>Right</span>
-          </div>
-        </div>
-      </div>
 
       <!-- Draft Selection Grid -->
       <div class="grid md:grid-cols-2 gap-8">
@@ -256,83 +203,46 @@ const createDraft = (setCode: string) => {
   </style>
 
   <script>
-    // Fan adjustment logic
-    const radiusSlider = document.getElementById('fanRadius') as HTMLInputElement;
-    const radiusValue = document.getElementById('radiusValue') as HTMLSpanElement;
-    const positionSlider = document.getElementById('cardPosition') as HTMLInputElement;
-    const positionValue = document.getElementById('positionValue') as HTMLSpanElement;
-    const horizontalSlider = document.getElementById('cardHorizontal') as HTMLInputElement;
-    const horizontalValue = document.getElementById('horizontalValue') as HTMLSpanElement;
+    // Fixed fan positioning based on finalized parameters
     const finCards = document.querySelectorAll('.fin-cards .card-fan') as NodeListOf<HTMLElement>;
     const tdmCards = document.querySelectorAll('.tdm-cards .card-fan') as NodeListOf<HTMLElement>;
     const finContainer = document.querySelector('.fin-cards') as HTMLElement;
     const tdmContainer = document.querySelector('.tdm-cards') as HTMLElement;
 
-    function updateFanDisplay(radius: number, verticalOffset: number, horizontalOffset: number) {
-      radiusValue.textContent = `${radius}px`;
-      positionValue.textContent = `${verticalOffset}px`;
-      horizontalValue.textContent = `${horizontalOffset}px`;
-      
-      // Update container position
-      if (finContainer) {
-        finContainer.style.transform = `translate(${horizontalOffset}px, ${verticalOffset}px)`;
-      }
-      if (tdmContainer) {
-        tdmContainer.style.transform = `translate(${horizontalOffset}px, ${verticalOffset}px)`;
-      }
-      
-      // Scale angle based on radius - wider radius = more angle
-      const baseAngleStep = 15; // minimum angle between cards
-      const maxAngleStep = 45; // maximum angle between cards
-      const radiusRatio = (radius - 40) / (150 - 40); // normalize radius to 0-1
-      const angleStep = baseAngleStep + (maxAngleStep - baseAngleStep) * radiusRatio;
-      const baseAngle = -angleStep; // starting angle
-      
-      // Update FIN cards
-      finCards.forEach((card, index) => {
-        const angle = baseAngle + (index * angleStep);
-        const translateX = Math.sin(angle * Math.PI / 180) * radius;
-        const rotate = angle;
-        
-        card.style.setProperty('--rotate', `${rotate}deg`);
-        card.style.setProperty('--translate-x', `${translateX}px`);
-        card.style.transform = `rotate(${rotate}deg) translateX(${translateX}px)`;
-      });
-
-      // Update TDM cards
-      tdmCards.forEach((card, index) => {
-        const angle = baseAngle + (index * angleStep);
-        const translateX = Math.sin(angle * Math.PI / 180) * radius;
-        const rotate = angle;
-        
-        card.style.setProperty('--rotate', `${rotate}deg`);
-        card.style.setProperty('--translate-x', `${translateX}px`);
-        card.style.transform = `rotate(${rotate}deg) translateX(${translateX}px)`;
-      });
+    // Apply fixed positioning with radius: 70px, h-offset: -50px, v-pos: 37px
+    const radius = 70;
+    const horizontalOffset = -50;
+    const verticalOffset = 37;
+    const angleStep = 30; // 30 degrees between cards
+    
+    // Update container position
+    if (finContainer) {
+      finContainer.style.transform = `translate(${horizontalOffset}px, ${verticalOffset}px)`;
     }
-
-    radiusSlider.addEventListener('input', (e) => {
-      const radius = parseInt((e.target as HTMLInputElement).value);
-      const position = parseInt(positionSlider.value);
-      const horizontal = parseInt(horizontalSlider.value);
-      updateFanDisplay(radius, position, horizontal);
+    if (tdmContainer) {
+      tdmContainer.style.transform = `translate(${horizontalOffset}px, ${verticalOffset}px)`;
+    }
+    
+    // Update FIN cards
+    finCards.forEach((card, index) => {
+      const angle = -angleStep + (index * angleStep);
+      const translateX = Math.sin(angle * Math.PI / 180) * radius;
+      const rotate = angle;
+      
+      card.style.setProperty('--rotate', `${rotate}deg`);
+      card.style.setProperty('--translate-x', `${translateX}px`);
+      card.style.transform = `rotate(${rotate}deg) translateX(${translateX}px)`;
     });
 
-    positionSlider.addEventListener('input', (e) => {
-      const position = parseInt((e.target as HTMLInputElement).value);
-      const radius = parseInt(radiusSlider.value);
-      const horizontal = parseInt(horizontalSlider.value);
-      updateFanDisplay(radius, position, horizontal);
+    // Update TDM cards
+    tdmCards.forEach((card, index) => {
+      const angle = -angleStep + (index * angleStep);
+      const translateX = Math.sin(angle * Math.PI / 180) * radius;
+      const rotate = angle;
+      
+      card.style.setProperty('--rotate', `${rotate}deg`);
+      card.style.setProperty('--translate-x', `${translateX}px`);
+      card.style.transform = `rotate(${rotate}deg) translateX(${translateX}px)`;
     });
-
-    horizontalSlider.addEventListener('input', (e) => {
-      const horizontal = parseInt((e.target as HTMLInputElement).value);
-      const radius = parseInt(radiusSlider.value);
-      const position = parseInt(positionSlider.value);
-      updateFanDisplay(radius, position, horizontal);
-    });
-
-    // Initialize with default values
-    updateFanDisplay(70, 37, -50);
   </script>
 </Layout>
