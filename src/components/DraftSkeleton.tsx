@@ -8,39 +8,87 @@
 export function DraftSkeleton() {
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900">
-      {/* Header skeleton - matches DraftHeader */}
-      <div className="bg-slate-800/50 backdrop-blur-sm border-b border-slate-700/50">
-        <div className="max-w-7xl mx-auto px-6 py-4">
-          <div className="flex items-center justify-between">
-            {/* Draft info skeleton */}
-            <div className="flex items-center gap-6">
-              <div>
-                <div className="h-7 w-32 bg-slate-700 rounded animate-pulse mb-2" />
-                <div className="flex items-center gap-3">
-                  <div className="h-6 w-20 bg-slate-700/50 rounded-full animate-pulse" />
-                  <div className="h-6 w-16 bg-slate-700/50 rounded-full animate-pulse" />
+      {/* Header skeleton - matches DraftHeader exactly */}
+      <header className="bg-slate-800/50 backdrop-blur-sm border-b border-slate-700/50">
+        <div className="max-w-7xl mx-auto px-2 sm:px-4 lg:px-6 py-3 sm:py-4">
+          {/* Mobile Layout skeleton */}
+          <div className="flex flex-col sm:hidden gap-2">
+            {/* Top Row - Draft Info and Settings */}
+            <div className="flex items-center justify-between">
+              <div className="min-w-0 flex-1">
+                {/* Set code skeleton */}
+                <div className="h-5 w-8 bg-slate-700 rounded animate-pulse mb-1" />
+                {/* Status badge skeleton */}
+                <div className="h-5 w-12 bg-slate-700/50 rounded-full animate-pulse" />
+              </div>
+              {/* Settings button skeleton */}
+              <div className="w-7 h-7 rounded-xl bg-slate-700/50 animate-pulse" />
+            </div>
+            
+            {/* Bottom Row - Navigation skeleton */}
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-1">
+                <div className="w-8 h-8 rounded-xl bg-slate-700/50 animate-pulse" />
+                <div className="text-center min-w-0 px-2">
+                  <div className="h-4 w-12 bg-slate-700 rounded animate-pulse mb-1" />
+                  <div className="h-3 w-10 bg-slate-700/50 rounded animate-pulse" />
+                </div>
+                <div className="w-8 h-8 rounded-xl bg-slate-700/50 animate-pulse" />
+              </div>
+              <div className="h-7 w-12 bg-slate-700/50 rounded-xl animate-pulse" />
+            </div>
+          </div>
+
+          {/* Desktop/Tablet Layout skeleton */}
+          <div className="hidden sm:flex items-center justify-between gap-2 sm:gap-4">
+            {/* Draft info skeleton - fixed width for consistency */}
+            <div className="flex items-center gap-2 sm:gap-6 min-w-0">
+              <div className="min-w-0">
+                {/* Draft title skeleton - Fixed width to prevent shift */}
+                <div className="h-5 sm:h-6 w-24 bg-slate-700 rounded animate-pulse" />
+                <div className="flex items-center gap-2 sm:gap-3 mt-1">
+                  {/* Seed badge skeleton */}
+                  <div className="h-5 sm:h-6 w-20 bg-slate-700/50 rounded-full animate-pulse" />
+                  {/* Status badge skeleton */}
+                  <div className="h-5 sm:h-6 w-14 bg-slate-700/50 rounded-full animate-pulse" />
                 </div>
               </div>
 
               {/* Navigation skeleton */}
-              <div className="flex items-center gap-3">
-                <div className="w-10 h-10 rounded-xl bg-slate-700/50 animate-pulse" />
-                <div className="text-center">
-                  <div className="h-7 w-20 bg-slate-700 rounded animate-pulse mb-1" />
-                  <div className="h-5 w-16 bg-slate-700/50 rounded animate-pulse" />
+              <div className="flex items-center gap-1 sm:gap-3">
+                <div className="w-8 h-8 sm:w-10 sm:h-10 rounded-xl bg-slate-700/50 animate-pulse" />
+                <div className="text-center min-w-0">
+                  <div className="h-4 sm:h-5 w-16 bg-slate-700 rounded animate-pulse mb-1" />
+                  <div className="h-3 sm:h-4 w-12 bg-slate-700/50 rounded animate-pulse" />
                 </div>
-                <div className="w-10 h-10 rounded-xl bg-slate-700/50 animate-pulse" />
+                <div className="w-8 h-8 sm:w-10 sm:h-10 rounded-xl bg-slate-700/50 animate-pulse" />
+              </div>
+            </div>
+
+            {/* Progress bar skeleton - hidden on mobile */}
+            <div className="hidden md:flex flex-1 max-w-md mx-4 lg:mx-8">
+              <div className="flex items-center gap-3 w-full">
+                <div className="flex-1 bg-slate-700/50 rounded-full h-2">
+                  <div className="bg-slate-600 h-2 rounded-full animate-pulse" style={{ width: '33%' }} />
+                </div>
+                <div className="h-4 w-8 bg-slate-700/50 rounded animate-pulse" />
               </div>
             </div>
 
             {/* Right side controls skeleton */}
-            <div className="flex items-center gap-3">
-              <div className="h-10 w-24 bg-slate-700/50 rounded-xl animate-pulse" />
-              <div className="h-10 w-32 bg-slate-700/50 rounded-xl animate-pulse" />
+            <div className="flex items-center gap-1 sm:gap-3">
+              {/* Quick pick button skeleton */}
+              <div className="h-7 sm:h-9 lg:h-10 w-20 lg:w-28 bg-slate-700/50 rounded-xl animate-pulse" />
+              {/* Overview button skeleton - hidden on mobile */}
+              <div className="hidden sm:block h-7 sm:h-9 lg:h-10 w-20 bg-slate-700/50 rounded-xl animate-pulse" />
+              {/* All Drafts button skeleton */}
+              <div className="h-7 sm:h-9 lg:h-10 w-16 sm:w-24 bg-slate-700/50 rounded-xl animate-pulse" />
+              {/* Settings button skeleton */}
+              <div className="w-7 h-7 sm:w-9 sm:h-9 rounded-xl bg-slate-700/50 animate-pulse" />
             </div>
           </div>
         </div>
-      </div>
+      </header>
 
       {/* Main content area - full width when sidebar closed */}
       <div className="flex-1 relative overflow-hidden">
