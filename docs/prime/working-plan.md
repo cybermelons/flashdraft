@@ -1,5 +1,10 @@
 # issues:
 
+<issue>
+  cascading cards in decklist:
+  the middle of the card is displayed, not the top. it snhould be object-top or something., the top X% of the card should be shown, which is the pip. use the right math to determine the height at hwich to cutoff to get the pip info.
+</issue>
+
 pick mode should also be previewed on the card preview.
 use a recent iconic card to preview (use Vivi's card)
 
